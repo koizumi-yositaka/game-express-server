@@ -1,0 +1,39 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+}
+
+model User {
+  userId        String        @id
+  displayName   String
+  invalidateFlg Boolean       @default(false)
+  createdAt     DateTime      @default(now())
+
+  roomMembers   RoomMember[]
+}
+
+model Room {
+  id           Int           @id @default(autoincrement())
+  roomCode     String        @unique
+  openFlg      Boolean       @default(true)  // ← status の代わりに boolean へ変更
+  createdAt    DateTime      @default(now())
+
+  members      RoomMember[]
+}
+
+model RoomMember {
+  id        Int      @id @default(autoincrement())
+  room      Room     @relation(fields: [roomId], references: [id])
+  roomId    Int
+
+  user      User     @relation(fields: [userId], references: [userId])
+  userId    String
+
+  joinedAt  DateTime @default(now())
+
+  @@unique([roomId, userId])
+}

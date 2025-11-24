@@ -20,8 +20,17 @@ project-root/
 docker compose up -d --build
 
 ## Volumeも削除
-docker compose down -v
+docker compose down -v -d db
 
 ## APIのみ
 docker compose build api
 docker compose up -d api
+
+## DBのみ
+docker compose up -d db
+
+## DB
+npx prisma studio
+
+## 修正時
+npx prisma migrate dev --name add_something

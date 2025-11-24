@@ -8,7 +8,8 @@ RUN npm install
 
 # ソースコードコピー
 COPY . .
-
+RUN npx prisma generate
+# RUN npx prisma migrate dev --name init
 # ★ TypeScript をビルドして dist/ を作る
 RUN npm run build
 

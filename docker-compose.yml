@@ -19,7 +19,7 @@ services:
     container_name: mysql-db
     environment:
       MYSQL_ROOT_PASSWORD: password
-      MYSQL_DATABASE: sample_db
+      MYSQL_DATABASE: game_db
       TZ: Asia/Tokyo
     volumes:
       - db_data:/var/lib/mysql
