@@ -6,7 +6,7 @@ export const validate =
   (schema: z.ZodTypeAny) =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log(req.body);
+      console.log("req.body", req.body);
       req.body = schema.parse(req.body);
       next();
     } catch (error: any) {
@@ -21,7 +21,7 @@ export const validateParams =
   (schema: z.ZodTypeAny) =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log(req.params);
+      console.log("req.params", req.params);
       schema.parse(req.params);
       console.log("afetr");
       next();

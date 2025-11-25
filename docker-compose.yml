@@ -6,11 +6,13 @@ services:
     container_name: api
     working_dir: /usr/src/app
     environment:
-      - DB_HOST=db
-      - DB_USER=root
-      - DB_PASSWORD=password
-      - DB_NAME=sample_db
-      - PORT=3000
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: root
+      DB_PASSWORD: password
+      DB_NAME: game_db
+      DATABASE_URL: mysql://root:password@db:3306/game_db?sslaccept=accept_invalid_certs
+      PORT: 3000
     depends_on:
       - db
 

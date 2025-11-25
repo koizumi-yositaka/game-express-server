@@ -34,3 +34,6 @@ npx prisma studio
 
 ## 修正時
 npx prisma migrate dev --name add_something
+
+
+apk add --no-cache mysql-client

@@ -4,6 +4,7 @@ import {
   registerUserSchema,
   userController,
   invalidateUserSchema,
+  getUserStatusParamsSchema,
 } from "../controllers/user.controller";
 
 const router = Router();
@@ -12,5 +13,10 @@ router.post(
   "/:userId/invalidate",
   validateParams(invalidateUserSchema),
   userController.invalidateUser
+);
+router.get(
+  "/:userId/status",
+  validateParams(getUserStatusParamsSchema),
+  userController.getUserStatus
 );
 export default router;

@@ -1,10 +1,11 @@
-import { Room } from "../generated/prisma/client";
+import { Room, RoomMember } from "../generated/prisma/client";
 import { roomRepository } from "../repos/roomRepository";
 import { type TRoom } from "../domain/types";
 import { randomInt } from "crypto";
 import { prisma } from "../db/prisma";
+import { Prisma } from "../generated/prisma/client";
 
-function toTRoom(room: Room | null): TRoom | null {
+export function toTRoom(room: Room | null): TRoom | null {
   if (!room) return null;
   return {
     id: room.id,
@@ -18,7 +19,7 @@ const ATTEMPTS_LIMIT = 5;
 
 export const roomService = {
   createRoom: async (): Promise<TRoom | null> => {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       let attempts = 0;
       let roomCode = "";
       while (attempts < ATTEMPTS_LIMIT) {
@@ -38,7 +39,7 @@ export const roomService = {
     });
   },
   closeRoom: async (roomCode: string): Promise<TRoom | null> => {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       let room = await roomRepository.getRoomByRoomCode(tx, roomCode);
       if (!room) {
         throw new Error("Room not found");

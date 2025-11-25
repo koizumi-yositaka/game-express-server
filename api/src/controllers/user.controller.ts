@@ -7,12 +7,29 @@ export const registerUserSchema = z.object({
   displayName: z.string(),
 });
 export type RegisterUserRequestBody = z.infer<typeof registerUserSchema>;
+
 export const invalidateUserSchema = z.object({
   userId: z.string(),
 });
 export type InvalidateUserRequestBody = z.infer<typeof invalidateUserSchema>;
 
+export const getUserStatusParamsSchema = z.object({
+  userId: z.string(),
+});
+export type GetUserStatusParams = z.infer<typeof getUserStatusParamsSchema>;
+
+type UserStatus = {
+  invalidateFlg: boolean;
+  isParticipating: boolean;
+};
+
 export const userController = {
+  /**
+   * ユーザーを取得する
+   * @param req リクエスト
+   * @param res レスポンス
+   * @param next 次のミドルウェア
+   */
   getUsers: async (_req: Request, res: Response, next: NextFunction) => {
     try {
       const users = await userService.getUsers();
@@ -21,11 +38,18 @@ export const userController = {
       next(error);
     }
   },
+  /**
+   * ユーザーを登録する
+   * @param req リクエスト
+   * @param res レスポンス
+   * @param next 次のミドルウェア
+   */
   registerUser: async (
     req: Request<unknown, unknown, RegisterUserRequestBody>,
     res: Response,
     next: NextFunction
   ) => {
+    console.log("registerUser", req.body);
     try {
       const user = await userService.registerUser(
         req.body.userId,
@@ -36,6 +60,12 @@ export const userController = {
       next(error);
     }
   },
+  /**
+   * ユーザーを無効化する
+   * @param req リクエスト
+   * @param res レスポンス
+   * @param next 次のミドルウェア
+   */
   invalidateUser: async (
     req: Request<InvalidateUserRequestBody>,
     res: Response,
@@ -44,6 +74,21 @@ export const userController = {
     try {
       const user = await userService.invalidateUser(req.params.userId);
       res.status(200).json(user);
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  getUserStatus: async (
+    req: Request<GetUserStatusParams>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const userStatus: UserStatus = await userService.getUserStatus(
+        req.params.userId
+      );
+      res.status(200).json(userStatus);
     } catch (error) {
       next(error);
     }

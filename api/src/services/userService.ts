@@ -1,18 +1,19 @@
 import { userRepository } from "../repos/userRepository";
 import { TUser } from "../domain/types";
 import { prisma } from "../db/prisma";
-import { User } from "../generated/prisma/client";
+import { Prisma, User } from "../generated/prisma/client";
+import { roomMemberRepository } from "../repos/roomMemberRepository";
 export const userService = {
   getUsers: async () => {
     return await userRepository.getUsers();
   },
   getUser: async (userId: string) => {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       return toTUser(await userRepository.getUser(tx, userId));
     });
   },
   registerUser: async (userId: string, displayName: string) => {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const existingUser = await userRepository.getUser(tx, userId);
 
       console.log("existingUser", existingUser);
@@ -39,7 +40,7 @@ export const userService = {
     });
   },
   invalidateUser: async (userId: string) => {
-    return await prisma.$transaction(async (tx) => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const existingUser = await userRepository.getUser(tx, userId);
       if (!existingUser) {
         throw new Error("User not found");
@@ -53,9 +54,25 @@ export const userService = {
       );
     });
   },
+  getUserStatus: async (userId: string) => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const user = await userRepository.getUser(tx, userId);
+      if (!user) {
+        throw new Error("User not found");
+      }
+      const isParticipating = await roomMemberRepository.isUserInOpenRoom(
+        tx,
+        userId
+      );
+      return {
+        invalidateFlg: user.invalidateFlg,
+        isParticipating,
+      };
+    });
+  },
 };
 
-function toTUser(user: User | null): TUser | null {
+export function toTUser(user: User | null): TUser | null {
   if (!user) return null;
   return {
     userId: user.userId,
