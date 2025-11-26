@@ -17,6 +17,21 @@ export type TRoomMember = {
   id: number;
   roomId: number;
   userId: string;
-  role: number;
+  roleId: number;
   joinedAt: Date;
+  user?: TUser;
+  role?: TRole;
+};
+
+export type TRoomAndMembers = {
+  room: TRoom;
+  members: TRoomMember[];
+};
+
+export type TRole = {
+  roleId: number;
+  roleName: string;
+  priority: number;
+  description: string;
+  imageUrl: string;
 };

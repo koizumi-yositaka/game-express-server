@@ -13,6 +13,7 @@ import { validate, validateParams } from "../middleware/validation";
 
 const router = Router();
 router.post("/", validate(createRoomSchema), roomController.createRoom);
+router.get("/", roomController.getAllRooms);
 router.post(
   "/:roomCode/close",
   validateParams(closeRoomParamsSchema),

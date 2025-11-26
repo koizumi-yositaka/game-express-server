@@ -36,10 +36,21 @@ model RoomMember {
   user      User     @relation(fields: [userId], references: [userId])
   userId    String
 
-  role      Int      @default(0)
+  role      MRole    @relation(fields: [roleId], references: [roleId])
+  roleId    Int      @default(0)
 
   joinedAt  DateTime @default(now())
 
   @@unique([roomId, userId])
+}
+
+model MRole {
+  roleId      Int           @id
+  roleName    String
+  priority    Int           @default(0)
+  description String
+  imageUrl    String
+
+  members     RoomMember[]
 }
 

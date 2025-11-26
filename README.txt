@@ -34,6 +34,10 @@ npx prisma studio
 
 ## 修正時
 npx prisma migrate dev --name add_something
+npx prisma generate
+
+## master更新
+npx tsx prisma/seed.ts
 
 
 apk add --no-cache mysql-client

@@ -4,41 +4,43 @@ import { roomMemberRepository } from "../repos/roomMemberRepository";
 import { roomRepository } from "../repos/roomRepository";
 import { userRepository } from "../repos/userRepository";
 import { toTRoom } from "./roomService";
+import { toTUser } from "./userService";
 import { TRoom } from "../domain/types";
+import { toTRole } from "./roomService";
 
-import { BadRequestError, NotFoundError } from "../error/AppError";
-import { TRoomMember } from "../domain/types";
-export type RoomAndMembers = {
-  room: TRoom;
-  members: TRoomMember[];
-};
+import {
+  BadRequestError,
+  InternalServerError,
+  NotFoundError,
+} from "../error/AppError";
+import { TRoomMember, TRoomAndMembers } from "../domain/types";
+import { GAME_STATUS, IMAGE_PATH_MAP } from "../domain/common";
+import { lineUtil } from "../util/lineUtil";
+import { roleMasterService } from "./roleMasterService";
 
-export function toTRoomMember(
-  roomMember: RoomMember | null
-): TRoomMember | null {
-  if (!roomMember) return null;
+export function toTRoomMember(roomMember: RoomMember): TRoomMember {
   return {
     id: roomMember.id,
     roomId: roomMember.roomId,
     userId: roomMember.userId,
-    role: roomMember.role,
+    roleId: roomMember.roleId,
     joinedAt: roomMember.joinedAt,
   };
 }
 
 export const roomMemberService = {
-  joinRoom: async (roomCode: string, userId: string): Promise<TRoom | null> => {
+  joinRoom: async (roomCode: string, userId: string): Promise<TRoom> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const room = await roomRepository.getRoomByRoomCode(tx, roomCode);
       if (!room) {
         throw new NotFoundError("部屋が見つかりません");
       }
-      if (room.status !== 0) {
+      if (room.status !== GAME_STATUS.NOT_STARTED) {
         throw new BadRequestError("Roomは募集中ではありません");
       }
       const memberInfo = await userRepository.getUser(tx, userId);
       if (!memberInfo) {
-        throw new NotFoundError("User not found");
+        throw new NotFoundError("ユーザーが見つかりません");
       }
       const roomMembers = await roomMemberRepository.getRoomMembers(
         tx,
@@ -58,9 +60,17 @@ export const roomMemberService = {
       }
       const roomWithUsers = await roomRepository.findWithUsersById(tx, room.id);
       const members =
-        roomWithUsers?.members?.map((m) => toTRoomMember(m)) ?? [];
+        roomWithUsers?.members?.map((m) =>
+          m.user
+            ? {
+                ...toTRoomMember(m),
+                user: toTUser(m.user),
+                role: toTRole(m.role),
+              }
+            : toTRoomMember(m)
+        ) ?? [];
       return {
-        room,
+        room: toTRoom(room),
         members,
       };
     });
@@ -76,10 +86,16 @@ export const roomMemberService = {
       if (!roomMember) {
         throw new NotFoundError("メンバーが見つかりません");
       }
-      return toTRoomMember(roomMember);
+      return roomMember.user
+        ? {
+            ...toTRoomMember(roomMember),
+            user: toTUser(roomMember.user),
+            role: toTRole(roomMember.role),
+          }
+        : toTRoomMember(roomMember);
     });
   },
-  startGame: async (roomCode: string): Promise<RoomAndMembers> => {
+  startGame: async (roomCode: string): Promise<TRoomAndMembers> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       let room = await roomRepository.getRoomByRoomCode(tx, roomCode);
       if (!room) {
@@ -89,30 +105,70 @@ export const roomMemberService = {
         tx,
         room.id
       );
-      const assignedRoles = assignRoles(roomMembers);
-      for (const member of assignedRoles) {
+
+      const assignedRoles = await assignRoles(shuffleArray(roomMembers));
+
+      assignedRoles.forEach(async (member) => {
         await roomMemberRepository.updateRoomMemberRole(
           tx,
           room.id,
           member.userId,
-          member.role
+          member.roleId
         );
-      }
+      });
+      await roomRepository.updateRoom(tx, room.id, {
+        status: GAME_STATUS.IN_PROGRESS,
+      });
       // if (roomMembers.length < 2) {
       //   throw new BadRequestError("部屋に参加者が2人未満です");
       // }
+      assignedRoles.forEach(async (member) => {
+        const { success } = await lineUtil.sendNoticeRoleMessage(
+          member.userId,
+          member.role?.roleName ?? "",
+          "BBBB",
+          "CCCC",
+          member.role?.imageUrl ?? "",
+          "https://joelle-unreleasable-defeatedly.ngrok-free.dev",
+          "役割を確認"
+        );
+        if (!success) {
+          console.error(
+            `Failed to send notice role message to ${member.userId}`
+          );
+          throw new InternalServerError("Failed to send notice role message");
+        }
+      });
       return {
-        room: toTRoom(room)!,
+        room: toTRoom(room),
         members: assignedRoles,
       };
     });
   },
 };
-function assignRoles(roomMembers: TRoomMember[]): TRoomMember[] {
-  return roomMembers.map((member) => {
+
+async function assignRoles(roomMembers: TRoomMember[]): Promise<TRoomMember[]> {
+  const roles = await roleMasterService.getRoles();
+  const sortedRoles = [...roles].sort((a, b) => b.priority - a.priority);
+  console.log(sortedRoles);
+  console.log("roomMembers", roomMembers);
+  return roomMembers.map((member, index) => {
+    const role = sortedRoles[index];
+    console.log("role", role);
     return {
       ...member,
-      role: Math.random() > 0.5 ? 1 : 2,
+      roleId: role?.roleId ?? 0,
+      role: role || sortedRoles[sortedRoles.length - 1],
     };
   });
+}
+
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array]; // 元の配列を破壊しない
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1)); // 0〜i のランダムな整数
+    [arr[i], arr[j]] = [arr[j], arr[i]]; // swap
+  }
+  console.log("shuffledArray", arr);
+  return arr;
 }

@@ -1,13 +1,8 @@
-import {
-  PrismaClient,
-  Prisma,
-  RoomMember,
-  User,
-} from "../generated/prisma/client";
-import { TRoom } from "../domain/types";
+import { PrismaClient, Prisma } from "../generated/prisma/client";
 
 type TxClient = PrismaClient | Prisma.TransactionClient;
 import { Room } from "../generated/prisma/client";
+import { GAME_STATUS } from "../domain/common";
 
 // members まで
 export type RoomWithMembers = Prisma.RoomGetPayload<{
@@ -20,17 +15,32 @@ export type RoomWithMembers = Prisma.RoomGetPayload<{
 export type RoomWithUsers = Prisma.RoomGetPayload<{
   include: {
     members: {
-      include: { user: true };
+      include: { user: true; role: true };
     };
   };
 }>;
 
 export const roomRepository = {
+  getRooms: async (
+    tx: TxClient,
+    searchParams: { roomCode?: string }
+  ): Promise<RoomWithMembers[]> => {
+    const rooms = await tx.room.findMany({
+      where: {
+        openFlg: true,
+        ...(searchParams.roomCode && { roomCode: searchParams.roomCode }),
+      },
+      include: {
+        members: true,
+      },
+    });
+    return rooms;
+  },
   createRoom: async (tx: TxClient, roomCode: string): Promise<Room | null> => {
     const room = await tx.room.create({
       data: {
         roomCode: roomCode,
-        status: 0,
+        status: GAME_STATUS.NOT_STARTED,
         openFlg: true,
       },
     });
@@ -87,7 +97,7 @@ export const roomRepository = {
       where: { id: roomId },
       include: {
         members: {
-          include: { user: true },
+          include: { user: true, role: true },
         },
       },
     });

@@ -10,7 +10,11 @@ export const userService = {
   },
   getUser: async (userId: string) => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      return toTUser(await userRepository.getUser(tx, userId));
+      const user = await userRepository.getUser(tx, userId);
+      if (!user) {
+        throw new NotFoundError("User not found");
+      }
+      return toTUser(user);
     });
   },
   registerUser: async (userId: string, displayName: string) => {
@@ -44,10 +48,10 @@ export const userService = {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const existingUser = await userRepository.getUser(tx, userId);
       if (!existingUser) {
-        throw new NotFoundError("User not found");
+        throw new NotFoundError("ユーザーが見つかりません");
       }
       if (existingUser.invalidateFlg) {
-        console.log("User is already invalidated");
+        console.log("ユーザーはすでに無効化されています");
         return toTUser(existingUser);
       }
       return toTUser(
@@ -74,8 +78,7 @@ export const userService = {
   },
 };
 
-export function toTUser(user: User | null): TUser | null {
-  if (!user) return null;
+export function toTUser(user: User): TUser {
   return {
     userId: user.userId,
     displayName: user.displayName,

@@ -1,10 +1,4 @@
-import {
-  PrismaClient,
-  Prisma,
-  RoomMember,
-  User,
-} from "../generated/prisma/client";
-import { TRoom } from "../domain/types";
+import { PrismaClient, Prisma, RoomMember } from "../generated/prisma/client";
 
 type TxClient = PrismaClient | Prisma.TransactionClient;
 
@@ -54,19 +48,26 @@ export const roomMemberRepository = {
           userId: userId,
         },
       },
+      include: {
+        user: true,
+        role: true,
+      },
     });
   },
   updateRoomMemberRole: async (
     tx: TxClient,
     roomId: number,
     userId: string,
-    role: number
+    roleId: number
   ) => {
     return await tx.roomMember.update({
       where: {
         roomId_userId: { roomId: roomId, userId: userId },
       },
-      data: { role: role },
+      data: { roleId: roleId },
+      include: {
+        role: true,
+      },
     });
   },
 };

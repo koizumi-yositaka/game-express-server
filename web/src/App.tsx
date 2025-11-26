@@ -1,5 +1,7 @@
 import { useEffect } from "react";
 import { healthCheck } from "./api/apiClient";
+import { BrowserRouter } from "react-router-dom";
+import AppRoutes from "./routes";
 
 function App() {
   useEffect(() => {
@@ -7,8 +9,12 @@ function App() {
       console.log(res);
     });
   }, []);
-  const env = import.meta.env.PROD;
-  return <>ENV:{env ? "本番" : "開発"}</>;
+  // const env = import.meta.env.PROD;
+  return (
+    <BrowserRouter>
+      <AppRoutes />
+    </BrowserRouter>
+  );
 }
 
 export default App;

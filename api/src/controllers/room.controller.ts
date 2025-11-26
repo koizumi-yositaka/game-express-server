@@ -1,10 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { roomService } from "../services/roomService";
-import {
-  roomMemberService,
-  type RoomAndMembers,
-} from "../services/roomMemberService";
-import { TRoom } from "../domain/types";
+import { roomMemberService } from "../services/roomMemberService";
+import { TRoom, TRoomAndMembers } from "../domain/types";
 
 import z from "zod";
 
@@ -20,7 +17,7 @@ type DTOTRoomMember = {
   id: number;
   roomId: number;
   userId: string;
-  role: number;
+  roleId: number;
   joinedAt: Date;
 };
 
@@ -166,10 +163,19 @@ export const roomController = {
       next(error);
     }
   },
+  getAllRooms: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const rooms = await roomService.getAllRooms();
+      res
+        .status(200)
+        .json(rooms.map((roomAndMembers) => toDTORoomMembers(roomAndMembers)));
+    } catch (error) {
+      next(error);
+    }
+  },
 };
 
-function toDTORoom(room: TRoom | null): DTORoom | null {
-  if (!room) return null;
+function toDTORoom(room: TRoom): DTORoom {
   return {
     id: room.id,
     roomCode: room.roomCode,
@@ -178,14 +184,14 @@ function toDTORoom(room: TRoom | null): DTORoom | null {
     createdAt: room.createdAt,
   };
 }
-function toDTORoomMembers(roomMembers: RoomAndMembers): DTORoomMembers {
+function toDTORoomMembers(roomMembers: TRoomAndMembers): DTORoomMembers {
   const room = toDTORoom(roomMembers.room)!;
   const members = roomMembers.members.map((member) => {
     return {
       id: member.id,
       roomId: member.roomId,
       userId: member.userId,
-      role: member.role,
+      roleId: member.roleId,
       joinedAt: member.joinedAt,
     };
   });

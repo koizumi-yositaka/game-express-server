@@ -34,7 +34,6 @@ export const userRepository = {
         displayName: updateVal.displayName,
       }),
     };
-    console.log("updateUserData", updateUserData);
     return await tx.user.update({
       where: { userId: userId },
       data: updateUserData,
