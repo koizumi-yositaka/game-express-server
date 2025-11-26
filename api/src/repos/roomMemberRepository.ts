@@ -40,4 +40,33 @@ export const roomMemberRepository = {
     });
     return count > 0;
   },
+  getRoomMemberByRoomCodeAndUserId: async (
+    tx: TxClient,
+    roomCode: string,
+    userId: string
+  ) => {
+    return await tx.roomMember.findFirst({
+      where: {
+        room: {
+          roomCode: roomCode,
+        },
+        user: {
+          userId: userId,
+        },
+      },
+    });
+  },
+  updateRoomMemberRole: async (
+    tx: TxClient,
+    roomId: number,
+    userId: string,
+    role: number
+  ) => {
+    return await tx.roomMember.update({
+      where: {
+        roomId_userId: { roomId: roomId, userId: userId },
+      },
+      data: { role: role },
+    });
+  },
 };

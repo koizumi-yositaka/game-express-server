@@ -1,6 +1,7 @@
 export type TRoom = {
   id?: number;
   roomCode: string;
+  status: number;
   openFlg: boolean;
   createdAt: Date;
 };
@@ -10,4 +11,12 @@ export type TUser = {
   displayName: string;
   invalidateFlg: boolean;
   createdAt?: Date;
+};
+
+export type TRoomMember = {
+  id: number;
+  roomId: number;
+  userId: string;
+  role: number;
+  joinedAt: Date;
 };

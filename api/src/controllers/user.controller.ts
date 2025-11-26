@@ -19,6 +19,7 @@ export const getUserStatusParamsSchema = z.object({
 export type GetUserStatusParams = z.infer<typeof getUserStatusParamsSchema>;
 
 type UserStatus = {
+  userId: string;
   invalidateFlg: boolean;
   isParticipating: boolean;
 };

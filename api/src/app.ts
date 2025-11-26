@@ -3,6 +3,7 @@ import express from "express";
 import cors from "cors";
 import routes from "./routes";
 import "dotenv/config";
+import { AppError } from "./error/AppError";
 const app = express();
 app.use(cors());
 app.use(express.json());
@@ -18,6 +19,9 @@ app.use(
     _next: express.NextFunction
   ) => {
     console.error(err);
+    if (err instanceof AppError) {
+      return res.status(err.statusCode).json({ message: err.message });
+    }
     const status = err.statusCode || 500;
     res
       .status(status)

@@ -3,6 +3,7 @@ import { TUser } from "../domain/types";
 import { prisma } from "../db/prisma";
 import { Prisma, User } from "../generated/prisma/client";
 import { roomMemberRepository } from "../repos/roomMemberRepository";
+import { NotFoundError } from "../error/AppError";
 export const userService = {
   getUsers: async () => {
     return await userRepository.getUsers();
@@ -43,7 +44,7 @@ export const userService = {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const existingUser = await userRepository.getUser(tx, userId);
       if (!existingUser) {
-        throw new Error("User not found");
+        throw new NotFoundError("User not found");
       }
       if (existingUser.invalidateFlg) {
         console.log("User is already invalidated");
@@ -58,13 +59,14 @@ export const userService = {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const user = await userRepository.getUser(tx, userId);
       if (!user) {
-        throw new Error("User not found");
+        throw new NotFoundError("User not found");
       }
       const isParticipating = await roomMemberRepository.isUserInOpenRoom(
         tx,
         userId
       );
       return {
+        userId,
         invalidateFlg: user.invalidateFlg,
         isParticipating,
       };

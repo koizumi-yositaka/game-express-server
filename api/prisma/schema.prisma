@@ -21,7 +21,8 @@ model User {
 model Room {
   id           Int           @id @default(autoincrement())
   roomCode     String        @unique
-  openFlg      Boolean       @default(true)  // ← status の代わりに boolean へ変更
+  status       Int           @default(0)
+  openFlg      Boolean       @default(true)
   createdAt    DateTime      @default(now())
 
   members      RoomMember[]
@@ -34,6 +35,8 @@ model RoomMember {
 
   user      User     @relation(fields: [userId], references: [userId])
   userId    String
+
+  role      Int      @default(0)
 
   joinedAt  DateTime @default(now())
 

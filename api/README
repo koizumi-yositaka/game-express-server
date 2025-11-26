@@ -1,3 +1,7 @@
 // health check
 
 http://localhost:3001/api/health
+
+
+room status
+0 : 募集中

@@ -30,6 +30,7 @@ export const roomRepository = {
     const room = await tx.room.create({
       data: {
         roomCode: roomCode,
+        status: 0,
         openFlg: true,
       },
     });
@@ -38,11 +39,15 @@ export const roomRepository = {
   updateRoom: async (
     tx: TxClient,
     roomId: number,
-    updateVal: { openFlg: boolean }
+    updateVal: { openFlg?: boolean; status?: number }
   ): Promise<Room | null> => {
+    const updateData = {
+      ...(updateVal.openFlg !== undefined && { openFlg: updateVal.openFlg }),
+      ...(updateVal.status !== undefined && { status: updateVal.status }),
+    };
     const updatedRoom = await tx.room.update({
       where: { id: roomId },
-      data: { openFlg: updateVal.openFlg },
+      data: updateData,
     });
     return updatedRoom;
   },
