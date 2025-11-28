@@ -1,34 +1,9 @@
 import { NextFunction, Request, Response } from "express";
 import { roomService } from "../services/roomService";
 import { roomMemberService } from "../services/roomMemberService";
-import { TRoom, TRoomAndMembers } from "../domain/types";
+import { toDTORoom, toDTORoomMember, toDTORoomSession } from "./dtoParse";
 
 import z from "zod";
-
-type DTORoom = {
-  id?: number;
-  roomCode: string;
-  status: number;
-  openFlg: boolean;
-  createdAt: Date;
-};
-
-type DTOTRoomMember = {
-  id: number;
-  roomId: number;
-  userId: string;
-  roleId: number;
-  joinedAt: Date;
-};
-
-type DTORoomMembers = {
-  room: DTORoom;
-  members: DTOTRoomMember[];
-};
-// ルーム作成のスキーマ
-export const createRoomSchema = z.object({
-  roomCode: z.string().length(4),
-});
 export const closeRoomParamsSchema = z.object({
   roomCode: z.string().length(4),
 });
@@ -49,13 +24,14 @@ export const getRoomMemberParamsSchema = z.object({
 export const startGameParamsSchema = z.object({
   roomCode: z.string().length(4),
 });
-export type CreateRoomRequestBody = z.infer<typeof createRoomSchema>;
+
 export type CloseRoomRequestParams = z.infer<typeof closeRoomParamsSchema>;
 export type AddRoomMemberParams = z.infer<typeof addRoomMemberParamsSchema>;
 export type AddRoomMemberBody = z.infer<typeof addRoomMemberBodySchema>;
 export type GetRoomMembersParams = z.infer<typeof getRoomMembersParamsSchema>;
 export type GetRoomMemberParams = z.infer<typeof getRoomMemberParamsSchema>;
 export type StartGameParams = z.infer<typeof startGameParamsSchema>;
+
 export const roomController = {
   /**
    * ルームを作成する
@@ -63,13 +39,9 @@ export const roomController = {
    * @param res レスポンス
    * @param next 次のミドルウェア
    */
-  createRoom: async (
-    req: Request<unknown, unknown, CreateRoomRequestBody>,
-    res: Response,
-    next: NextFunction
-  ) => {
+  createRoom: async (_: Request, res: Response, next: NextFunction) => {
     try {
-      console.log(req.body.roomCode);
+      // roomの情報
       const room = await roomService.createRoom();
       res.status(200).json(toDTORoom(room));
     } catch (error) {
@@ -129,7 +101,9 @@ export const roomController = {
       const roomMembers = await roomMemberService.getRoomMembers(
         req.params.roomCode
       );
-      res.status(200).json(roomMembers);
+      res
+        .status(200)
+        .json(roomMembers.map((roomMember) => toDTORoomMember(roomMember)));
     } catch (error) {
       next(error);
     }
@@ -144,7 +118,7 @@ export const roomController = {
         req.params.roomCode,
         req.params.userId
       );
-      res.status(200).json(roomMember);
+      res.status(200).json(toDTORoomMember(roomMember));
     } catch (error) {
       next(error);
     }
@@ -158,7 +132,7 @@ export const roomController = {
       const roomAndMembers = await roomMemberService.startGame(
         req.params.roomCode
       );
-      res.status(200).json(toDTORoomMembers(roomAndMembers));
+      res.status(200).json(toDTORoomSession(roomAndMembers));
     } catch (error) {
       next(error);
     }
@@ -168,35 +142,21 @@ export const roomController = {
       const rooms = await roomService.getAllRooms();
       res
         .status(200)
-        .json(rooms.map((roomAndMembers) => toDTORoomMembers(roomAndMembers)));
+        .json(rooms.map((roomAndMembers) => toDTORoom(roomAndMembers)));
+    } catch (error) {
+      next(error);
+    }
+  },
+  getRoomByRoomCode: async (
+    req: Request<GetRoomMembersParams>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const room = await roomService.getRoomByRoomCode(req.params.roomCode);
+      res.status(200).json(toDTORoom(room));
     } catch (error) {
       next(error);
     }
   },
 };
-
-function toDTORoom(room: TRoom): DTORoom {
-  return {
-    id: room.id,
-    roomCode: room.roomCode,
-    status: room.status,
-    openFlg: room.openFlg,
-    createdAt: room.createdAt,
-  };
-}
-function toDTORoomMembers(roomMembers: TRoomAndMembers): DTORoomMembers {
-  const room = toDTORoom(roomMembers.room)!;
-  const members = roomMembers.members.map((member) => {
-    return {
-      id: member.id,
-      roomId: member.roomId,
-      userId: member.userId,
-      roleId: member.roleId,
-      joinedAt: member.joinedAt,
-    };
-  });
-  return {
-    room: room,
-    members: members,
-  };
-}

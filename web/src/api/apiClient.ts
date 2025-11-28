@@ -1,5 +1,5 @@
 import axiosInstance from "./axiousInstance";
-import type { DTORoom, DTORoomMembers } from "@/types";
+import type { DTORoom, DTORoomSession, DTORoomMember } from "@/types";
 
 export async function healthCheck() {
   try {
@@ -11,7 +11,7 @@ export async function healthCheck() {
   }
 }
 
-export async function getRooms(): Promise<DTORoomMembers[]> {
+export async function getRooms(): Promise<DTORoom[]> {
   try {
     const res = await axiosInstance.get("/rooms");
     return res.data;
@@ -21,7 +21,16 @@ export async function getRooms(): Promise<DTORoomMembers[]> {
   }
 }
 
-export async function createRoom(): Promise<DTORoom> {
+export async function getRoomByRoomCode(roomCode: string): Promise<DTORoom> {
+  try {
+    const res = await axiosInstance.get(`/rooms/${roomCode}`);
+    return res.data;
+  } catch (error) {
+    console.error("getRoomByRoomCode error:", error);
+    throw error;
+  }
+}
+export async function createRoom(): Promise<DTORoomSession> {
   try {
     const res = await axiosInstance.post("/rooms", { roomCode: "1234" });
     return res.data;
@@ -33,7 +42,7 @@ export async function createRoom(): Promise<DTORoom> {
 
 export async function getRoomMembers(
   roomCode: string
-): Promise<DTORoomMembers> {
+): Promise<DTORoomMember[]> {
   try {
     const res = await axiosInstance.get(`/rooms/${roomCode}/members`);
     return res.data;
@@ -48,6 +57,38 @@ export async function closeRoom(roomCode: string): Promise<void> {
     await axiosInstance.post(`/rooms/${roomCode}/close`);
   } catch (error) {
     console.error("deleteRoom error:", error);
+    throw error;
+  }
+}
+
+export async function startGame(roomCode: string): Promise<DTORoomSession> {
+  try {
+    const res = await axiosInstance.post(`/rooms/${roomCode}/start`);
+    return res.data;
+  } catch (error) {
+    console.error("startGame error:", error);
+    throw error;
+  }
+}
+
+export async function stepGameSession(roomId: number): Promise<DTORoomSession> {
+  try {
+    const res = await axiosInstance.post(`/rooms/${roomId}/step`);
+    return res.data;
+  } catch (error) {
+    console.error("stepGameSession error:", error);
+    throw error;
+  }
+}
+
+export async function getRoomSession(
+  roomSessionId: number
+): Promise<DTORoomSession> {
+  try {
+    const res = await axiosInstance.get(`/sessions/${roomSessionId}`);
+    return res.data;
+  } catch (error) {
+    console.error("getRoomSession error:", error);
     throw error;
   }
 }

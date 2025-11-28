@@ -1,3 +1,5 @@
+import { TDirection, TRole } from "../domain/types";
+
 // roomのセッション情報
 export type DTORoomSession = {
   id: number;
@@ -38,14 +40,3 @@ export type DTOUserStatus = {
   invalidateFlg: boolean;
   isParticipating: boolean;
 };
-
-// 以下上書き禁止
-export type TRole = {
-  roleId: number;
-  roleName: string;
-  priority: number;
-  description: string;
-  imageUrl: string;
-};
-
-export type TDirection = "N" | "E" | "S" | "W";

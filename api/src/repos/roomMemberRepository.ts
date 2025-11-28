@@ -2,6 +2,12 @@ import { PrismaClient, Prisma, RoomMember } from "../generated/prisma/client";
 
 type TxClient = PrismaClient | Prisma.TransactionClient;
 
+export type RoomMemberWithUsers = Prisma.RoomMemberGetPayload<{
+  include: {
+    user: true;
+    role: true;
+  };
+}>;
 export const roomMemberRepository = {
   joinRoom: async (
     tx: TxClient,
@@ -12,14 +18,6 @@ export const roomMemberRepository = {
       data: {
         roomId: roomId,
         userId: userId,
-      },
-    });
-  },
-  getRoomMembers: async (tx: TxClient, roomId: number) => {
-    return await tx.roomMember.findMany({
-      where: { roomId: roomId },
-      include: {
-        room: true,
       },
     });
   },
@@ -34,26 +32,6 @@ export const roomMemberRepository = {
     });
     return count > 0;
   },
-  getRoomMemberByRoomCodeAndUserId: async (
-    tx: TxClient,
-    roomCode: string,
-    userId: string
-  ) => {
-    return await tx.roomMember.findFirst({
-      where: {
-        room: {
-          roomCode: roomCode,
-        },
-        user: {
-          userId: userId,
-        },
-      },
-      include: {
-        user: true,
-        role: true,
-      },
-    });
-  },
   updateRoomMemberRole: async (
     tx: TxClient,
     roomId: number,
@@ -66,6 +44,37 @@ export const roomMemberRepository = {
       },
       data: { roleId: roleId },
       include: {
+        role: true,
+      },
+    });
+  },
+
+  // 以下get
+  // これは役割が振られる前にしか使わないので、roleは含めない
+  getRoomMembers: async (tx: TxClient, roomId: number) => {
+    return await tx.roomMember.findMany({
+      where: { roomId: roomId },
+      include: {
+        room: true,
+      },
+    });
+  },
+  getRoomMemberByRoomCodeAndUserId: async (
+    tx: TxClient,
+    roomCode: string,
+    userId: string
+  ): Promise<RoomMemberWithUsers | null> => {
+    return await tx.roomMember.findFirst({
+      where: {
+        room: {
+          roomCode: roomCode,
+        },
+        user: {
+          userId: userId,
+        },
+      },
+      include: {
+        user: true,
         role: true,
       },
     });

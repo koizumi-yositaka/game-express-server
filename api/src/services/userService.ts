@@ -4,6 +4,7 @@ import { prisma } from "../db/prisma";
 import { Prisma, User } from "../generated/prisma/client";
 import { roomMemberRepository } from "../repos/roomMemberRepository";
 import { NotFoundError } from "../error/AppError";
+import { toTUser } from "../domain/typeParse";
 export const userService = {
   getUsers: async () => {
     return await userRepository.getUsers();
@@ -77,12 +78,3 @@ export const userService = {
     });
   },
 };
-
-export function toTUser(user: User): TUser {
-  return {
-    userId: user.userId,
-    displayName: user.displayName,
-    invalidateFlg: user.invalidateFlg,
-    createdAt: user.createdAt,
-  };
-}

@@ -18,9 +18,9 @@ const Rooms = () => {
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const handleCreateRoom = async () => {
-    const room = await createRoom();
-    console.log(room);
-    navigate("/rooms/new", { state: { roomCode: room.roomCode } });
+    const roomSession = await createRoom();
+    console.log(roomSession);
+    navigate("/rooms/new", { state: { roomCode: roomSession.room.roomCode } });
   };
 
   const handleDetail = (roomCode: string) => {
@@ -45,10 +45,10 @@ const Rooms = () => {
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {rooms?.map((room) => (
           <RoomCard
-            key={room.room.id}
+            key={room.id}
             data={room}
-            onDetailClick={() => handleDetail(room.room.roomCode)}
-            onDeleteClick={() => handleDelete(room.room.roomCode)}
+            onDetailClick={() => handleDetail(room.roomCode)}
+            onDeleteClick={() => handleDelete(room.roomCode)}
           />
         ))}
       </div>

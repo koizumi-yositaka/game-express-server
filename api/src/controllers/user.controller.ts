@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { userService } from "../services/userService";
 import z from "zod";
+import { DTOUserStatus } from "./dto";
 
 export const registerUserSchema = z.object({
   userId: z.string(),
@@ -17,12 +18,6 @@ export const getUserStatusParamsSchema = z.object({
   userId: z.string(),
 });
 export type GetUserStatusParams = z.infer<typeof getUserStatusParamsSchema>;
-
-type UserStatus = {
-  userId: string;
-  invalidateFlg: boolean;
-  isParticipating: boolean;
-};
 
 export const userController = {
   /**
@@ -86,7 +81,7 @@ export const userController = {
     next: NextFunction
   ) => {
     try {
-      const userStatus: UserStatus = await userService.getUserStatus(
+      const userStatus: DTOUserStatus = await userService.getUserStatus(
         req.params.userId
       );
       res.status(200).json(userStatus);

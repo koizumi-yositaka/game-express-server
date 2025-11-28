@@ -1,7 +1,7 @@
 import { MRole, Prisma } from "../generated/prisma/client";
 import { Room } from "../generated/prisma/client";
-import { roomRepository } from "../repos/roomRepository";
-import { TRole, type TRoom, type TRoomAndMembers } from "../domain/types";
+import { roomRepository, RoomWithUsers } from "../repos/roomRepository";
+import { TRole, TRoomMember, type TRoom } from "../domain/types";
 import { randomInt } from "crypto";
 import { prisma } from "../db/prisma";
 import {
@@ -9,11 +9,14 @@ import {
   InternalServerError,
   NotFoundError,
 } from "../error/AppError";
-import { toTRoomMember } from "./roomMemberService";
+
+import { roomSessionService } from "./roomSessionService";
+import { toTRoom, toTRoomFromRoomWithUsers } from "../domain/typeParse";
 
 const ATTEMPTS_LIMIT = 5;
 
 export const roomService = {
+  // 部屋を作成する 初期状態ではメンバーはいない
   createRoom: async (): Promise<TRoom> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       let attempts = 0;
@@ -27,7 +30,7 @@ export const roomService = {
           if (!createdRoom) {
             throw new InternalServerError("Failed to create room");
           }
-          return toTRoom(createdRoom);
+          return toTRoom(createdRoom, []);
         } else if (room && !room.openFlg) {
           const reopenedRoom = await roomRepository.updateRoom(tx, room.id, {
             openFlg: true,
@@ -35,7 +38,8 @@ export const roomService = {
           if (!reopenedRoom) {
             throw new InternalServerError("Failed to reopen room");
           }
-          return toTRoom(reopenedRoom);
+          await roomSessionService.createRoomSession(reopenedRoom.id);
+          return toTRoom(reopenedRoom, []);
         }
         attempts++;
       }
@@ -44,7 +48,10 @@ export const roomService = {
   },
   closeRoom: async (roomCode: string): Promise<TRoom> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      let room = await roomRepository.getRoomByRoomCode(tx, roomCode);
+      let room: RoomWithUsers | null = await roomRepository.getRoomByRoomCode(
+        tx,
+        roomCode
+      );
       if (!room) {
         throw new NotFoundError("部屋が見つかりません");
       }
@@ -57,7 +64,7 @@ export const roomService = {
       if (!closedRoom) {
         throw new InternalServerError("Failed to close room");
       }
-      return toTRoom(closedRoom);
+      return toTRoom(closedRoom, []);
     });
   },
   updateRoomStatus: async (
@@ -65,7 +72,10 @@ export const roomService = {
     status: number
   ): Promise<TRoom> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      let room = await roomRepository.getRoomByRoomCode(tx, roomCode);
+      let room: RoomWithUsers | null = await roomRepository.getRoomByRoomCode(
+        tx,
+        roomCode
+      );
       if (!room) {
         throw new NotFoundError("部屋が見つかりません");
       }
@@ -75,32 +85,37 @@ export const roomService = {
       if (!updatedRoom) {
         throw new InternalServerError("Failed to update room status");
       }
-      return toTRoom(updatedRoom);
+      return toTRoom(updatedRoom, room.members);
     });
   },
-  getAllRooms: async (): Promise<TRoomAndMembers[]> => {
+  getAllRooms: async (): Promise<TRoom[]> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const rooms = await roomRepository.getRooms(tx, {});
-      console.log("rooms", rooms);
-      const roomAndMembers = rooms.map((room) => {
-        return {
-          room: toTRoom(room),
-          members: room.members.map((member) => toTRoomMember(member)),
-        };
-      });
-      return roomAndMembers;
+      const rooms: RoomWithUsers[] = await roomRepository.getRooms(tx, {});
+      return rooms.map((room) => toTRoomFromRoomWithUsers(room));
     });
   },
-  getRoomInfoByRoomCode: async (roomCode: string): Promise<TRoomAndMembers> => {
+  getRoomInfoByRoomCode: async (roomCode: string): Promise<TRoom> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const rooms = await roomRepository.getRooms(tx, { roomCode });
-      if (rooms.length === 0) {
+      const room: RoomWithUsers | null = await roomRepository.getRoomByRoomCode(
+        tx,
+        roomCode
+      );
+      if (!room) {
         throw new NotFoundError("部屋が見つかりません");
       }
-      return {
-        room: toTRoom(rooms[0]),
-        members: rooms[0].members.map((member) => toTRoomMember(member)),
-      };
+      return toTRoomFromRoomWithUsers(room);
+    });
+  },
+  getRoomByRoomCode: async (roomCode: string): Promise<TRoom> => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const room: RoomWithUsers | null = await roomRepository.getRoomByRoomCode(
+        tx,
+        roomCode
+      );
+      if (!room) {
+        throw new NotFoundError("部屋が見つかりません");
+      }
+      return toTRoomFromRoomWithUsers(room);
     });
   },
 };
@@ -108,24 +123,4 @@ export const roomService = {
 function generate4DigitCode(): string {
   const num = randomInt(0, 10000);
   return num.toString().padStart(4, "0");
-}
-
-export function toTRoom(room: Room): TRoom {
-  return {
-    id: room.id,
-    roomCode: room.roomCode,
-    status: room.status,
-    openFlg: room.openFlg,
-    createdAt: room.createdAt,
-  };
-}
-
-export function toTRole(role: MRole): TRole {
-  return {
-    roleId: role.roleId,
-    roleName: role.roleName,
-    priority: role.priority,
-    description: role.description ?? "",
-    imageUrl: role.imageUrl ?? "",
-  };
 }

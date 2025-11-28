@@ -1,27 +1,38 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getRoomMembers } from "@/api/apiClient";
-import type { DTORoomMembers } from "@/types";
+import { getRoomByRoomCode } from "@/api/apiClient";
+import type { DTORoom } from "@/types";
 import { Button } from "@/components/ui/button";
 import { GAME_STATUS } from "@/util/common";
+import GameGrid from "@/components/features/gameGrid/GameGrid";
+import { useState } from "react";
 
 const RoomDetail = () => {
   const { roomCode } = useParams<{ roomCode: string }>();
-
+  const [currentCell] = useState<[number, number]>([0, 0]);
   const {
-    data: roomMembers,
+    data: roomInfo,
     isLoading,
     error,
-  } = useQuery<DTORoomMembers | undefined>({
-    queryKey: ["roomMembers", roomCode],
+  } = useQuery<DTORoom | undefined>({
+    queryKey: ["room", roomCode],
     queryFn: async () => {
       if (!roomCode) return undefined;
-      return await getRoomMembers(roomCode);
+      return await getRoomByRoomCode(roomCode);
     },
     enabled: !!roomCode,
     refetchInterval: 3000,
   });
 
+  // const startGameHandler = async () => {
+  //   try {
+  //     if (!roomCode || !roomMembers?.room.id) return;
+  //     const roomAndMembers = await startGame(roomCode);
+  //     setRoomSession(roomAndMembers.roomSession);
+  //   } catch (error) {
+  //     console.error("startGame error:", error);
+  //   }
+  // };
   if (!roomCode) {
     return <div className="p-4">ルームコードが指定されていません</div>;
   }
@@ -34,50 +45,59 @@ const RoomDetail = () => {
     return <div className="p-4 text-red-500">Error: {error.message}</div>;
   }
 
-  if (!roomMembers) {
+  if (!roomInfo) {
     return <div className="p-4">部屋情報が取得できませんでした</div>;
   }
-
-  const { room, members } = roomMembers;
 
   return (
     <div className="p-4 space-y-4">
       <div>
         <h1 className="text-2xl font-bold">
-          Room <span className="font-mono">{room.roomCode}</span>
+          Room <span className="font-mono">{roomInfo.roomCode}</span>
         </h1>
         <p className="text-sm text-muted-foreground">
-          Status: {room.status} / Open: {room.openFlg ? "Yes" : "No"}
+          Status: {roomInfo.status} / Open: {roomInfo.openFlg ? "Yes" : "No"}
         </p>
       </div>
 
       <div>
-        {room.status === GAME_STATUS.NOT_STARTED && <Button>開始</Button>}
+        {roomInfo.status === GAME_STATUS.NOT_STARTED && (
+          // <Button onClick={startGameHandler}>開始</Button>
+          <Button>開始</Button>
+        )}
       </div>
       <div>
         <h2 className="text-lg font-semibold mb-2">Members</h2>
-        {members.length === 0 ? (
+        {roomInfo.members.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             まだ誰も参加していません
           </p>
         ) : (
           <ul className="space-y-1 text-sm">
-            {members.map((m) => (
+            {roomInfo.members.map((member) => (
               <li
-                key={m.id}
+                key={member.id}
                 className="flex items-center justify-between rounded border px-3 py-1"
               >
                 <span className="font-mono">
-                  {m.user?.displayName || m.userId}
+                  {member.user?.displayName || member.user?.userId}
                 </span>
                 <span className="text-xs text-muted-foreground">
-                  roleId: {m.roleId}
+                  roleId: {member.role?.roleId}
                 </span>
               </li>
             ))}
           </ul>
         )}
       </div>
+      <GameGrid
+        size={7}
+        currentCell={currentCell}
+        specialCells={[
+          [2, 3],
+          [4, 1],
+        ]}
+      />
     </div>
   );
 };

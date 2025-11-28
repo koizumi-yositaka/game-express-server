@@ -26,6 +26,7 @@ model Room {
   createdAt    DateTime      @default(now())
 
   members      RoomMember[]
+  sessions     RoomSession[]
 }
 
 model RoomMember {
@@ -40,8 +41,65 @@ model RoomMember {
   roleId    Int      @default(0)
 
   joinedAt  DateTime @default(now())
-
+  commands  Command[]
   @@unique([roomId, userId])
+}
+
+enum Direction {
+  N
+  E
+  S
+  W
+}
+
+model RoomSession {
+  id         Int        @id @default(autoincrement())
+  roomId     Int        @unique
+  turn       Int        @default(1)
+
+  posX       Int
+  posY       Int
+  direction  Direction  // 今向いている方向（N/E/S/W）
+
+  setting    String     @default("")
+
+  status     Int        @default(0)
+
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  room            Room       @relation(fields: [roomId], references: [id])
+  commands        Command[]
+}
+
+enum CommandType {
+  FORWARD
+  TURN_RIGHT
+}
+
+model Command {
+  id             Int          @id @default(autoincrement())
+  roomSessionId  Int
+  memberId       Int
+
+  commandType    CommandType
+  processed      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
+  processedAt    DateTime?
+
+  roomSession    RoomSession  @relation(fields: [roomSessionId], references: [id])
+  member         RoomMember   @relation(fields: [memberId], references: [id])
+}
+
+model CommandHistory {
+  id             Int          @id @default(autoincrement())
+  roomSessionId  Int
+  memberId       Int
+  commandId      Int
+
+  turn           Int
+  processed      Boolean      @default(false)
+  createdAt      DateTime     @default(now())
 }
 
 model MRole {

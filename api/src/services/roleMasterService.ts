@@ -1,6 +1,6 @@
 import { roleRepository } from "../repos/roleRepository";
 import { TRole } from "../domain/types";
-import { toTRole } from "./roomService";
+import { toTRole } from "../domain/typeParse";
 
 // キャッシュ用の変数
 let rolesCache: TRole[] | null = null;

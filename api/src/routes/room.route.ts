@@ -1,6 +1,5 @@
 import { Router } from "express";
 import {
-  createRoomSchema,
   roomController,
   closeRoomParamsSchema,
   addRoomMemberBodySchema,
@@ -12,8 +11,9 @@ import {
 import { validate, validateParams } from "../middleware/validation";
 
 const router = Router();
-router.post("/", validate(createRoomSchema), roomController.createRoom);
+router.post("/", roomController.createRoom);
 router.get("/", roomController.getAllRooms);
+router.get("/:roomCode", roomController.getRoomByRoomCode);
 router.post(
   "/:roomCode/close",
   validateParams(closeRoomParamsSchema),
@@ -42,4 +42,5 @@ router.post(
   validateParams(startGameParamsSchema),
   roomController.startGame
 );
+
 export default router;

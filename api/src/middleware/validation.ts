@@ -21,13 +21,24 @@ export const validateParams =
   (schema: z.ZodTypeAny) =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
-      console.log("req.params", req.params);
       schema.parse(req.params);
-      console.log("afetr");
       next();
     } catch (err: any) {
       return res.status(400).json({
         message: "Invalid path parameters",
+        errors: err.errors,
+      });
+    }
+  };
+export const validateQuery =
+  (schema: z.ZodTypeAny) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    try {
+      schema.parse(req.query);
+      next();
+    } catch (err: any) {
+      return res.status(400).json({
+        message: "Invalid query parameters",
         errors: err.errors,
       });
     }

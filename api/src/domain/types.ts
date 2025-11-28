@@ -1,9 +1,11 @@
+import z from "zod";
 export type TRoom = {
-  id?: number;
+  id: number;
   roomCode: string;
   status: number;
   openFlg: boolean;
   createdAt: Date;
+  members: TRoomMember[];
 };
 
 export type TUser = {
@@ -23,9 +25,24 @@ export type TRoomMember = {
   role?: TRole;
 };
 
-export type TRoomAndMembers = {
+export type TRoomSession = {
+  id: number;
+  roomId: number;
+  posX: number;
+  posY: number;
+  turn: number;
+  direction: TDirection;
+  status: number;
+  setting: string;
   room: TRoom;
-  members: TRoomMember[];
+};
+
+export type TCommand = {
+  id?: number;
+  roomSessionId: number;
+  memberId: number;
+  commandType: TCommandType;
+  processed: boolean;
 };
 
 export type TRole = {
@@ -35,3 +52,11 @@ export type TRole = {
   description: string;
   imageUrl: string;
 };
+
+export const CommandTypeSchema = z.enum(["FORWARD", "TURN_RIGHT"]);
+export type TCommandType = z.infer<typeof CommandTypeSchema>;
+
+export const DirectionSchema = z.enum(["N", "E", "S", "W"]);
+export type TDirection = z.infer<typeof DirectionSchema>;
+
+// 全てはroomから始まる

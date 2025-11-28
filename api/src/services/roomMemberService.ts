@@ -3,30 +3,30 @@ import { Prisma, RoomMember } from "../generated/prisma/client";
 import { roomMemberRepository } from "../repos/roomMemberRepository";
 import { roomRepository } from "../repos/roomRepository";
 import { userRepository } from "../repos/userRepository";
-import { toTRoom } from "./roomService";
-import { toTUser } from "./userService";
+import {
+  toTRoom,
+  toTRoomMember,
+  toTRoomMemberFromRoomMemberWithUsers,
+  toTUser,
+  toTRole,
+  toTRoomFromRoomWithUsers,
+} from "../domain/typeParse";
+
 import { TRoom } from "../domain/types";
-import { toTRole } from "./roomService";
 
 import {
   BadRequestError,
   InternalServerError,
   NotFoundError,
 } from "../error/AppError";
-import { TRoomMember, TRoomAndMembers } from "../domain/types";
+import { TRoomMember, TRoomSession } from "../domain/types";
 import { GAME_STATUS, IMAGE_PATH_MAP } from "../domain/common";
 import { lineUtil } from "../util/lineUtil";
 import { roleMasterService } from "./roleMasterService";
-
-export function toTRoomMember(roomMember: RoomMember): TRoomMember {
-  return {
-    id: roomMember.id,
-    roomId: roomMember.roomId,
-    userId: roomMember.userId,
-    roleId: roomMember.roleId,
-    joinedAt: roomMember.joinedAt,
-  };
-}
+import { RoomMemberWithUsers } from "../repos/roomMemberRepository";
+import { RoomWithUsers } from "../repos/roomRepository";
+import { roomSessionRepository } from "../repos/roomSessionRepository";
+import { toTRoomSessionFromRoomSessionWithMembers } from "../domain/typeParse";
 
 export const roomMemberService = {
   joinRoom: async (roomCode: string, userId: string): Promise<TRoom> => {
@@ -49,7 +49,8 @@ export const roomMemberService = {
       if (!roomMembers.some((member) => member.userId === userId)) {
         await roomMemberRepository.joinRoom(tx, room.id, userId);
       }
-      return toTRoom(room);
+      // あらたしくメンバー状況を取得するかは未定
+      return toTRoom(room, []);
     });
   },
   getRoomMembers: async (roomCode: string) => {
@@ -58,21 +59,14 @@ export const roomMemberService = {
       if (!room) {
         throw new NotFoundError("部屋が見つかりません");
       }
-      const roomWithUsers = await roomRepository.findWithUsersById(tx, room.id);
-      const members =
-        roomWithUsers?.members?.map((m) =>
-          m.user
-            ? {
-                ...toTRoomMember(m),
-                user: toTUser(m.user),
-                role: toTRole(m.role),
-              }
-            : toTRoomMember(m)
-        ) ?? [];
-      return {
-        room: toTRoom(room),
-        members,
-      };
+      const roomWithUsers: RoomWithUsers | null =
+        await roomRepository.findWithUsersById(tx, room.id);
+      if (!roomWithUsers) {
+        throw new NotFoundError("部屋が見つかりません");
+      }
+      return roomWithUsers.members.map((member) =>
+        toTRoomMemberFromRoomMemberWithUsers(member)
+      );
     });
   },
   getRoomMember: async (roomCode: string, userId: string) => {
@@ -95,11 +89,16 @@ export const roomMemberService = {
         : toTRoomMember(roomMember);
     });
   },
-  startGame: async (roomCode: string): Promise<TRoomAndMembers> => {
+  startGame: async (roomCode: string): Promise<TRoomSession> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       let room = await roomRepository.getRoomByRoomCode(tx, roomCode);
-      if (!room) {
+      if (!room || !room.id) {
         throw new NotFoundError("部屋が見つかりません");
+      }
+      const existingRoomSession =
+        await roomSessionRepository.getRoomSessionByRoomId(tx, room.id);
+      if (existingRoomSession) {
+        throw new BadRequestError("Room session already exists");
       }
       const roomMembers = await roomMemberRepository.getRoomMembers(
         tx,
@@ -111,7 +110,7 @@ export const roomMemberService = {
       assignedRoles.forEach(async (member) => {
         await roomMemberRepository.updateRoomMemberRole(
           tx,
-          room.id,
+          room!.id,
           member.userId,
           member.roleId
         );
@@ -139,10 +138,33 @@ export const roomMemberService = {
           throw new InternalServerError("Failed to send notice role message");
         }
       });
-      return {
-        room: toTRoom(room),
-        members: assignedRoles,
-      };
+
+      const posX = 3;
+      const posY = 3;
+      const direction = "N";
+      await roomSessionRepository.createRoomSession(
+        tx,
+        room.id,
+        posX,
+        posY,
+        direction,
+        "setting"
+      );
+
+      const roomSession = await roomSessionRepository.getRoomSessionByRoomId(
+        tx,
+        room.id
+      );
+      if (!roomSession) {
+        throw new NotFoundError("Room session 作成失敗");
+      }
+      return toTRoomSessionFromRoomSessionWithMembers(roomSession);
+
+      // room = await roomRepository.getRoomById(tx, room.id);
+      // if (!room) {
+      //   throw new NotFoundError("部屋が見つかりません");
+      // }
+      // return toTRoomFromRoomWithUsers(room);
     });
   },
 };
@@ -150,11 +172,9 @@ export const roomMemberService = {
 async function assignRoles(roomMembers: TRoomMember[]): Promise<TRoomMember[]> {
   const roles = await roleMasterService.getRoles();
   const sortedRoles = [...roles].sort((a, b) => b.priority - a.priority);
-  console.log(sortedRoles);
-  console.log("roomMembers", roomMembers);
   return roomMembers.map((member, index) => {
     const role = sortedRoles[index];
-    console.log("role", role);
+
     return {
       ...member,
       roleId: role?.roleId ?? 0,

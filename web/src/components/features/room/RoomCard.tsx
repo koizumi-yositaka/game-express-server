@@ -1,4 +1,3 @@
-import type { DTORoomMembers } from "@/types";
 import { Badge } from "../../ui/badge";
 import {
   Card,
@@ -9,9 +8,10 @@ import {
   CardTitle,
 } from "../../ui/card";
 import { Button } from "../../ui/button";
+import type { DTORoom } from "@/types";
 
 type RoomCardProps = {
-  data: DTORoomMembers;
+  data: DTORoom;
   onDetailClick?: () => void;
   onDeleteClick?: () => void;
 };
@@ -44,13 +44,12 @@ const getStatusVariant = (
   }
 };
 
-const RoomCard = ({ data, onDetailClick, onDeleteClick }: RoomCardProps) => {
-  const { room, members } = data;
-
-  const createdAt =
-    room.createdAt instanceof Date ? room.createdAt : new Date(room.createdAt);
-
-  const memberCount = members.length;
+const RoomCard = ({
+  data: room,
+  onDetailClick,
+  onDeleteClick,
+}: RoomCardProps) => {
+  const memberCount = room.members.length;
 
   return (
     <Card className="flex flex-col justify-between h-full">
@@ -64,10 +63,7 @@ const RoomCard = ({ data, onDetailClick, onDeleteClick }: RoomCardProps) => {
           </Badge>
         </div>
         <CardDescription className="text-xs text-muted-foreground">
-          Created at{" "}
-          {createdAt instanceof Date
-            ? createdAt.toLocaleString()
-            : String(createdAt)}
+          Created at {room.createdAt}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
