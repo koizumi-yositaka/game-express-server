@@ -28,6 +28,11 @@ router.post(
   roomSessionController.stepRoomSession
 );
 router.post(
+  "/:roomSessionId/startTurn",
+  validateParams(roomSessionIdSchema),
+  roomSessionController.startTurn
+);
+router.post(
   "/:roomSessionId/commands",
   validate(addCommandsBodySchema),
   roomSessionController.addCommands

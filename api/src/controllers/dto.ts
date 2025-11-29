@@ -48,3 +48,11 @@ export type DTOCommand = {
   commandType: TCommandType;
   processed: boolean;
 };
+
+// Lambda用
+
+export type AddCommandResult = {
+  roomSessionId: number;
+  commandsCount: number;
+  isValid: boolean;
+};

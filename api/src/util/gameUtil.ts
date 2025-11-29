@@ -1,4 +1,13 @@
-import { TCommand, TDirection } from "../domain/types";
+import {
+  TCommand,
+  TCommandType,
+  TDirection,
+  TRole,
+  TUser,
+} from "../domain/types";
+import { jsonRW } from "./jsonRW";
+import { COMMAND_BUTTON_DATA_MAP } from "../domain/common";
+import path from "path";
 type Location = {
   posX: number;
   posY: number;
@@ -9,6 +18,13 @@ type TSetting = {
   specialCells: [number, number][];
   currentCell: [number, number];
 };
+
+type GameSetting = {
+  roleSetting: Record<number, { availableCommands: TCommandType[] }>;
+};
+
+let cachedGameSetting: GameSetting | null = null;
+
 const defaultSetting: TSetting = {
   size: 7,
   currentCell: [0, 0],
@@ -76,7 +92,60 @@ export function executeCommand(
     direction,
   };
 }
+
+export async function getAvailableCommandsByRole(
+  role: TRole,
+  actionName: string,
+  meta: {
+    formId: string;
+    roomSessionId: number;
+    memberId: number;
+    turn: number;
+  }
+): Promise<CommandButtonData[]> {
+  // commandType, displayText,labelを確定
+  const gameSetting = await importGameSetting();
+  const availableCommands =
+    gameSetting.roleSetting[role.roleId].availableCommands;
+  console.log("availableCommands", availableCommands);
+  return availableCommands.map((commandType) => {
+    return {
+      commandType,
+      displayText: COMMAND_BUTTON_DATA_MAP[commandType].displayText,
+      label: COMMAND_BUTTON_DATA_MAP[commandType].label,
+      formId: meta.formId,
+      action: `${actionName}`,
+      roomSessionId: meta.roomSessionId,
+      memberId: meta.memberId,
+      turn: meta.turn,
+    };
+  });
+}
+
+async function importGameSetting(): Promise<GameSetting> {
+  if (cachedGameSetting) {
+    return cachedGameSetting;
+  }
+  const gameSetting = await jsonRW.readJson<GameSetting>(
+    path.join(__dirname, "../data/game-setting.json")
+  );
+  cachedGameSetting = gameSetting;
+  return gameSetting;
+}
+
 export const gameUtil = {
   defaultSetting,
   executeCommand,
+};
+
+// buttonに必要なデータ
+export type CommandButtonData = {
+  formId: string;
+  action: string;
+  roomSessionId: number;
+  memberId: number;
+  commandType: TCommandType;
+  turn: number;
+  displayText: string;
+  label: string;
 };

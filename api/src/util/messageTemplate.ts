@@ -1,4 +1,8 @@
-export const MESSAGE_TEMPLATE = {
+export const MESSAGE_TEMPLATE = Object.freeze({
+  POSTBACK_COMMAND_BUTTON: {
+    type: "button",
+    action: { type: "postback", label: "", data: "", displayText: "" },
+  },
   NOTICE_ROLE_HEADER: "Gameが始まりました。\nあなたは以下の役割です。",
   NOTICE_ROLE: {
     type: "bubble",
@@ -92,4 +96,25 @@ export const MESSAGE_TEMPLATE = {
       flex: 0,
     },
   },
-};
+  AVAILABLE_COMMANDS: {
+    type: "bubble",
+    body: {
+      type: "box",
+      layout: "vertical",
+      contents: [
+        {
+          type: "text",
+          text: "選択肢を選んでください",
+          weight: "bold",
+          size: "md",
+        },
+        {
+          type: "box",
+          layout: "vertical",
+          margin: "md",
+          contents: [],
+        },
+      ],
+    },
+  },
+});

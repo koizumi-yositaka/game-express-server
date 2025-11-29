@@ -102,6 +102,12 @@ model CommandHistory {
   createdAt      DateTime     @default(now())
 }
 
+model InvalidatedLineUserForm {
+  id          String   @id @default(cuid())
+  formId      String   @unique
+  createdAt   DateTime @default(now())
+}
+
 model MRole {
   roleId      Int           @id
   roleName    String

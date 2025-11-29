@@ -19,6 +19,8 @@ export const roomSessionIdSchema = z.object({
 });
 
 export const addCommandsBodySchema = z.object({
+  formId: z.string(),
+  turn: z.number(),
   commands: z.array(
     z.object({
       memberId: z.number(),
@@ -90,10 +92,7 @@ export const roomSessionController = {
     next: NextFunction
   ) => {
     try {
-      const { commands } = req.body;
-      if (isNaN(Number(req.params.roomSessionId))) {
-        throw new BadRequestError("roomSessionId must be a number");
-      }
+      const { formId, turn, commands } = req.body;
       const commandList: TCommand[] = commands.map((command) => ({
         roomSessionId: Number(req.params.roomSessionId),
         memberId: command.memberId,
@@ -102,6 +101,8 @@ export const roomSessionController = {
       }));
       const result = await roomSessionService.addCommands(
         Number(req.params.roomSessionId),
+        turn,
+        formId,
         commandList
       );
       res.status(200).json(result);
@@ -119,6 +120,20 @@ export const roomSessionController = {
         Number(req.params.roomSessionId)
       );
       res.status(200).json(toDTORoomSession(roomSession));
+    } catch (error) {
+      next(error);
+    }
+  },
+  startTurn: async (
+    req: Request<RoomSessionIdSchema>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      await roomSessionService.sendAvailableCommandsMessage(
+        Number(req.params.roomSessionId)
+      );
+      res.status(200).json({ message: "Available commands message sent" });
     } catch (error) {
       next(error);
     }

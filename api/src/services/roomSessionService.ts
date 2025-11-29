@@ -8,8 +8,11 @@ import {
   toTRoomSessionFromRoomSessionWithMembers,
   toTRoomSessionFromRoomSessionWithUsers,
 } from "../domain/typeParse";
-import { gameUtil } from "../util/gameUtil";
-
+import { gameUtil, getAvailableCommandsByRole } from "../util/gameUtil";
+import { AddCommandResult } from "../controllers/dto";
+import { invalidateLineUserFormRepo } from "../repos/invalidateLineUserFormRepo";
+import { lineUtil } from "../util/lineUtil";
+import { v4 as uuidv4 } from "uuid";
 export const roomSessionService = {
   createRoomSession: async (roomId: number): Promise<TRoomSession> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
@@ -135,7 +138,13 @@ export const roomSessionService = {
       );
     });
   },
-  addCommands: async (roomSessionId: number, commands: TCommand[]) => {
+
+  addCommands: async (
+    roomSessionId: number,
+    turn: number,
+    formId: string,
+    commands: TCommand[]
+  ): Promise<AddCommandResult> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const roomSession = await roomSessionRepository.getRoomSession(
         tx,
@@ -143,6 +152,28 @@ export const roomSessionService = {
       );
       if (!roomSession) {
         throw new NotFoundError("Room session not found");
+      }
+
+      // 同じFormからの連続した命令の実行は無効にする
+      const isInvalidated = await invalidateLineUserFormRepo.checkIsInvalidated(
+        tx,
+        formId
+      );
+      if (isInvalidated) {
+        return {
+          isValid: false,
+          roomSessionId: roomSessionId,
+          commandsCount: 0,
+        };
+      }
+      console.log(roomSession.commands);
+      // turnが一致しない場合は無効にする
+      if (turn !== roomSession.turn) {
+        return {
+          isValid: false,
+          roomSessionId: roomSessionId,
+          commandsCount: 0,
+        };
       }
       for (const command of commands) {
         await commandRepository.createCommand(
@@ -152,10 +183,42 @@ export const roomSessionService = {
           command.commandType
         );
       }
+      // formの無効化
+      await invalidateLineUserFormRepo.invalidateLineUserForm(tx, formId);
       return {
+        isValid: true,
         roomSessionId: roomSessionId,
         commandsCount: commands.length,
       };
+    });
+  },
+  sendAvailableCommandsMessage: async (
+    roomSessionId: number
+  ): Promise<void> => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const roomSession = await roomSessionRepository.getRoomSession(
+        tx,
+        roomSessionId
+      );
+      if (!roomSession) {
+        throw new NotFoundError("Room session not found");
+      }
+      const formId = uuidv4();
+      roomSession.room.members.forEach(async (member) => {
+        const role = member.role;
+        const user = member.user;
+        const availableCommands = await getAvailableCommandsByRole(
+          role,
+          "turn_action",
+          {
+            formId,
+            roomSessionId: roomSessionId,
+            memberId: member.id,
+            turn: roomSession.turn,
+          }
+        );
+        lineUtil.sendAvailableCommandsMessage(user.userId, availableCommands);
+      });
     });
   },
 };
