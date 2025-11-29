@@ -29,36 +29,14 @@ export const MESSAGE_TEMPLATE = Object.freeze({
               contents: [
                 {
                   type: "text",
-                  text: "Place",
+                  text: "Description",
                   color: "#aaaaaa",
                   size: "sm",
                   flex: 1,
                 },
                 {
                   type: "text",
-                  text: "Flex Tower, 7-7-4 Midori-ku, Tokyo",
-                  wrap: true,
-                  color: "#666666",
-                  size: "sm",
-                  flex: 5,
-                },
-              ],
-            },
-            {
-              type: "box",
-              layout: "baseline",
-              spacing: "sm",
-              contents: [
-                {
-                  type: "text",
-                  text: "Time",
-                  color: "#aaaaaa",
-                  size: "sm",
-                  flex: 1,
-                },
-                {
-                  type: "text",
-                  text: "10:00 - 23:00",
+                  text: "",
                   wrap: true,
                   color: "#666666",
                   size: "sm",

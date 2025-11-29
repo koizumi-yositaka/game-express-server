@@ -5,6 +5,14 @@ import type { DTORoomSession } from "@/types";
 import { Button } from "@/components/ui/button";
 import { GAME_STATUS } from "@/util/common";
 import GameGrid from "@/components/features/gameGrid/GameGrid";
+import type { DTOCommand } from "@/types";
+
+// まだ実行されていないコマンドのあるメンバーかどうかを判定
+const isCommandReceipt = (commands: DTOCommand[], memberId: number) => {
+  return commands.some(
+    (command) => command.memberId === memberId && !command.processed
+  );
+};
 
 const SessionDetail = () => {
   const { roomSessionId } = useParams<{ roomSessionId: string }>();
@@ -22,6 +30,12 @@ const SessionDetail = () => {
     enabled: !!roomSessionId,
     refetchInterval: 3000,
   });
+
+  const isAllCommandReceipt = () => {
+    return sessionInfo?.room.members.every((member) => {
+      return isCommandReceipt(sessionInfo.commands, member.id);
+    });
+  };
 
   if (!roomSessionId) {
     return <div className="p-4">セッションIDが指定されていません</div>;
@@ -50,6 +64,7 @@ const SessionDetail = () => {
           {sessionInfo.room.openFlg ? "Yes" : "No"}
         </p>
       </div>
+      <div className="text-lg font-bold">Turn: {sessionInfo.turn}</div>
 
       <div>
         {sessionInfo.room.status === GAME_STATUS.NOT_STARTED && (
@@ -73,23 +88,41 @@ const SessionDetail = () => {
                 <span className="font-mono">
                   {member.user?.displayName || member.user?.userId}
                 </span>
-                <span className="text-xs text-muted-foreground">
-                  roleId: {member.role?.roleId}
-                </span>
+                {isCommandReceipt(sessionInfo.commands, member.id) ? (
+                  <span className="text-xs text-green-500">
+                    Command Received
+                  </span>
+                ) : (
+                  <span className="text-xs text-red-500">
+                    Command Not Received
+                  </span>
+                )}
               </li>
             ))}
           </ul>
         )}
       </div>
-      <GameGrid
-        size={7}
-        direction={sessionInfo.direction}
-        currentCell={[sessionInfo.posX, sessionInfo.posY]}
-        specialCells={[
-          [2, 3],
-          [4, 1],
-        ]}
-      />
+      {isAllCommandReceipt() ? (
+        <div className="text-lg font-bold">
+          <Button>Reflect Commands</Button>
+        </div>
+      ) : (
+        <div className="text-lg font-bold">Not All Command Received</div>
+      )}
+      <div className="flex">
+        <div className="flex-1">
+          <GameGrid
+            size={7}
+            direction={sessionInfo.direction}
+            currentCell={[sessionInfo.posX, sessionInfo.posY]}
+            specialCells={[
+              [2, 3],
+              [4, 1],
+            ]}
+          />
+        </div>
+        <div className="flex-1">TODO</div>
+      </div>
     </div>
   );
 };

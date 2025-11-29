@@ -61,7 +61,7 @@ export function toDTORoomSession(roomSession: TRoomSession): DTORoomSession {
     commands: roomSession.commands.map((command) => toDTOCommand(command)),
   };
 }
-
+// 消したい
 export function toTRole(role: TRole): TRole {
   return {
     roleId: role.roleId,
@@ -69,5 +69,6 @@ export function toTRole(role: TRole): TRole {
     priority: role.priority,
     description: role.description,
     imageUrl: role.imageUrl,
+    notionUrl: role.notionUrl,
   };
 }

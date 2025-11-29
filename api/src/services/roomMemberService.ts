@@ -125,10 +125,9 @@ export const roomMemberService = {
         const { success } = await lineUtil.sendNoticeRoleMessage(
           member.userId,
           member.role?.roleName ?? "",
-          "BBBB",
-          "CCCC",
+          member.role?.description ?? "",
           member.role?.imageUrl ?? "",
-          "https://joelle-unreleasable-defeatedly.ngrok-free.dev",
+          member.role?.notionUrl ?? "",
           "役割を確認"
         );
         if (!success) {

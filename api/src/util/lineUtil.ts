@@ -23,8 +23,7 @@ export const lineUtil = {
   sendNoticeRoleMessage: async (
     userId: string,
     title: string,
-    place: string,
-    time: string,
+    description: string,
     imageUrl: string,
     linkUrl: string,
     linkLabel: string
@@ -35,8 +34,7 @@ export const lineUtil = {
       );
       const template = structuredClone(MESSAGE_TEMPLATE.NOTICE_ROLE) as any;
       template.body.contents[0].text = title;
-      template.body.contents[1].contents[0].contents[1].text = place;
-      template.body.contents[1].contents[1].contents[1].text = time;
+      template.body.contents[1].contents[0].contents[1].text = description;
       template.body.contents[2].url = imageUrl;
       template.footer.contents[0].action.uri = linkUrl;
       template.footer.contents[0].action.label = linkLabel;
@@ -62,23 +60,19 @@ export const lineUtil = {
     commandButtonDataList: CommandButtonData[]
   ) => {
     try {
-      console.log(commandButtonDataList);
       const template = MESSAGE_TEMPLATE.AVAILABLE_COMMANDS as any;
-      const a = commandButtonDataList.map((commandButtonData) => {
-        console.log(commandButtonData);
-        const commandButton = structuredClone(
-          MESSAGE_TEMPLATE.POSTBACK_COMMAND_BUTTON
-        );
-        const dataString = `action=${commandButtonData.action}&formId=${commandButtonData.formId}&roomSessionId=${commandButtonData.roomSessionId}&memberId=${commandButtonData.memberId}&commandType=${commandButtonData.commandType}&turn=${commandButtonData.turn}`;
-        commandButton.action.label = commandButtonData.label;
-        commandButton.action.displayText = commandButtonData.displayText;
-        commandButton.action.data = dataString;
-        console.log("commandButton", commandButton);
-        return commandButton;
-      });
-      console.log("a", a);
-      template.body.contents[1].contents = a;
-      console.log("template", JSON.stringify(template, null, 2));
+      template.body.contents[1].contents = commandButtonDataList.map(
+        (commandButtonData) => {
+          const commandButton = structuredClone(
+            MESSAGE_TEMPLATE.POSTBACK_COMMAND_BUTTON
+          );
+          const dataString = `action=${commandButtonData.action}&formId=${commandButtonData.formId}&roomSessionId=${commandButtonData.roomSessionId}&memberId=${commandButtonData.memberId}&commandType=${commandButtonData.commandType}&turn=${commandButtonData.turn}`;
+          commandButton.action.label = commandButtonData.label;
+          commandButton.action.displayText = commandButtonData.displayText;
+          commandButton.action.data = dataString;
+          return commandButton;
+        }
+      );
       await lineClient.sendMessage(userId, [getFlexMessage(template)]);
     } catch (error) {
       throw new InternalServerError(

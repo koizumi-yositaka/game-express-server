@@ -52,6 +52,7 @@ export type TRole = {
   priority: number;
   description: string;
   imageUrl: string;
+  notionUrl: string;
 };
 
 export const CommandTypeSchema = z.enum(["FORWARD", "TURN_RIGHT"]);

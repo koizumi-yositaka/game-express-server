@@ -11,6 +11,7 @@ const RoomsLayout = () => {
       <Button onClick={handleBack} variant="outline">
         Back
       </Button>
+
       <Outlet />
     </div>
   );

@@ -62,7 +62,8 @@ export const roomSessionController = {
         throw new BadRequestError("roomSessionId must be a number");
       }
       const roomSession = await roomSessionService.getRoomSession(
-        Number(req.params.roomSessionId)
+        Number(req.params.roomSessionId),
+        false
       );
       res.status(200).json(toDTORoomSession(roomSession));
     } catch (error) {

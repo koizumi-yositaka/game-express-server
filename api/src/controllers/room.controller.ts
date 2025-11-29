@@ -42,6 +42,7 @@ export const roomController = {
   createRoom: async (_: Request, res: Response, next: NextFunction) => {
     try {
       // roomの情報
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       const room = await roomService.createRoom();
       res.status(200).json(toDTORoom(room));
     } catch (error) {

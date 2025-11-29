@@ -126,9 +126,10 @@ async function importGameSetting(): Promise<GameSetting> {
   if (cachedGameSetting) {
     return cachedGameSetting;
   }
-  const gameSetting = await jsonRW.readJson<GameSetting>(
-    path.join(__dirname, "../data/game-setting.json")
-  );
+  // __dirname は dist/util/ または src/util/ を指す
+  // ビルド後は dist/util/ になるので、dist/data/ を参照
+  const filePath = path.join(__dirname, "../data/game-setting.json");
+  const gameSetting = await jsonRW.readJson<GameSetting>(filePath);
   cachedGameSetting = gameSetting;
   return gameSetting;
 }

@@ -9,6 +9,8 @@ import RoomCard from "@/components/features/room/RoomCard";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import type { DTORoom } from "@/types";
+import { callMyConfirm } from "@/util/myConfirm";
+import { useLoading } from "@/contexts/LoadingContext";
 
 const Rooms = () => {
   const {
@@ -20,13 +22,19 @@ const Rooms = () => {
     queryFn: getRooms,
     refetchInterval: 3000,
   });
-
+  const { show, hide } = useLoading();
   const queryClient = useQueryClient();
   const navigate = useNavigate();
   const handleCreateRoom = async () => {
-    const roomSession = await createRoom();
-    console.log(roomSession);
-    navigate(`/rooms/${roomSession.room.roomCode}/new`);
+    try {
+      show("Creating room...");
+      const room = await createRoom();
+      navigate(`/rooms/${room.roomCode}/new`);
+    } catch (error) {
+      console.error("createRoom error:", error);
+    } finally {
+      hide();
+    }
   };
 
   const handleDetail = async (room: DTORoom) => {
@@ -41,6 +49,12 @@ const Rooms = () => {
   };
 
   const handleDelete = async (room: DTORoom) => {
+    const result = await callMyConfirm(
+      "Are you sure you want to delete this room?"
+    );
+    if (!result) {
+      return;
+    }
     await closeRoom(room.roomCode);
     queryClient.invalidateQueries({ queryKey: ["rooms"] });
   };

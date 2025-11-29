@@ -1,13 +1,14 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getRoomByRoomCode, startGame } from "@/api/apiClient";
+import { getRoomByRoomCode, startGame, startTurn } from "@/api/apiClient";
 import type { DTORoom } from "@/types";
 import { Button } from "@/components/ui/button";
 import { GAME_STATUS } from "@/util/common";
-
+import { useLoading } from "@/contexts/LoadingContext";
 const RoomPrepare = () => {
   const { roomCode } = useParams<{ roomCode: string }>();
   const navigate = useNavigate();
+  const { show, hide } = useLoading();
   const {
     data: roomInfo,
     isLoading,
@@ -24,11 +25,15 @@ const RoomPrepare = () => {
 
   const startGameHandler = async () => {
     try {
+      show("Starting game...");
       if (!roomCode) return;
       const roomSession = await startGame(roomCode);
+      await startTurn(roomSession.id);
       navigate(`/session/${roomSession.id}`);
     } catch (error) {
       console.error("startGame error:", error);
+    } finally {
+      hide();
     }
   };
   if (!roomCode) {

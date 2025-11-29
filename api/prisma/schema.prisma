@@ -114,6 +114,7 @@ model MRole {
   priority    Int           @default(0)
   description String
   imageUrl    String
+  notionUrl   String        @default("")
 
   members     RoomMember[]
 }

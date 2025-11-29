@@ -30,7 +30,7 @@ export async function getRoomByRoomCode(roomCode: string): Promise<DTORoom> {
     throw error;
   }
 }
-export async function createRoom(): Promise<DTORoomSession> {
+export async function createRoom(): Promise<DTORoom> {
   try {
     const res = await axiosInstance.post("/rooms", { roomCode: "1234" });
     return res.data;
@@ -70,7 +70,19 @@ export async function startGame(roomCode: string): Promise<DTORoomSession> {
     throw error;
   }
 }
-
+export async function startTurn(
+  roomSessionId: number
+): Promise<DTORoomSession> {
+  try {
+    const res = await axiosInstance.post(
+      `/sessions/${roomSessionId}/startTurn`
+    );
+    return res.data;
+  } catch (error) {
+    console.error("startTurn error:", error);
+    throw error;
+  }
+}
 export async function stepGameSession(roomId: number): Promise<DTORoomSession> {
   try {
     const res = await axiosInstance.post(`/rooms/${roomId}/step`);

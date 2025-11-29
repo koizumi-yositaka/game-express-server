@@ -49,6 +49,7 @@ export function toTRole(role: MRole): TRole {
     priority: role.priority,
     description: role.description ?? "",
     imageUrl: role.imageUrl ?? "",
+    notionUrl: role.notionUrl ?? "",
   };
 }
 

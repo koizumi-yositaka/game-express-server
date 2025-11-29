@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `MRole` ADD COLUMN `notionUrl` VARCHAR(191) NOT NULL DEFAULT '';
