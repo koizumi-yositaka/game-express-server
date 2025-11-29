@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 
-const RoomDetail = () => {
+const RoomNew = () => {
   const { roomCode } = useParams<{ roomCode: string }>();
   const navigate = useNavigate();
 
@@ -15,4 +15,4 @@ const RoomDetail = () => {
   );
 };
 
-export default RoomDetail;
+export default RoomNew;

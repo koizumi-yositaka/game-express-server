@@ -4,8 +4,15 @@ import {
   TUser,
   TRole,
   TRoomSession,
+  TCommand,
 } from "../domain/types";
-import { DTORoom, DTORoomMember, DTOUser, DTORoomSession } from "./dto";
+import {
+  DTORoom,
+  DTORoomMember,
+  DTOUser,
+  DTORoomSession,
+  DTOCommand,
+} from "./dto";
 export function toDTORoomMember(roomMember: TRoomMember): DTORoomMember {
   return {
     id: roomMember.id,
@@ -24,8 +31,6 @@ export function toDTOUser(user: TUser): DTOUser {
 }
 
 export function toDTORoom(room: TRoom): DTORoom {
-  console.log("room", room, room.createdAt);
-  console.log("room", room, room.createdAt.toISOString());
   return {
     id: room.id,
     roomCode: room.roomCode,
@@ -33,6 +38,15 @@ export function toDTORoom(room: TRoom): DTORoom {
     openFlg: room.openFlg,
     createdAt: room.createdAt.toISOString(),
     members: room.members.map((member) => toDTORoomMember(member)),
+  };
+}
+
+export function toDTOCommand(command: TCommand): DTOCommand {
+  return {
+    id: command.id ?? 0,
+    memberId: command.memberId,
+    commandType: command.commandType,
+    processed: command.processed,
   };
 }
 
@@ -44,6 +58,7 @@ export function toDTORoomSession(roomSession: TRoomSession): DTORoomSession {
     direction: roomSession.direction,
     turn: roomSession.turn,
     room: toDTORoom(roomSession.room),
+    commands: roomSession.commands.map((command) => toDTOCommand(command)),
   };
 }
 

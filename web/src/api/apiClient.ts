@@ -92,3 +92,15 @@ export async function getRoomSession(
     throw error;
   }
 }
+
+export async function getRoomSessionByRoomId(
+  roomId: number
+): Promise<DTORoomSession> {
+  try {
+    const res = await axiosInstance.get(`/sessions?roomId=${roomId}`);
+    return res.data;
+  } catch (error) {
+    console.error("getRoomSessionByRoomId error:", error);
+    throw error;
+  }
+}

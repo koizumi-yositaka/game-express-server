@@ -1,10 +1,12 @@
 import Layout from "@/layouts/Layout";
 import { Route, Routes } from "react-router-dom";
 import Root from "@/pages/Root";
-import RoomDetail from "@/pages/room/RoomDetail";
+import RoomPrepare from "@/pages/room/RoomPrepare";
 import Rooms from "@/pages/room/Rooms";
-import CreatedRoom from "@/pages/room/CreatedRoom";
+import RoomNew from "@/pages/room/RoomNew";
+import SessionDetail from "@/pages/session/SessionDetail";
 import RoomsLayout from "@/layouts/RoomsLayout";
+import SessionLayout from "@/layouts/SessionLayout";
 
 export default function AppRoutes() {
   return (
@@ -13,8 +15,12 @@ export default function AppRoutes() {
         <Route path="/" element={<Root />} />
         <Route path="rooms" element={<RoomsLayout />}>
           <Route index element={<Rooms />} />
-          <Route path="new" element={<CreatedRoom />} />
-          <Route path=":roomCode" element={<RoomDetail />} />
+          <Route path=":roomCode/new" element={<RoomNew />} />
+          <Route path=":roomCode/prepare" element={<RoomPrepare />} />
+          {/* <Route path=":roomCode/detail" element={<RoomDetail />} /> */}
+        </Route>
+        <Route path="session" element={<SessionLayout />}>
+          <Route path=":roomSessionId" element={<SessionDetail />} />
         </Route>
       </Route>
     </Routes>

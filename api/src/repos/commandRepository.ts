@@ -19,12 +19,6 @@ export const commandRepository = {
     });
   },
 
-  getCommands: async (tx: TxClient, roomSessionId: number) => {
-    return await tx.command.findMany({
-      where: { roomSessionId: roomSessionId, processed: false },
-    });
-  },
-
   updateCommand: async (
     tx: TxClient,
     commandId: number,
@@ -52,9 +46,18 @@ export const commandRepository = {
       },
     });
   },
-  getCommandHistory: async (tx: TxClient, roomSessionId: number) => {
+  getCommandHistory: async (
+    tx: TxClient,
+    roomSessionId: number,
+    turn?: number
+  ) => {
+    const condition = { roomSessionId: roomSessionId };
+
     return await tx.commandHistory.findMany({
-      where: { roomSessionId: roomSessionId },
+      where: {
+        ...condition,
+        ...(turn ? { turn: turn } : {}),
+      },
     });
   },
 };

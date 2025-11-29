@@ -1,4 +1,4 @@
-import { TDirection, TRole } from "../domain/types";
+import { TCommandType, TDirection, TRole } from "../domain/types";
 
 // roomのセッション情報
 export type DTORoomSession = {
@@ -8,6 +8,7 @@ export type DTORoomSession = {
   direction: TDirection;
   turn: number;
   room: DTORoom;
+  commands: DTOCommand[];
 };
 
 // roomの情報
@@ -39,4 +40,11 @@ export type DTOUserStatus = {
   userId: string;
   invalidateFlg: boolean;
   isParticipating: boolean;
+};
+
+export type DTOCommand = {
+  id: number;
+  memberId: number;
+  commandType: TCommandType;
+  processed: boolean;
 };

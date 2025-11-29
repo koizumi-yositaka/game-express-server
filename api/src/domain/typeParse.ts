@@ -16,7 +16,7 @@ import {
 } from "./types";
 import { RoomWithUsers } from "../repos/roomRepository";
 import { RoomMemberWithUsers } from "../repos/roomMemberRepository";
-import { RoomSessionWithMembers } from "../repos/roomSessionRepository";
+import { RoomSessionWithMembersAndCommands } from "../repos/roomSessionRepository";
 
 export function toTRoom(room: Room, members: RoomMember[]): TRoom {
   return {
@@ -86,19 +86,21 @@ export function toTUser(user: User): TUser {
 
 // 渡し方に工夫必要
 export function toTRoomSessionFromRoomSessionWithMembers(
-  roomSession: RoomSessionWithMembers
+  roomSession: RoomSessionWithMembersAndCommands
 ): TRoomSession {
   return toTRoomSession(
     roomSession,
     roomSession.room,
-    roomSession.room.members // これ要らない
+    roomSession.room.members, // これ要らない,
+    roomSession.commands
   );
 }
 
 export function toTRoomSession(
   roomSession: RoomSession,
   room: Room,
-  members: RoomMember[]
+  members: RoomMember[],
+  commands: Command[]
 ): TRoomSession {
   return {
     id: roomSession.id,
@@ -110,12 +112,14 @@ export function toTRoomSession(
     status: roomSession.status,
     setting: roomSession.setting,
     room: toTRoom(room, members),
+    commands: commands.map((command) => toTCommand(command)),
   };
 }
 
 export function toTRoomSessionFromRoomSessionWithUsers(
   roomSession: RoomSession,
-  room: RoomWithUsers
+  room: RoomWithUsers,
+  commands: Command[]
 ): TRoomSession {
   return {
     id: roomSession.id,
@@ -127,6 +131,7 @@ export function toTRoomSessionFromRoomSessionWithUsers(
     status: roomSession.status,
     setting: roomSession.setting,
     room: toTRoomFromRoomWithUsers(room),
+    commands: commands.map((command) => toTCommand(command)),
   };
 }
 

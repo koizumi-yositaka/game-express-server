@@ -1,5 +1,5 @@
 import { roomSessionRepository } from "../repos/roomSessionRepository";
-import { TCommand, TDirection, TRoomSession } from "../domain/types";
+import { TCommand, TRoomSession } from "../domain/types";
 import { prisma } from "../db/prisma";
 import { Prisma } from "../generated/prisma/client";
 import { BadRequestError, NotFoundError } from "../error/AppError";
@@ -8,12 +8,7 @@ import {
   toTRoomSessionFromRoomSessionWithMembers,
   toTRoomSessionFromRoomSessionWithUsers,
 } from "../domain/typeParse";
-
-type Location = {
-  posX: number;
-  posY: number;
-  direction: TDirection;
-};
+import { gameUtil } from "../util/gameUtil";
 
 export const roomSessionService = {
   createRoomSession: async (roomId: number): Promise<TRoomSession> => {
@@ -39,13 +34,17 @@ export const roomSessionService = {
         tx,
         roomId
       );
+
       if (!roomSession) {
         throw new NotFoundError("Room session 作成失敗");
       }
       return toTRoomSessionFromRoomSessionWithMembers(roomSession);
     });
   },
-  getRoomSession: async (roomSessionId: number): Promise<TRoomSession> => {
+  getRoomSession: async (
+    roomSessionId: number,
+    processed?: boolean
+  ): Promise<TRoomSession> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const roomSession = await roomSessionRepository.getRoomSession(
         tx,
@@ -54,10 +53,21 @@ export const roomSessionService = {
       if (!roomSession) {
         throw new NotFoundError("Room session not found");
       }
+      if (processed !== undefined) {
+        roomSession.commands = roomSession.commands.filter(
+          (command) => command.processed === processed
+        );
+      } else {
+        roomSession.commands = [];
+      }
+
       return toTRoomSessionFromRoomSessionWithMembers(roomSession);
     });
   },
-  getRoomSessionByRoomId: async (roomId: number): Promise<TRoomSession> => {
+  getRoomSessionByRoomId: async (
+    roomId: number,
+    processed?: boolean
+  ): Promise<TRoomSession> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const roomSession = await roomSessionRepository.getRoomSessionByRoomId(
         tx,
@@ -66,10 +76,19 @@ export const roomSessionService = {
       if (!roomSession) {
         throw new NotFoundError("Room session not found");
       }
+      if (processed !== undefined) {
+        roomSession.commands = roomSession.commands.filter(
+          (command) => command.processed === processed
+        );
+      } else {
+        roomSession.commands = [];
+      }
       return toTRoomSessionFromRoomSessionWithMembers(roomSession);
     });
   },
   reflectCommands: async (roomSessionId: number): Promise<TRoomSession> => {
+    const maxX = 7;
+    const maxY = 7;
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const currentRoomSession = await roomSessionRepository.getRoomSession(
         tx,
@@ -80,11 +99,18 @@ export const roomSessionService = {
       }
       let { posX, posY, direction, turn } = currentRoomSession;
       let tempLocation = { posX, posY, direction };
-      const commands = await commandRepository.getCommands(tx, roomSessionId);
+      const commands = currentRoomSession.commands.filter(
+        (command) => !command.processed
+      );
       console.log(`commands: ${commands.length}`);
       for (const command of commands) {
         // コマンドを実行する
-        tempLocation = executeCommand(command, tempLocation);
+        tempLocation = gameUtil.executeCommand(
+          command,
+          tempLocation,
+          maxX,
+          maxY
+        );
         await commandRepository.updateCommand(tx, command.id, true);
         await commandRepository.createCommandHistory(
           tx,
@@ -104,7 +130,8 @@ export const roomSessionService = {
       );
       return toTRoomSessionFromRoomSessionWithUsers(
         updatedRoomSession,
-        currentRoomSession.room
+        currentRoomSession.room,
+        commands
       );
     });
   },
@@ -132,53 +159,3 @@ export const roomSessionService = {
     });
   },
 };
-
-function executeCommand(command: TCommand, location: Location): Location {
-  const { commandType } = command;
-  let { posX, posY, direction } = location;
-
-  if (commandType.startsWith("TURN_")) {
-    switch (commandType) {
-      case "TURN_RIGHT":
-        direction =
-          direction === "N"
-            ? "E"
-            : direction === "E"
-            ? "S"
-            : direction === "S"
-            ? "W"
-            : "N";
-        break;
-      default:
-        direction = "N";
-    }
-  } else {
-    switch (commandType) {
-      case "FORWARD":
-        switch (direction) {
-          case "N":
-            posY += 1;
-            break;
-          case "E":
-            posX += 1;
-            break;
-          case "S":
-            posY -= 1;
-            break;
-          case "W":
-            posX -= 1;
-            break;
-        }
-        break;
-      default:
-        break;
-    }
-  }
-  console.log("実行前", location);
-  console.log("実行後", { posX, posY, direction });
-  return {
-    posX,
-    posY,
-    direction,
-  };
-}

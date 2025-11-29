@@ -35,6 +35,7 @@ export type TRoomSession = {
   status: number;
   setting: string;
   room: TRoom;
+  commands: TCommand[];
 };
 
 export type TCommand = {

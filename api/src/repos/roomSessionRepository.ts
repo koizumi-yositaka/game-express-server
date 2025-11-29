@@ -4,11 +4,12 @@ import { TDirection } from "../domain/types";
 type TxClient = PrismaClient | Prisma.TransactionClient;
 
 // room.members.user, room.members.role まで含む
-export type RoomSessionWithMembers = Prisma.RoomSessionGetPayload<{
+export type RoomSessionWithMembersAndCommands = Prisma.RoomSessionGetPayload<{
   include: {
     room: {
       include: { members: { include: { user: true; role: true } } };
     };
+    commands: true;
   };
 }>;
 
@@ -49,22 +50,24 @@ export const roomSessionRepository = {
   getRoomSession: async (
     tx: TxClient,
     roomSessionId: number
-  ): Promise<RoomSessionWithMembers | null> => {
+  ): Promise<RoomSessionWithMembersAndCommands | null> => {
     return await tx.roomSession.findUnique({
       where: { id: roomSessionId },
       include: {
         room: { include: { members: { include: { user: true, role: true } } } },
+        commands: true,
       },
     });
   },
   getRoomSessionByRoomId: async (
     tx: TxClient,
     roomId: number
-  ): Promise<RoomSessionWithMembers | null> => {
+  ): Promise<RoomSessionWithMembersAndCommands | null> => {
     return await tx.roomSession.findFirst({
       where: { roomId: roomId },
       include: {
         room: { include: { members: { include: { user: true, role: true } } } },
+        commands: true,
       },
     });
   },

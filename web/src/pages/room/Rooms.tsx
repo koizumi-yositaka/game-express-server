@@ -1,8 +1,14 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { closeRoom, createRoom, getRooms } from "@/api/apiClient";
+import {
+  closeRoom,
+  createRoom,
+  getRooms,
+  getRoomSessionByRoomId,
+} from "@/api/apiClient";
 import RoomCard from "@/components/features/room/RoomCard";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
+import type { DTORoom } from "@/types";
 
 const Rooms = () => {
   const {
@@ -20,15 +26,22 @@ const Rooms = () => {
   const handleCreateRoom = async () => {
     const roomSession = await createRoom();
     console.log(roomSession);
-    navigate("/rooms/new", { state: { roomCode: roomSession.room.roomCode } });
+    navigate(`/rooms/${roomSession.room.roomCode}/new`);
   };
 
-  const handleDetail = (roomCode: string) => {
-    navigate(`/rooms/${roomCode}`);
+  const handleDetail = async (room: DTORoom) => {
+    if (room.status === 0) {
+      navigate(`/rooms/${room.roomCode}/prepare`);
+    } else {
+      const roomSession = await getRoomSessionByRoomId(room.id);
+      if (roomSession) {
+        navigate(`/session/${roomSession.id}`);
+      }
+    }
   };
 
-  const handleDelete = async (roomCode: string) => {
-    await closeRoom(roomCode);
+  const handleDelete = async (room: DTORoom) => {
+    await closeRoom(room.roomCode);
     queryClient.invalidateQueries({ queryKey: ["rooms"] });
   };
   if (isLoading) return <div>Loading...</div>;
@@ -47,8 +60,8 @@ const Rooms = () => {
           <RoomCard
             key={room.id}
             data={room}
-            onDetailClick={() => handleDetail(room.roomCode)}
-            onDeleteClick={() => handleDelete(room.roomCode)}
+            onDetailClick={() => handleDetail(room)}
+            onDeleteClick={() => handleDelete(room)}
           />
         ))}
       </div>

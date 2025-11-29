@@ -6,6 +6,7 @@ export type DTORoomSession = {
   direction: TDirection;
   turn: number;
   room: DTORoom;
+  commands: DTOCommand[];
 };
 
 // roomの情報
@@ -39,6 +40,13 @@ export type DTOUserStatus = {
   isParticipating: boolean;
 };
 
+export type DTOCommand = {
+  id: number;
+  memberId: number;
+  commandType: TCommandType;
+  processed: boolean;
+};
+
 // 以下上書き禁止
 export type TRole = {
   roleId: number;
@@ -49,3 +57,5 @@ export type TRole = {
 };
 
 export type TDirection = "N" | "E" | "S" | "W";
+
+export type TCommandType = "FORWARD" | "TURN_RIGHT";
