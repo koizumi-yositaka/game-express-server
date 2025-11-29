@@ -83,9 +83,11 @@ export async function startTurn(
     throw error;
   }
 }
-export async function stepGameSession(roomId: number): Promise<DTORoomSession> {
+export async function stepGameSession(
+  roomSessionId: number
+): Promise<DTORoomSession> {
   try {
-    const res = await axiosInstance.post(`/rooms/${roomId}/step`);
+    const res = await axiosInstance.post(`/sessions/${roomSessionId}/step`);
     return res.data;
   } catch (error) {
     console.error("stepGameSession error:", error);

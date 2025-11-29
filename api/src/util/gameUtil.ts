@@ -63,16 +63,16 @@ export function executeCommand(
       case "FORWARD":
         switch (direction) {
           case "N":
+            if (posY - 1 < 0) break;
+            posY -= 1;
+            break;
+          case "S":
             if (posY + 1 > maxY - 1) break;
             posY += 1;
             break;
           case "E":
             if (posX + 1 > maxX - 1) break;
             posX += 1;
-            break;
-          case "S":
-            if (posY - 1 < 0) break;
-            posY -= 1;
             break;
           case "W":
             if (posX - 1 < 0) break;

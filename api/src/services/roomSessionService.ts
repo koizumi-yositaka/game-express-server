@@ -131,6 +131,13 @@ export const roomSessionService = {
         turn + 1,
         tempLocation.direction
       );
+
+      currentRoomSession.room.members.forEach(async (member) => {
+        await lineUtil.sendSimpleTextMessage(
+          member.userId,
+          `ROOM[${currentRoomSession.room.roomCode}] TURN[${turn}] COMPLETED + なんちゃらかんちゃら`
+        );
+      });
       return toTRoomSessionFromRoomSessionWithUsers(
         updatedRoomSession,
         currentRoomSession.room,

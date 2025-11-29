@@ -1,6 +1,6 @@
 import { useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
-import { getRoomSession } from "@/api/apiClient";
+import { getRoomSession, startTurn, stepGameSession } from "@/api/apiClient";
 import type { DTORoomSession } from "@/types";
 import { Button } from "@/components/ui/button";
 import { GAME_STATUS } from "@/util/common";
@@ -35,6 +35,15 @@ const SessionDetail = () => {
     return sessionInfo?.room.members.every((member) => {
       return isCommandReceipt(sessionInfo.commands, member.id);
     });
+  };
+
+  const reflectCommands = async () => {
+    try {
+      await stepGameSession(Number(roomSessionId));
+      await startTurn(Number(roomSessionId));
+    } catch (error) {
+      console.error("reflectCommands error:", error);
+    }
   };
 
   if (!roomSessionId) {
@@ -104,7 +113,7 @@ const SessionDetail = () => {
       </div>
       {isAllCommandReceipt() ? (
         <div className="text-lg font-bold">
-          <Button>Reflect Commands</Button>
+          <Button onClick={reflectCommands}>Reflect Commands</Button>
         </div>
       ) : (
         <div className="text-lg font-bold">Not All Command Received</div>

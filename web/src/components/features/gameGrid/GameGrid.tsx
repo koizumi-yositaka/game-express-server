@@ -16,7 +16,8 @@ const GameGrid = ({
 }: GameGridProps) => {
   // 特殊マスか判定する関数
   const getCellClassName = (r: number, c: number) => {
-    const base = "w-10 h-10 border border-gray-500"; // ← ここでサイズ & 枠線
+    const base =
+      "w-10 h-10 border border-gray-500 flex items-center justify-center"; // ← ここでサイズ & 枠線 & 中央配置
 
     if (isSpecialCell(r, c)) return `${base} bg-red-400`;
     if (isCurrentCell(r, c)) return `${base} bg-blue-400`;
@@ -41,22 +42,52 @@ const GameGrid = ({
     r === currentCell[0] && c === currentCell[1];
 
   return (
-    <div className="grid grid-cols-7 gap-1 w-fit m-4">
-      {Array.from({ length: size }).map((_, row) =>
-        Array.from({ length: size }).map((_, col) => (
-          <div key={`${row}-${col}`} className={getCellClassName(row, col)}>
-            {isCurrentCell(row, col) && (
-              <div
-                className={`text-white text-2xl ${getDirectionClass(
-                  direction
-                )}`}
-              >
-                ▲
-              </div>
-            )}
+    <div className="flex m-4 w-fit">
+      {/* 左側の行番号 */}
+      <div className="flex flex-col mr-1">
+        <div className="h-8" /> {/* 左上の空白 */}
+        {Array.from({ length: size }).map((_, row) => (
+          <div
+            key={`row-${row}`}
+            className="h-10 flex items-center justify-center text-gray-500 text-sm"
+          >
+            {row}
           </div>
-        ))
-      )}
+        ))}
+      </div>
+
+      <div>
+        {/* 上側の列番号 */}
+        <div className="grid grid-cols-7 gap-1 mb-1">
+          {Array.from({ length: size }).map((_, col) => (
+            <div
+              key={`col-${col}`}
+              className="w-10 h-8 flex items-center justify-center text-gray-500 text-sm"
+            >
+              {col}
+            </div>
+          ))}
+        </div>
+
+        {/* グリッド本体 */}
+        <div className="grid grid-cols-7 gap-1">
+          {Array.from({ length: size }).map((_, col) =>
+            Array.from({ length: size }).map((_, row) => (
+              <div key={`${row}-${col}`} className={getCellClassName(row, col)}>
+                {isCurrentCell(row, col) && (
+                  <div
+                    className={`text-white text-2xl ${getDirectionClass(
+                      direction
+                    )}`}
+                  >
+                    ▲
+                  </div>
+                )}
+              </div>
+            ))
+          )}
+        </div>
+      </div>
     </div>
   );
 };

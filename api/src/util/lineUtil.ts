@@ -80,4 +80,12 @@ export const lineUtil = {
       );
     }
   },
+
+  sendSimpleTextMessage: async (userId: string, text: string) => {
+    try {
+      await lineClient.sendMessage(userId, [getSimpleTextMessage(text)]);
+    } catch (error) {
+      throw new InternalServerError("Failed to send simple text message");
+    }
+  },
 };
