@@ -1,7 +1,7 @@
 {
   "roleSetting": {
     "0": {
-      "availableCommands": ["FORWARD", "TURN_RIGHT"]
+      "availableCommands": ["FORWARD", "TURN_RIGHT", "TURN_LEFT"]
     },
     "1": {
       "availableCommands": ["FORWARD", "TURN_RIGHT"]
@@ -10,7 +10,7 @@
       "availableCommands": ["FORWARD"]
     },
     "3": {
-      "availableCommands": ["TURN_RIGHT"]
+      "availableCommands": ["TURN_RIGHT", "TURN_LEFT"]
     }
   }
 }

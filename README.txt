@@ -43,3 +43,8 @@ npx tsx prisma/seed.ts
 apk add --no-cache mysql-client
 
 ## Commandの追加方法
+schema.CommandType
+game-setting.json
+types.ts * 2
+gameUtil
+cimmon.ts

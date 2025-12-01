@@ -75,6 +75,7 @@ model RoomSession {
 enum CommandType {
   FORWARD
   TURN_RIGHT
+  TURN_LEFT
 }
 
 model Command {

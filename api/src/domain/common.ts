@@ -1,4 +1,4 @@
-import { TCommandType } from "./types";
+import { RoomSessionSettingJsonContents, TCommandType } from "./types";
 
 const GAME_STATUS = Object.freeze({
   NOT_STARTED: 0,
@@ -26,9 +26,30 @@ const COMMAND_BUTTON_DATA_MAP: Record<
   },
   TURN_RIGHT: {
     commandType: "TURN_RIGHT",
-    displayText: "右に曲がる",
-    label: "右に曲がる",
+    displayText: "右を向く",
+    label: "右を向く",
+  },
+  TURN_LEFT: {
+    commandType: "TURN_LEFT",
+    displayText: "左を向く",
+    label: "左を向く",
   },
 });
 
-export { GAME_STATUS, IMAGE_PATH_MAP, COMMAND_BUTTON_DATA_MAP };
+const DEFAULT_SETTING: RoomSessionSettingJsonContents = {
+  size: 7,
+  initialCell: [3, 3],
+  initialDirection: "N",
+  specialCells: [
+    [2, 3],
+    [4, 1],
+  ],
+  goalCell: [0, 0],
+};
+
+export {
+  GAME_STATUS,
+  IMAGE_PATH_MAP,
+  COMMAND_BUTTON_DATA_MAP,
+  DEFAULT_SETTING,
+};

@@ -62,7 +62,7 @@ export type RoomSessionSettingJsonContents = {
   goalCell: [number, number];
 };
 
-export const CommandTypeSchema = z.enum(["FORWARD", "TURN_RIGHT"]);
+export const CommandTypeSchema = z.enum(["FORWARD", "TURN_RIGHT", "TURN_LEFT"]);
 export type TCommandType = z.infer<typeof CommandTypeSchema>;
 
 export const DirectionSchema = z.enum(["N", "E", "S", "W"]);

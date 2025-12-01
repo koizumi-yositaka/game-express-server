@@ -6,7 +6,7 @@ import {
   RoomSessionSettingJsonContents,
 } from "../domain/types";
 import { jsonRW } from "./jsonRW";
-import { COMMAND_BUTTON_DATA_MAP } from "../domain/common";
+import { COMMAND_BUTTON_DATA_MAP, DEFAULT_SETTING } from "../domain/common";
 import path from "path";
 
 type Location = {
@@ -20,17 +20,6 @@ type GameSetting = {
 };
 
 let cachedGameSetting: GameSetting | null = null;
-
-const defaultSetting: RoomSessionSettingJsonContents = {
-  size: 7,
-  initialCell: [3, 3],
-  initialDirection: "N",
-  specialCells: [
-    [2, 3],
-    [4, 1],
-  ],
-  goalCell: [0, 0],
-};
 
 export function executeCommand(
   command: TCommand,
@@ -52,6 +41,16 @@ export function executeCommand(
             ? "S"
             : direction === "S"
             ? "W"
+            : "N";
+        break;
+      case "TURN_LEFT":
+        direction =
+          direction === "N"
+            ? "W"
+            : direction === "W"
+            ? "S"
+            : direction === "S"
+            ? "E"
             : "N";
         break;
       default:
@@ -107,7 +106,6 @@ export async function getAvailableCommandsByRole(
   const gameSetting = await importGameSetting();
   const availableCommands =
     gameSetting.roleSetting[role.roleId].availableCommands;
-  console.log("availableCommands", availableCommands);
   return availableCommands.map((commandType) => {
     return {
       commandType,
@@ -135,11 +133,11 @@ async function importGameSetting(): Promise<GameSetting> {
 }
 
 function createGameSetting(
-  size: number = defaultSetting.size,
-  specialCells: [number, number][] = defaultSetting.specialCells,
-  goalCell: [number, number] = defaultSetting.goalCell,
-  initialCell: [number, number] = defaultSetting.initialCell,
-  initialDirection: TDirection = "N"
+  size: number = DEFAULT_SETTING.size,
+  specialCells: [number, number][] = DEFAULT_SETTING.specialCells,
+  goalCell: [number, number] = DEFAULT_SETTING.goalCell,
+  initialCell: [number, number] = DEFAULT_SETTING.initialCell,
+  initialDirection: TDirection = DEFAULT_SETTING.initialDirection
 ): RoomSessionSettingJsonContents {
   return {
     size,
@@ -157,7 +155,7 @@ function getRoomSettingJsonContents(
 }
 
 export const gameUtil = {
-  defaultSetting,
+  DEFAULT_SETTING,
   executeCommand,
   createGameSetting,
   getRoomSettingJsonContents,
