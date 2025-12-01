@@ -5,6 +5,7 @@ import {
   TRole,
   TRoomSession,
   TCommand,
+  RoomSessionSettingJsonContents,
 } from "../domain/types";
 import {
   DTORoom,
@@ -57,6 +58,7 @@ export function toDTORoomSession(roomSession: TRoomSession): DTORoomSession {
     posY: roomSession.posY,
     direction: roomSession.direction,
     turn: roomSession.turn,
+    setting: JSON.parse(roomSession.setting) as RoomSessionSettingJsonContents,
     room: toDTORoom(roomSession.room),
     commands: roomSession.commands.map((command) => toDTOCommand(command)),
   };

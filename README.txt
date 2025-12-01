@@ -41,3 +41,5 @@ npx tsx prisma/seed.ts
 
 
 apk add --no-cache mysql-client
+
+## Commandの追加方法

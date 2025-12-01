@@ -39,14 +39,22 @@ export const roomSessionRepository = {
     posX: number,
     posY: number,
     turn: number,
-    direction: TDirection
+    direction: TDirection,
+    status?: number
   ) => {
+    const updateData = {
+      posX: posX,
+      posY: posY,
+      turn: turn,
+      direction: direction,
+    };
+
     return await tx.roomSession.update({
       where: { id: roomSessionId },
-      data: { posX: posX, posY: posY, turn: turn, direction: direction },
+      data:
+        status !== undefined ? { ...updateData, status: status } : updateData,
     });
   },
-
   getRoomSession: async (
     tx: TxClient,
     roomSessionId: number

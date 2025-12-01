@@ -54,11 +54,16 @@ export type TRole = {
   imageUrl: string;
   notionUrl: string;
 };
+export type RoomSessionSettingJsonContents = {
+  size: number;
+  initialCell: [number, number];
+  initialDirection: TDirection;
+  specialCells: [number, number][];
+  goalCell: [number, number];
+};
 
 export const CommandTypeSchema = z.enum(["FORWARD", "TURN_RIGHT"]);
 export type TCommandType = z.infer<typeof CommandTypeSchema>;
 
 export const DirectionSchema = z.enum(["N", "E", "S", "W"]);
 export type TDirection = z.infer<typeof DirectionSchema>;
-
-// 全てはroomから始まる

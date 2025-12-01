@@ -64,9 +64,10 @@ const RoomPrepare = () => {
       </div>
 
       <div>
-        {roomInfo.status === GAME_STATUS.NOT_STARTED && (
-          <Button onClick={startGameHandler}>開始</Button>
-        )}
+        {roomInfo.status === GAME_STATUS.NOT_STARTED &&
+          roomInfo.members.length > 0 && (
+            <Button onClick={startGameHandler}>開始</Button>
+          )}
       </div>
       <div>
         <h2 className="text-lg font-semibold mb-2">Members</h2>

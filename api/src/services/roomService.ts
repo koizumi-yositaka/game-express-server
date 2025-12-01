@@ -39,7 +39,7 @@ export const roomService = {
           if (!reopenedRoom) {
             throw new InternalServerError("Failed to reopen room");
           }
-          await roomSessionService.createRoomSession(reopenedRoom.id);
+          // await roomSessionService.createRoomSession(reopenedRoom.id);
           return toTRoom(reopenedRoom, []);
         }
         attempts++;

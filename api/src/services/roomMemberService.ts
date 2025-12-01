@@ -3,6 +3,7 @@ import { Prisma, RoomMember } from "../generated/prisma/client";
 import { roomMemberRepository } from "../repos/roomMemberRepository";
 import { roomRepository } from "../repos/roomRepository";
 import { userRepository } from "../repos/userRepository";
+import { gameUtil } from "../util/gameUtil";
 import {
   toTRoom,
   toTRoomMember,
@@ -138,16 +139,15 @@ export const roomMemberService = {
         }
       });
 
-      const posX = 3;
-      const posY = 3;
-      const direction = "N";
+      // 初期設定
+      const initailSetting = gameUtil.createGameSetting();
       await roomSessionRepository.createRoomSession(
         tx,
         room.id,
-        posX,
-        posY,
-        direction,
-        "setting"
+        initailSetting.initialCell[0],
+        initailSetting.initialCell[1],
+        initailSetting.initialDirection,
+        JSON.stringify(initailSetting)
       );
 
       const roomSession = await roomSessionRepository.getRoomSessionByRoomId(

@@ -6,6 +6,7 @@ interface GameGridProps {
   direction: TDirection;
   specialCells: [number, number][];
   currentCell: [number, number];
+  goalCell: [number, number];
 }
 
 const GameGrid = ({
@@ -13,6 +14,7 @@ const GameGrid = ({
   direction,
   specialCells,
   currentCell,
+  goalCell,
 }: GameGridProps) => {
   // 特殊マスか判定する関数
   const getCellClassName = (r: number, c: number) => {
@@ -21,6 +23,7 @@ const GameGrid = ({
 
     if (isSpecialCell(r, c)) return `${base} bg-red-400`;
     if (isCurrentCell(r, c)) return `${base} bg-blue-400`;
+    if (isGoalCell(r, c)) return `${base} bg-green-400`;
     return `${base} bg-gray-300`;
   };
 
@@ -40,6 +43,9 @@ const GameGrid = ({
     specialCells.some(([sr, sc]) => sr === r && sc === c);
   const isCurrentCell = (r: number, c: number) =>
     r === currentCell[0] && c === currentCell[1];
+
+  const isGoalCell = (r: number, c: number) =>
+    r === goalCell[0] && c === goalCell[1];
 
   return (
     <div className="flex m-4 w-fit">

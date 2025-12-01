@@ -1,4 +1,9 @@
-import { TCommandType, TDirection, TRole } from "../domain/types";
+import {
+  RoomSessionSettingJsonContents,
+  TCommandType,
+  TDirection,
+  TRole,
+} from "../domain/types";
 
 // roomのセッション情報
 export type DTORoomSession = {
@@ -6,6 +11,7 @@ export type DTORoomSession = {
   posX: number;
   posY: number;
   direction: TDirection;
+  setting: RoomSessionSettingJsonContents;
   turn: number;
   room: DTORoom;
   commands: DTOCommand[];

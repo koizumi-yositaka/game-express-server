@@ -5,6 +5,7 @@ export type DTORoomSession = {
   posY: number;
   direction: TDirection;
   turn: number;
+  setting: RoomSessionSettingJsonContents;
   room: DTORoom;
   commands: DTOCommand[];
 };
@@ -45,6 +46,14 @@ export type DTOCommand = {
   memberId: number;
   commandType: TCommandType;
   processed: boolean;
+};
+
+export type RoomSessionSettingJsonContents = {
+  size: number;
+  initialCell: [number, number];
+  initialDirection: TDirection;
+  specialCells: [number, number][];
+  goalCell: [number, number];
 };
 
 // 以下上書き禁止

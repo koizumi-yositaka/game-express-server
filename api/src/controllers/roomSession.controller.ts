@@ -70,23 +70,23 @@ export const roomSessionController = {
       next(error);
     }
   },
-  createRoomSession: async (
-    req: Request<RoomIdSchema>,
-    res: Response,
-    next: NextFunction
-  ) => {
-    try {
-      if (isNaN(Number(req.params.roomId))) {
-        throw new BadRequestError("roomId must be a number");
-      }
-      const roomSession = await roomSessionService.createRoomSession(
-        Number(req.params.roomId)
-      );
-      res.status(200).json(toDTORoomSession(roomSession));
-    } catch (error) {
-      next(error);
-    }
-  },
+  // createRoomSession: async (
+  //   req: Request<RoomIdSchema>,
+  //   res: Response,
+  //   next: NextFunction
+  // ) => {
+  //   try {
+  //     if (isNaN(Number(req.params.roomId))) {
+  //       throw new BadRequestError("roomId must be a number");
+  //     }
+  //     const roomSession = await roomSessionService.createRoomSession(
+  //       Number(req.params.roomId)
+  //     );
+  //     res.status(200).json(toDTORoomSession(roomSession));
+  //   } catch (error) {
+  //     next(error);
+  //   }
+  // },
   addCommands: async (
     req: Request<RoomSessionIdSchema, unknown, AddCommandsBody>,
     res: Response,

@@ -37,9 +37,9 @@ router.post(
   validate(addCommandsBodySchema),
   roomSessionController.addCommands
 );
-router.post(
-  "/create/:roomId",
-  validateParams(roomIdSchema),
-  roomSessionController.createRoomSession
-);
+// router.post(
+//   "/create/:roomId",
+//   validateParams(roomIdSchema),
+//   roomSessionController.createRoomSession
+// );
 export default router;

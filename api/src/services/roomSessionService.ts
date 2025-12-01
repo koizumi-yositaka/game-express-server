@@ -13,37 +13,8 @@ import { AddCommandResult } from "../controllers/dto";
 import { invalidateLineUserFormRepo } from "../repos/invalidateLineUserFormRepo";
 import { lineUtil } from "../util/lineUtil";
 import { v4 as uuidv4 } from "uuid";
+import { GAME_STATUS } from "../domain/common";
 export const roomSessionService = {
-  createRoomSession: async (roomId: number): Promise<TRoomSession> => {
-    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const existingRoomSession =
-        await roomSessionRepository.getRoomSessionByRoomId(tx, roomId);
-      if (existingRoomSession) {
-        throw new BadRequestError("Room session already exists");
-      }
-      const posX = 3;
-      const posY = 3;
-      const direction = "N";
-      await roomSessionRepository.createRoomSession(
-        tx,
-        roomId,
-        posX,
-        posY,
-        direction,
-        "setting"
-      );
-
-      const roomSession = await roomSessionRepository.getRoomSessionByRoomId(
-        tx,
-        roomId
-      );
-
-      if (!roomSession) {
-        throw new NotFoundError("Room session 作成失敗");
-      }
-      return toTRoomSessionFromRoomSessionWithMembers(roomSession);
-    });
-  },
   getRoomSession: async (
     roomSessionId: number,
     processed?: boolean
@@ -90,18 +61,19 @@ export const roomSessionService = {
     });
   },
   reflectCommands: async (roomSessionId: number): Promise<TRoomSession> => {
-    const maxX = 7;
-    const maxY = 7;
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const currentRoomSession = await roomSessionRepository.getRoomSession(
         tx,
         roomSessionId
       );
+
       if (!currentRoomSession) {
         throw new NotFoundError("Room session not found");
       }
-      let { posX, posY, direction, turn } = currentRoomSession;
+
+      let { posX, posY, direction, turn, setting } = currentRoomSession;
       let tempLocation = { posX, posY, direction };
+      const settingContents = gameUtil.getRoomSettingJsonContents(setting);
       const commands = currentRoomSession.commands.filter(
         (command) => !command.processed
       );
@@ -111,8 +83,9 @@ export const roomSessionService = {
         tempLocation = gameUtil.executeCommand(
           command,
           tempLocation,
-          maxX,
-          maxY
+          settingContents.goalCell,
+          settingContents.size,
+          settingContents.size
         );
         await commandRepository.updateCommand(tx, command.id, true);
         await commandRepository.createCommandHistory(
@@ -123,26 +96,57 @@ export const roomSessionService = {
           turn
         );
       }
-      const updatedRoomSession = await roomSessionRepository.updateRoomSession(
-        tx,
-        roomSessionId,
-        tempLocation.posX,
-        tempLocation.posY,
-        turn + 1,
-        tempLocation.direction
-      );
-
-      currentRoomSession.room.members.forEach(async (member) => {
-        await lineUtil.sendSimpleTextMessage(
-          member.userId,
-          `ROOM[${currentRoomSession.room.roomCode}] TURN[${turn}] COMPLETED + なんちゃらかんちゃら`
+      // ゴールに到達したかどうかを判断する
+      if (
+        tempLocation.posX === settingContents.goalCell[0] &&
+        tempLocation.posY === settingContents.goalCell[1]
+      ) {
+        // ゴールに到達した場合はゲームを終了する
+        console.log("ゴールに到達しました");
+        const updatedRoomSession =
+          await roomSessionRepository.updateRoomSession(
+            tx,
+            roomSessionId,
+            tempLocation.posX,
+            tempLocation.posY,
+            turn,
+            tempLocation.direction,
+            GAME_STATUS.COMPLETED
+          );
+        currentRoomSession.room.members.forEach(async (member) => {
+          await lineUtil.sendSimpleTextMessage(
+            member.userId,
+            `ROOM[${currentRoomSession.room.roomCode}] TURN[${turn}] GOAL`
+          );
+        });
+        return toTRoomSessionFromRoomSessionWithUsers(
+          currentRoomSession,
+          currentRoomSession.room,
+          commands
         );
-      });
-      return toTRoomSessionFromRoomSessionWithUsers(
-        updatedRoomSession,
-        currentRoomSession.room,
-        commands
-      );
+      } else {
+        const updatedRoomSession =
+          await roomSessionRepository.updateRoomSession(
+            tx,
+            roomSessionId,
+            tempLocation.posX,
+            tempLocation.posY,
+            turn + 1,
+            tempLocation.direction
+          );
+        currentRoomSession.room.members.forEach(async (member) => {
+          await lineUtil.sendSimpleTextMessage(
+            member.userId,
+            `ROOM[${currentRoomSession.room.roomCode}] TURN[${turn}] COMPLETED + なんちゃらかんちゃら`
+          );
+        });
+
+        return toTRoomSessionFromRoomSessionWithUsers(
+          updatedRoomSession,
+          currentRoomSession.room,
+          commands
+        );
+      }
     });
   },
 
@@ -228,4 +232,36 @@ export const roomSessionService = {
       });
     });
   },
+  // createRoomSession: async (roomId: number): Promise<TRoomSession> => {
+  //   return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+  //     const existingRoomSession =
+  //       await roomSessionRepository.getRoomSessionByRoomId(tx, roomId);
+  //     if (existingRoomSession) {
+  //       throw new BadRequestError("Room session already exists");
+  //     }
+  //     // 初期設定
+  //     const setting = gameUtil.createGameSetting();
+
+  //     await roomSessionRepository.createRoomSession(
+  //       tx,
+  //       roomId,
+  //       setting.initialCell[0],
+  //       setting.initialCell[1],
+  //       setting.initialDirection,
+  //       JSON.stringify(setting)
+  //     );
+
+  //     // roomSessionのsetting fileを作成する
+
+  //     const roomSession = await roomSessionRepository.getRoomSessionByRoomId(
+  //       tx,
+  //       roomId
+  //     );
+
+  //     if (!roomSession) {
+  //       throw new NotFoundError("Room session 作成失敗");
+  //     }
+  //     return toTRoomSessionFromRoomSessionWithMembers(roomSession);
+  //   });
+  // },
 };

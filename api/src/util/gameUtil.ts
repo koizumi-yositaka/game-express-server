@@ -3,20 +3,16 @@ import {
   TCommandType,
   TDirection,
   TRole,
-  TUser,
+  RoomSessionSettingJsonContents,
 } from "../domain/types";
 import { jsonRW } from "./jsonRW";
 import { COMMAND_BUTTON_DATA_MAP } from "../domain/common";
 import path from "path";
+
 type Location = {
   posX: number;
   posY: number;
   direction: TDirection;
-};
-type TSetting = {
-  size: number;
-  specialCells: [number, number][];
-  currentCell: [number, number];
 };
 
 type GameSetting = {
@@ -25,18 +21,21 @@ type GameSetting = {
 
 let cachedGameSetting: GameSetting | null = null;
 
-const defaultSetting: TSetting = {
+const defaultSetting: RoomSessionSettingJsonContents = {
   size: 7,
-  currentCell: [0, 0],
+  initialCell: [3, 3],
+  initialDirection: "N",
   specialCells: [
     [2, 3],
     [4, 1],
   ],
+  goalCell: [0, 0],
 };
 
 export function executeCommand(
   command: TCommand,
   location: Location,
+  goalCell: [number, number],
   maxX: number,
   maxY: number
 ): Location {
@@ -86,6 +85,7 @@ export function executeCommand(
   }
   console.log("実行前", location);
   console.log("実行後", { posX, posY, direction });
+
   return {
     posX,
     posY,
@@ -134,9 +134,33 @@ async function importGameSetting(): Promise<GameSetting> {
   return gameSetting;
 }
 
+function createGameSetting(
+  size: number = defaultSetting.size,
+  specialCells: [number, number][] = defaultSetting.specialCells,
+  goalCell: [number, number] = defaultSetting.goalCell,
+  initialCell: [number, number] = defaultSetting.initialCell,
+  initialDirection: TDirection = "N"
+): RoomSessionSettingJsonContents {
+  return {
+    size,
+    initialCell,
+    specialCells,
+    goalCell,
+    initialDirection,
+  };
+}
+
+function getRoomSettingJsonContents(
+  jsonString: string
+): RoomSessionSettingJsonContents {
+  return JSON.parse(jsonString) as RoomSessionSettingJsonContents;
+}
+
 export const gameUtil = {
   defaultSetting,
   executeCommand,
+  createGameSetting,
+  getRoomSettingJsonContents,
 };
 
 // buttonに必要なデータ

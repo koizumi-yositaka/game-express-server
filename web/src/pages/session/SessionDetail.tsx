@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { GAME_STATUS } from "@/util/common";
 import GameGrid from "@/components/features/gameGrid/GameGrid";
 import type { DTOCommand } from "@/types";
+import { useLoading } from "@/contexts/LoadingContext";
 
 // まだ実行されていないコマンドのあるメンバーかどうかを判定
 const isCommandReceipt = (commands: DTOCommand[], memberId: number) => {
@@ -16,7 +17,7 @@ const isCommandReceipt = (commands: DTOCommand[], memberId: number) => {
 
 const SessionDetail = () => {
   const { roomSessionId } = useParams<{ roomSessionId: string }>();
-
+  const { show, hide } = useLoading();
   const {
     data: sessionInfo,
     isLoading,
@@ -39,10 +40,14 @@ const SessionDetail = () => {
 
   const reflectCommands = async () => {
     try {
+      show("次のターンに進みます...");
       await stepGameSession(Number(roomSessionId));
+      await new Promise((resolve) => setTimeout(resolve, 2000));
       await startTurn(Number(roomSessionId));
     } catch (error) {
       console.error("reflectCommands error:", error);
+    } finally {
+      hide();
     }
   };
 
@@ -124,10 +129,8 @@ const SessionDetail = () => {
             size={7}
             direction={sessionInfo.direction}
             currentCell={[sessionInfo.posX, sessionInfo.posY]}
-            specialCells={[
-              [2, 3],
-              [4, 1],
-            ]}
+            specialCells={sessionInfo.setting.specialCells}
+            goalCell={sessionInfo.setting.goalCell}
           />
         </div>
         <div className="flex-1">TODO</div>
