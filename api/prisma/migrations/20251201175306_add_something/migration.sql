@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `RoomSession` MODIFY `turn` INTEGER NOT NULL DEFAULT 0;

@@ -131,7 +131,8 @@ export const roomSessionService = {
             roomSessionId,
             tempLocation.posX,
             tempLocation.posY,
-            turn + 1,
+            // turn + 1,
+            turn,
             tempLocation.direction
           );
         currentRoomSession.room.members.forEach(async (member) => {
@@ -214,6 +215,11 @@ export const roomSessionService = {
       if (!roomSession) {
         throw new NotFoundError("Room session not found");
       }
+      await roomSessionRepository.stepNextTurn(
+        tx,
+        roomSessionId,
+        roomSession.turn + 1
+      );
       const formId = uuidv4();
       roomSession.room.members.forEach(async (member) => {
         const role = member.role;

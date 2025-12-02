@@ -3,9 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { getRoomSession, startTurn, stepGameSession } from "@/api/apiClient";
 import type { DTORoomSession } from "@/types";
 import { Button } from "@/components/ui/button";
-import { GAME_STATUS } from "@/util/common";
 import GameGrid from "@/components/features/gameGrid/GameGrid";
 import type { DTOCommand } from "@/types";
+import { RoomMemberList } from "@/components/features/roomSession/RoomMemberList";
+import { useState } from "react";
+import { ReceiptCommandList } from "@/components/features/roomSession/ReceiptCommandList";
 import { useLoading } from "@/contexts/LoadingContext";
 
 // まだ実行されていないコマンドのあるメンバーかどうかを判定
@@ -18,6 +20,13 @@ const isCommandReceipt = (commands: DTOCommand[], memberId: number) => {
 const SessionDetail = () => {
   const { roomSessionId } = useParams<{ roomSessionId: string }>();
   const { show, hide } = useLoading();
+
+  const [turnStatus, setTurnStatus] = useState<
+    "command_inputing" | "turn_ended"
+  >("command_inputing");
+  const [receiptCommandList, setReceiptCommandList] = useState<DTOCommand[]>(
+    []
+  );
   const {
     data: sessionInfo,
     isLoading,
@@ -40,17 +49,30 @@ const SessionDetail = () => {
 
   const reflectCommands = async () => {
     try {
-      show("次のターンに進みます...");
-      await stepGameSession(Number(roomSessionId));
+      const response = await stepGameSession(Number(roomSessionId));
+      show("Reflecting commands...");
       await new Promise((resolve) => setTimeout(resolve, 2000));
-      await startTurn(Number(roomSessionId));
+      hide();
+      setReceiptCommandList(response.commands);
+      setTurnStatus("turn_ended");
+      // await new Promise((resolve) => setTimeout(resolve, 2000));
+      // await startTurn(Number(roomSessionId));
     } catch (error) {
       console.error("reflectCommands error:", error);
-    } finally {
-      hide();
     }
   };
 
+  const startNextTurn = async () => {
+    try {
+      await startTurn(Number(roomSessionId));
+      show("Starting next turn...");
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      hide();
+      setTurnStatus("command_inputing");
+    } catch (error) {
+      console.error("startNextTurn error:", error);
+    }
+  };
   if (!roomSessionId) {
     return <div className="p-4">セッションIDが指定されていません</div>;
   }
@@ -73,57 +95,31 @@ const SessionDetail = () => {
         <h1 className="text-2xl font-bold">
           Room <span className="font-mono">{sessionInfo.room.roomCode}</span>
         </h1>
-        <p className="text-sm text-muted-foreground">
-          Status: {sessionInfo.room.status} / Open:{" "}
-          {sessionInfo.room.openFlg ? "Yes" : "No"}
-        </p>
       </div>
       <div className="text-lg font-bold">Turn: {sessionInfo.turn}</div>
 
-      <div>
-        {sessionInfo.room.status === GAME_STATUS.NOT_STARTED && (
-          // <Button onClick={startGameHandler}>開始</Button>
-          <Button>開始</Button>
-        )}
-      </div>
-      <div>
-        <h2 className="text-lg font-semibold mb-2">Members</h2>
-        {sessionInfo.room.members.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            まだ誰も参加していません
-          </p>
-        ) : (
-          <ul className="space-y-1 text-sm">
-            {sessionInfo.room.members.map((member) => (
-              <li
-                key={member.id}
-                className="flex items-center justify-between rounded border px-3 py-1"
-              >
-                <span className="font-mono">
-                  {member.user?.displayName || member.user?.userId}
-                </span>
-                {isCommandReceipt(sessionInfo.commands, member.id) ? (
-                  <span className="text-xs text-green-500">
-                    Command Received
-                  </span>
-                ) : (
-                  <span className="text-xs text-red-500">
-                    Command Not Received
-                  </span>
-                )}
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
-      {isAllCommandReceipt() ? (
-        <div className="text-lg font-bold">
+      {turnStatus === "command_inputing" &&
+        (isAllCommandReceipt() ? (
           <Button onClick={reflectCommands}>Reflect Commands</Button>
-        </div>
-      ) : (
-        <div className="text-lg font-bold">Not All Command Received</div>
+        ) : (
+          <div className="text-lg font-bold">Not All Command Received</div>
+        ))}
+
+      {turnStatus === "turn_ended" && (
+        <Button onClick={startNextTurn}>Next Turn</Button>
       )}
-      <div className="flex">
+
+      <div className="flex gap-4">
+        <div className="flex-1">
+          {turnStatus === "turn_ended" ? (
+            <ReceiptCommandList
+              roomSession={sessionInfo}
+              receiptCommandList={receiptCommandList}
+            />
+          ) : (
+            <RoomMemberList roomSession={sessionInfo} />
+          )}
+        </div>
         <div className="flex-1">
           <GameGrid
             size={7}
@@ -133,7 +129,6 @@ const SessionDetail = () => {
             goalCell={sessionInfo.setting.goalCell}
           />
         </div>
-        <div className="flex-1">TODO</div>
       </div>
     </div>
   );

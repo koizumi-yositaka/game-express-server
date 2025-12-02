@@ -134,16 +134,17 @@ async function importGameSetting(): Promise<GameSetting> {
 
 function createGameSetting(
   size: number = DEFAULT_SETTING.size,
-  specialCells: [number, number][] = DEFAULT_SETTING.specialCells,
-  goalCell: [number, number] = DEFAULT_SETTING.goalCell,
   initialCell: [number, number] = DEFAULT_SETTING.initialCell,
-  initialDirection: TDirection = DEFAULT_SETTING.initialDirection
+  initialDirection: TDirection = DEFAULT_SETTING.initialDirection,
+  specialCells?: [number, number][]
 ): RoomSessionSettingJsonContents {
   return {
     size,
     initialCell,
-    specialCells,
-    goalCell,
+    specialCells: specialCells
+      ? specialCells
+      : _getRandomSecondOuterRingCoordinate(size, 2),
+    goalCell: _getRandomCoordinateOfCorners(size),
     initialDirection,
   };
 }
@@ -152,6 +153,44 @@ function getRoomSettingJsonContents(
   jsonString: string
 ): RoomSessionSettingJsonContents {
   return JSON.parse(jsonString) as RoomSessionSettingJsonContents;
+}
+
+function _getRandomCoordinateOfCorners(size: number): [number, number] {
+  const coordinates: [number, number][] = [
+    [0, 0],
+    [0, size - 1],
+    [size - 1, 0],
+    [size - 1, size - 1],
+  ];
+  const randomCoordinate =
+    coordinates[Math.floor(Math.random() * coordinates.length)];
+  return randomCoordinate;
+}
+
+function _getRandomSecondOuterRingCoordinate(
+  size: number,
+  length: number
+): [number, number][] {
+  const coordinates: [number, number][] = [];
+  const result: [number, number][] = [];
+  for (let x = 0; x < size; x++) {
+    for (let y = 0; y < size; y++) {
+      // 外から2つ目の条件
+      if (x === 1 || y === 1 || x === size - 2 || y === size - 2) {
+        // ただし一番外側は除く
+        if (x > 0 && x < size - 1 && y > 0 && y < size - 1) {
+          coordinates.push([x, y]);
+        }
+      }
+    }
+  }
+  console.log("coordinates", coordinates);
+  for (let i = 0; i < length; i++) {
+    const idx = Math.floor(Math.random() * coordinates.length);
+    result.push(coordinates[idx]);
+    coordinates.splice(idx, 1);
+  }
+  return result;
 }
 
 export const gameUtil = {

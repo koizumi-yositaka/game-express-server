@@ -10,7 +10,6 @@ import {
   toTRoomMemberFromRoomMemberWithUsers,
   toTUser,
   toTRole,
-  toTRoomFromRoomWithUsers,
 } from "../domain/typeParse";
 
 import { TRoom } from "../domain/types";

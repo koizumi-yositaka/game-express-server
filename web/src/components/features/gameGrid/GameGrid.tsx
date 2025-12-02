@@ -48,53 +48,59 @@ const GameGrid = ({
     r === goalCell[0] && c === goalCell[1];
 
   return (
-    <div className="flex m-4 w-fit">
-      {/* 左側の行番号 */}
-      <div className="flex flex-col mr-1">
-        <div className="h-8" /> {/* 左上の空白 */}
-        {Array.from({ length: size }).map((_, row) => (
-          <div
-            key={`row-${row}`}
-            className="h-10 flex items-center justify-center text-gray-500 text-sm"
-          >
-            {row}
-          </div>
-        ))}
-      </div>
-
-      <div>
-        {/* 上側の列番号 */}
-        <div className="grid grid-cols-7 gap-1 mb-1">
-          {Array.from({ length: size }).map((_, col) => (
+    <>
+      <h2 className="text-lg font-semibold mb-2">Game Grid</h2>
+      <div className="flex m-4 w-fit">
+        {/* 左側の行番号 */}
+        <div className="flex flex-col mr-1 gap-1">
+          <div className="h-8" /> {/* 左上の空白 */}
+          {Array.from({ length: size }).map((_, row) => (
             <div
-              key={`col-${col}`}
-              className="w-10 h-8 flex items-center justify-center text-gray-500 text-sm"
+              key={`row-${row}`}
+              className="h-10 flex items-center justify-center text-gray-500 text-sm"
             >
-              {col}
+              {row + 1}
             </div>
           ))}
         </div>
 
-        {/* グリッド本体 */}
-        <div className="grid grid-cols-7 gap-1">
-          {Array.from({ length: size }).map((_, col) =>
-            Array.from({ length: size }).map((_, row) => (
-              <div key={`${row}-${col}`} className={getCellClassName(row, col)}>
-                {isCurrentCell(row, col) && (
-                  <div
-                    className={`text-white text-2xl ${getDirectionClass(
-                      direction
-                    )}`}
-                  >
-                    ▲
-                  </div>
-                )}
+        <div>
+          {/* 上側の列番号 */}
+          <div className="grid grid-cols-7 gap-1 mb-1">
+            {Array.from({ length: size }).map((_, col) => (
+              <div
+                key={`col-${col}`}
+                className="w-10 h-8 flex items-center justify-center text-gray-500 text-sm"
+              >
+                {col + 1}
               </div>
-            ))
-          )}
+            ))}
+          </div>
+
+          {/* グリッド本体 */}
+          <div className="grid grid-cols-7 gap-1">
+            {Array.from({ length: size }).map((_, col) =>
+              Array.from({ length: size }).map((_, row) => (
+                <div
+                  key={`${row}-${col}`}
+                  className={getCellClassName(row, col)}
+                >
+                  {isCurrentCell(row, col) && (
+                    <div
+                      className={`text-white text-2xl ${getDirectionClass(
+                        direction
+                      )}`}
+                    >
+                      ▲
+                    </div>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

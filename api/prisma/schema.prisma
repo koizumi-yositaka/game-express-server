@@ -55,7 +55,7 @@ enum Direction {
 model RoomSession {
   id         Int        @id @default(autoincrement())
   roomId     Int        @unique
-  turn       Int        @default(1)
+  turn       Int        @default(0)
 
   posX       Int
   posY       Int
