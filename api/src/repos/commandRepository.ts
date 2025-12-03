@@ -42,7 +42,8 @@ export const commandRepository = {
     roomSessionId: number,
     memberId: number,
     commandId: number,
-    turn: number
+    turn: number,
+    arg: string
   ) => {
     return await tx.commandHistory.create({
       data: {
@@ -50,6 +51,7 @@ export const commandRepository = {
         memberId: memberId,
         commandId: commandId,
         turn: turn,
+        arg: arg,
       },
     });
   },

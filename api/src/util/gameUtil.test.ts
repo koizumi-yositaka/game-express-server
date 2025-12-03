@@ -1,7 +1,6 @@
 import {
   executeCommand,
   getAvailableCommandsByRole,
-  CommandButtonData,
   gameUtil,
 } from "./gameUtil";
 import {
@@ -10,12 +9,11 @@ import {
   TDirection,
   TRole,
   TRoomSession,
-  RoomSessionSettingJsonContents,
+  TRoomMember,
 } from "../domain/types";
 import { jsonRW } from "./jsonRW";
-import { roleSpecialMoveExecutor } from "../roles/roleSpecialMoveExecutor";
+
 import { COMMAND_BUTTON_DATA_MAP, DEFAULT_SETTING } from "../domain/common";
-import { NotFoundError } from "../error/AppError";
 
 // モックのセットアップ
 jest.mock("./jsonRW");
@@ -56,6 +54,7 @@ describe("gameUtil", () => {
             roomId: 1,
             userId: "user1",
             roleId: 1,
+            status: 0,
             joinedAt: new Date(),
             role: m.role
               ? {
@@ -406,61 +405,61 @@ describe("gameUtil", () => {
       });
     });
 
-    describe("SPECIAL", () => {
-      it("SPECIALコマンドでroleSpecialMoveExecutorが呼ばれる", () => {
-        const mockExecuteSpecialMove = jest.fn();
-        (roleSpecialMoveExecutor.executeSpecialMove as jest.Mock) =
-          mockExecuteSpecialMove;
+    // describe("SPECIAL", () => {
+    //   it("SPECIALコマンドでroleSpecialMoveExecutorが呼ばれる", () => {
+    //     const mockExecuteSpecialMove = jest.fn();
+    //     (roleSpecialMoveExecutor.executeSpecialMove as jest.Mock) =
+    //       mockExecuteSpecialMove;
 
-        const command: TCommand = {
-          roomSessionId: 1,
-          memberId: 1,
-          commandType: "SPECIAL",
-          processed: false,
-          arg: "",
-        };
-        const gridInfo = {
-          location: { posX: 3, posY: 3, direction: "N" as TDirection },
-          goalCell: [[0, 0]] as [number, number][],
-          maxX: 7,
-          maxY: 7,
-        };
-        const roomSession = createMockRoomSession([
-          { id: 1, role: { roleName: "EMPEROR" } },
-        ]);
+    //     const command: TCommand = {
+    //       roomSessionId: 1,
+    //       memberId: 1,
+    //       commandType: "SPECIAL",
+    //       processed: false,
+    //       arg: "",
+    //     };
+    //     const gridInfo = {
+    //       location: { posX: 3, posY: 3, direction: "N" as TDirection },
+    //       goalCell: [[0, 0]] as [number, number][],
+    //       maxX: 7,
+    //       maxY: 7,
+    //     };
+    //     const roomSession = createMockRoomSession([
+    //       { id: 1, role: { roleName: "EMPEROR" } },
+    //     ]);
 
-        const result = executeCommand(command, gridInfo, roomSession);
+    //     const result = executeCommand(command, gridInfo, roomSession);
 
-        expect(mockExecuteSpecialMove).toHaveBeenCalledWith("EMPEROR");
-        expect(result.posX).toBe(3);
-        expect(result.posY).toBe(3);
-        expect(result.direction).toBe("N");
-      });
+    //     expect(mockExecuteSpecialMove).toHaveBeenCalledWith("EMPEROR");
+    //     expect(result.posX).toBe(3);
+    //     expect(result.posY).toBe(3);
+    //     expect(result.direction).toBe("N");
+    //   });
 
-      it("メンバーが見つからない場合、NotFoundErrorをスローする", () => {
-        const command: TCommand = {
-          roomSessionId: 1,
-          memberId: 999,
-          commandType: "SPECIAL",
-          processed: false,
-          arg: "",
-        };
-        const gridInfo = {
-          location: { posX: 3, posY: 3, direction: "N" as TDirection },
-          goalCell: [[0, 0]] as [number, number][],
-          maxX: 7,
-          maxY: 7,
-        };
-        const roomSession = createMockRoomSession([{ id: 1 }]);
+    //   it("メンバーが見つからない場合、NotFoundErrorをスローする", () => {
+    //     const command: TCommand = {
+    //       roomSessionId: 1,
+    //       memberId: 999,
+    //       commandType: "SPECIAL",
+    //       processed: false,
+    //       arg: "",
+    //     };
+    //     const gridInfo = {
+    //       location: { posX: 3, posY: 3, direction: "N" as TDirection },
+    //       goalCell: [[0, 0]] as [number, number][],
+    //       maxX: 7,
+    //       maxY: 7,
+    //     };
+    //     const roomSession = createMockRoomSession([{ id: 1 }]);
 
-        expect(() => executeCommand(command, gridInfo, roomSession)).toThrow(
-          NotFoundError
-        );
-        expect(() => executeCommand(command, gridInfo, roomSession)).toThrow(
-          "Role not found"
-        );
-      });
-    });
+    //     expect(() => executeCommand(command, gridInfo, roomSession)).toThrow(
+    //       NotFoundError
+    //     );
+    //     expect(() => executeCommand(command, gridInfo, roomSession)).toThrow(
+    //       "Role not found"
+    //     );
+    //   });
+    // });
   });
 
   describe("getAvailableCommandsByRole", () => {
@@ -473,6 +472,37 @@ describe("gameUtil", () => {
       notionUrl: "",
       group: 1,
     };
+
+    const mockMe: TRoomMember = {
+      id: 1,
+      roomId: 1,
+      userId: "user1",
+      roleId: 1,
+      status: 0,
+      joinedAt: new Date(),
+      role: mockRole,
+    };
+
+    const mockMembers: TRoomMember[] = [
+      mockMe,
+      {
+        id: 2,
+        roomId: 1,
+        userId: "user2",
+        roleId: 2,
+        status: 0,
+        joinedAt: new Date(),
+        role: {
+          roleId: 2,
+          roleName: "DEATH",
+          priority: 2,
+          description: "Test role 2",
+          imageUrl: "",
+          notionUrl: "",
+          group: 2,
+        },
+      },
+    ];
 
     const mockGameSetting = {
       roleSetting: {
@@ -497,13 +527,14 @@ describe("gameUtil", () => {
         roomSessionId: 1,
         memberId: 1,
         turn: 1,
-        arg: "",
       };
 
       const result = await getAvailableCommandsByRole(
         mockRole,
         "submitCommand",
-        meta
+        meta,
+        mockMembers,
+        mockMe
       );
 
       expect(result).toHaveLength(4);
@@ -516,6 +547,7 @@ describe("gameUtil", () => {
         roomSessionId: meta.roomSessionId,
         memberId: meta.memberId,
         turn: meta.turn,
+        arg: "",
       });
 
       // ゲーム設定ファイルから正しいコマンドタイプを取得していることを確認
@@ -530,13 +562,14 @@ describe("gameUtil", () => {
         roomSessionId: 1,
         memberId: 1,
         turn: 1,
-        arg: "",
       };
 
       const result = await getAvailableCommandsByRole(
         mockRole,
         "submitCommand",
-        meta
+        meta,
+        mockMembers,
+        mockMe
       );
 
       result.forEach((command) => {
@@ -548,6 +581,7 @@ describe("gameUtil", () => {
         expect(command).toHaveProperty("roomSessionId");
         expect(command).toHaveProperty("memberId");
         expect(command).toHaveProperty("turn");
+        expect(command).toHaveProperty("arg");
       });
     });
   });

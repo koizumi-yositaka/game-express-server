@@ -48,7 +48,17 @@ export const roomMemberRepository = {
       },
     });
   },
-
+  updateRoomMemberStatus: async (
+    tx: TxClient,
+    roomId: number,
+    userId: string,
+    status: number
+  ) => {
+    return await tx.roomMember.update({
+      where: { roomId_userId: { roomId: roomId, userId: userId } },
+      data: { status: status },
+    });
+  },
   // 以下get
   // これは役割が振られる前にしか使わないので、roleは含めない
   getRoomMembers: async (tx: TxClient, roomId: number) => {

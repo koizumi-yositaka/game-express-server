@@ -55,6 +55,40 @@ export const ROLE_NAME_MAP = {
   HERMIT: "HERMIT",
   THE_TOWER: "THE_TOWER",
 };
+
+export const SPECIAL_COMMAND_MAP: Record<
+  keyof typeof ROLE_NAME_MAP,
+  { displayText: string; label: string }
+> = Object.freeze({
+  EMPEROR: {
+    displayText: "",
+    label: "",
+  },
+  DEATH: {
+    displayText: "",
+    label: "",
+  },
+  HIEROPHANT: {
+    displayText: "${userName}の行動妨害",
+    label: "${userName}の行動妨害",
+  },
+  FOOL: {
+    displayText: "",
+    label: "",
+  },
+  HIGH_PRIESTESS: {
+    displayText: "",
+    label: "",
+  },
+  HERMIT: {
+    displayText: "",
+    label: "",
+  },
+  THE_TOWER: {
+    displayText: "",
+    label: "",
+  },
+});
 export const ROLE_GROUP_MAP = Object.freeze({
   KINGDOM: 1,
   HELL: 2,
@@ -73,6 +107,11 @@ const DEFAULT_SETTING: RoomSessionSettingJsonContents = {
     [7, 7],
   ],
 };
+
+export const ROOM_MEMBER_STATUS = Object.freeze({
+  ACTIVE: 0,
+  SKILL_USED: 1,
+});
 
 export {
   GAME_STATUS,

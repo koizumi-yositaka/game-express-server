@@ -63,6 +63,7 @@ export function toTRoomMember(roomMember: RoomMember): TRoomMember {
     roomId: roomMember.roomId,
     userId: roomMember.userId,
     roleId: roomMember.roleId,
+    status: roomMember.status,
     joinedAt: roomMember.joinedAt,
   };
 }
@@ -75,6 +76,7 @@ export function toTRoomMemberFromRoomMemberWithUsers(
     roomId: roomMember.roomId,
     userId: roomMember.user.userId,
     roleId: roomMember.role.roleId,
+    status: roomMember.status,
     joinedAt: roomMember.joinedAt,
     user: toTUser(roomMember.user),
     role: toTRole(roomMember.role),
@@ -160,6 +162,7 @@ export function toTCommandHistory(
     memberId: commandHistory.memberId,
     commandId: commandHistory.commandId,
     turn: commandHistory.turn,
+    arg: commandHistory.arg,
     command: toTCommand(commandHistory.command),
   };
 }

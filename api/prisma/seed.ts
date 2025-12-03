@@ -6,7 +6,7 @@ async function main() {
     {
       roleId: 0,
       roleName: "EMPEROR",
-      priority: 1,
+      priority: 100,
       description: "皇帝",
       imageUrl: "https://d1z1o17j25srna.cloudfront.net/emperor.png",
       notionUrl: "https://flashy-visitor-ec3.notion.site/emperor",
@@ -15,7 +15,7 @@ async function main() {
     {
       roleId: 1,
       roleName: "DEATH",
-      priority: 1,
+      priority: 100,
       description: "死神",
       imageUrl: "https://d1z1o17j25srna.cloudfront.net/death.png",
       notionUrl: "https://flashy-visitor-ec3.notion.site/death",
@@ -24,7 +24,7 @@ async function main() {
     {
       roleId: 2,
       roleName: "HIEROPHANT",
-      priority: 0,
+      priority: 10,
       description: "祭司",
       imageUrl: "https://d1z1o17j25srna.cloudfront.net/hierophant.png",
       notionUrl: "https://flashy-visitor-ec3.notion.site/hierophant",

@@ -19,6 +19,7 @@ import {
 export function toDTORoomMember(roomMember: TRoomMember): DTORoomMember {
   return {
     id: roomMember.id,
+    status: roomMember.status,
     joinedAt: roomMember.joinedAt.toISOString(),
     user: roomMember.user ? toDTOUser(roomMember.user) : null,
     role: roomMember.role ? toTRole(roomMember.role) : null,
@@ -63,6 +64,7 @@ export function toDTOCommandHistory(
     memberId: commandHistory.memberId,
     commandId: commandHistory.commandId,
     turn: commandHistory.turn,
+    arg: commandHistory.arg,
     command: toDTOCommand(commandHistory.command),
   };
 }

@@ -5,12 +5,14 @@ import {
   TRole,
   RoomSessionSettingJsonContents,
   TRoomSession,
+  TRoomMember,
 } from "../domain/types";
 import { jsonRW } from "./jsonRW";
 import {
   COMMAND_BUTTON_DATA_MAP,
   DEFAULT_SETTING,
   ROLE_NAME_MAP,
+  SPECIAL_COMMAND_MAP,
 } from "../domain/common";
 import path from "path";
 import { NotFoundError } from "../error/AppError";
@@ -29,6 +31,30 @@ type GameSetting = {
 };
 
 let cachedGameSetting: GameSetting | null = null;
+
+export async function executeSpecialCommand(
+  command: TCommand,
+  gridInfo: {
+    location: Location;
+    goalCell: [number, number][];
+    maxX: number;
+    maxY: number;
+  },
+  roomSession: TRoomSession
+): Promise<void> {
+  const { commandType } = command;
+  const { location, goalCell, maxX, maxY } = gridInfo;
+  let { posX, posY, direction } = location;
+  const role = roomSession.room.members.find(
+    (member) => member.id === command.memberId
+  );
+  if (!role) {
+    throw new NotFoundError("Role not found");
+  }
+  roleSpecialMoveExecutor.executeSpecialMove(
+    role.role?.roleName as keyof typeof ROLE_NAME_MAP
+  );
+}
 
 export function executeCommand(
   command: TCommand,
@@ -72,15 +98,6 @@ export function executeCommand(
   } else {
     switch (commandType) {
       case "SPECIAL":
-        const role = roomSession.room.members.find(
-          (member) => member.id === command.memberId
-        );
-        if (!role) {
-          throw new NotFoundError("Role not found");
-        }
-        roleSpecialMoveExecutor.executeSpecialMove(
-          role.role?.roleName as keyof typeof ROLE_NAME_MAP
-        );
         break;
       case "SKIP":
         break;
@@ -126,7 +143,9 @@ export async function getAvailableCommandsByRole(
     roomSessionId: number;
     memberId: number;
     turn: number;
-  }
+  },
+  members: TRoomMember[],
+  me: TRoomMember
 ): Promise<CommandButtonData[]> {
   // commandType, displayText,labelを確定
   const gameSetting = await importGameSetting();
@@ -134,7 +153,7 @@ export async function getAvailableCommandsByRole(
     gameSetting.roleSetting[role.roleName as keyof typeof ROLE_NAME_MAP]
       .availableCommands;
 
-  const commandButtonDataList = availableCommands.map((commandType) => {
+  let commandButtonDataList = availableCommands.map((commandType) => {
     return {
       commandType,
       displayText: COMMAND_BUTTON_DATA_MAP[commandType].displayText,
@@ -147,8 +166,30 @@ export async function getAvailableCommandsByRole(
       arg: "",
     };
   });
+  console.log(role.roleName);
   if (role.roleName === "HIEROPHANT") {
-    // TODO protect someone
+    commandButtonDataList = commandButtonDataList.filter(
+      (command) => command.commandType !== "SPECIAL"
+    );
+    members
+      .filter((member) => member.id !== me.id)
+      .forEach((member) => {
+        commandButtonDataList.push({
+          commandType: "SPECIAL",
+          displayText: SPECIAL_COMMAND_MAP[
+            role.roleName as keyof typeof ROLE_NAME_MAP
+          ].displayText.replace("${userName}", member.user?.displayName ?? ""),
+          label: SPECIAL_COMMAND_MAP[
+            role.roleName as keyof typeof ROLE_NAME_MAP
+          ].label.replace("${userName}", member.user?.displayName ?? ""),
+          formId: meta.formId,
+          action: `${actionName}`,
+          roomSessionId: meta.roomSessionId,
+          memberId: meta.memberId,
+          turn: meta.turn,
+          arg: member.id.toString(),
+        });
+      });
   }
   return commandButtonDataList;
 }
@@ -186,6 +227,17 @@ function getRoomSettingJsonContents(
   jsonString: string
 ): RoomSessionSettingJsonContents {
   return JSON.parse(jsonString) as RoomSessionSettingJsonContents;
+}
+
+function getRandomKingdomMember(roomMembers: TRoomMember[]) {
+  const kingdomMembers = roomMembers.filter(
+    (member) => member.role?.group === 1 && member.role?.roleName !== "EMPEROR"
+  );
+  if (kingdomMembers.length === 0) {
+    return null;
+  }
+  const randomIndex = Math.floor(Math.random() * kingdomMembers.length);
+  return kingdomMembers[randomIndex];
 }
 
 function _getRandomCoordinateOfCorners(size: number): [number, number][] {
@@ -232,6 +284,8 @@ function _getRandomSecondOuterRingCoordinate(
 export const gameUtil = {
   DEFAULT_SETTING,
   executeCommand,
+  executeSpecialCommand,
+  getRandomKingdomMember,
   createGameSetting,
   getRoomSettingJsonContents,
 };

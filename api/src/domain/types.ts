@@ -20,6 +20,7 @@ export type TRoomMember = {
   roomId: number;
   userId: string;
   roleId: number;
+  status: number;
   joinedAt: Date;
   user?: TUser;
   role?: TRole;
@@ -53,6 +54,7 @@ export type TCommandHistory = {
   memberId: number;
   commandId: number;
   turn: number;
+  arg: string;
   command: TCommand;
 };
 

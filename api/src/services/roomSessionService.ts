@@ -1,5 +1,11 @@
 import { roomSessionRepository } from "../repos/roomSessionRepository";
-import { TCommand, TCommandHistory, TRoomSession } from "../domain/types";
+import {
+  RoomSessionSettingJsonContents,
+  TCommand,
+  TCommandHistory,
+  TDirection,
+  TRoomSession,
+} from "../domain/types";
 import { prisma } from "../db/prisma";
 import { Prisma } from "../generated/prisma/client";
 import { BadRequestError, NotFoundError } from "../error/AppError";
@@ -14,7 +20,30 @@ import { invalidateLineUserFormRepo } from "../repos/invalidateLineUserFormRepo"
 import logger from "../util/logger";
 import { lineUtil } from "../util/lineUtil";
 import { v4 as uuidv4 } from "uuid";
-import { GAME_STATUS } from "../domain/common";
+import { GAME_STATUS, ROOM_MEMBER_STATUS } from "../domain/common";
+import { roomMemberRepository } from "../repos/roomMemberRepository";
+
+const MAX_TURN = 5;
+function isGoalReached(
+  tempLocation: { posX: number; posY: number; direction: TDirection },
+  settingContents: RoomSessionSettingJsonContents
+): boolean {
+  return settingContents.goalCell.some(
+    (goalCell) =>
+      tempLocation.posX === goalCell[0] && tempLocation.posY === goalCell[1]
+  );
+}
+
+function isSpecialCellsReached(
+  tempLocation: { posX: number; posY: number; direction: TDirection },
+  settingContents: RoomSessionSettingJsonContents
+): boolean {
+  return settingContents.specialCells.some(
+    (specialCell) =>
+      tempLocation.posX === specialCell[0] &&
+      tempLocation.posY === specialCell[1]
+  );
+}
 export const roomSessionService = {
   getRoomSession: async (
     roomSessionId: number,
@@ -67,18 +96,48 @@ export const roomSessionService = {
         tx,
         roomSessionId
       );
-
       if (!currentRoomSession) {
         throw new NotFoundError("Room session not found");
       }
-
       let { posX, posY, direction, turn, setting } = currentRoomSession;
       let tempLocation = { posX, posY, direction };
       const settingContents = gameUtil.getRoomSettingJsonContents(setting);
-      const commands = currentRoomSession.commands.filter(
-        (command) => !command.processed
+      // 特殊コマンドと通常コマンドを取得する
+      const specialCommands = currentRoomSession.commands.filter(
+        (command) => command.commandType === "SPECIAL"
       );
-      for (const command of commands) {
+      const normalCommands = currentRoomSession.commands.filter(
+        (command) => !command.processed && command.commandType !== "SPECIAL"
+      );
+
+      // TODO COMMANDの実行順序の確認
+      // TODO HIEROPHANTの阻害の対象者を取得する
+
+      // 特殊コマンドを実行する
+      logger.info("特殊コマンドの実行");
+
+      for (const command of specialCommands) {
+        await gameUtil.executeSpecialCommand(
+          command,
+          {
+            location: tempLocation,
+            goalCell: settingContents.goalCell,
+            maxX: settingContents.size,
+            maxY: settingContents.size,
+          },
+          toTRoomSessionFromRoomSessionWithMembers(currentRoomSession)
+        );
+        await roomMemberRepository.updateRoomMemberStatus(
+          tx,
+          currentRoomSession.roomId,
+          currentRoomSession.room.members.find(
+            (member) => member.id === command.memberId
+          )?.userId!,
+          ROOM_MEMBER_STATUS.SKILL_USED
+        );
+      }
+      logger.info("通常コマンドの実行");
+      for (const command of normalCommands) {
         // コマンドを実行する
         tempLocation = gameUtil.executeCommand(
           command,
@@ -96,19 +155,43 @@ export const roomSessionService = {
           roomSessionId,
           command.memberId,
           command.id,
-          turn
+          turn,
+          command.arg
         );
+        if (isGoalReached(tempLocation, settingContents)) {
+          // ゴールに到達した場合はゲームを終了する
+          await roomSessionRepository.updateRoomSession(
+            tx,
+            roomSessionId,
+            tempLocation.posX,
+            tempLocation.posY,
+            turn,
+            tempLocation.direction,
+            GAME_STATUS.COMPLETED
+          );
+          currentRoomSession.room.members.forEach(async (member) => {
+            await lineUtil.sendSimpleTextMessage(
+              member.userId,
+              `ROOM[${currentRoomSession.room.roomCode}] TURN[${turn}] GOAL`
+            );
+          });
+          return toTRoomSessionFromRoomSessionWithUsers(
+            currentRoomSession,
+            currentRoomSession.room,
+            currentRoomSession.commands
+          );
+        }
       }
-      // ゴールに到達したかどうかを判断する
-      if (
-        settingContents.goalCell.some(
-          (goalCell) =>
-            tempLocation.posX === goalCell[0] &&
-            tempLocation.posY === goalCell[1]
-        )
-      ) {
-        // ゴールに到達した場合はゲームを終了する
-        console.log("ゴールに到達しました");
+      // 全てのコマンド完了後
+
+      if (turn >= MAX_TURN) {
+        // ゲームを終了する
+        currentRoomSession.room.members.forEach(async (member) => {
+          await lineUtil.sendSimpleTextMessage(
+            member.userId,
+            `ROOM[${currentRoomSession.room.roomCode}] 全てのturnが終了しましたが、ゴールに到達していませんでした。`
+          );
+        });
         const updatedRoomSession =
           await roomSessionRepository.updateRoomSession(
             tx,
@@ -119,18 +202,22 @@ export const roomSessionService = {
             tempLocation.direction,
             GAME_STATUS.COMPLETED
           );
-        currentRoomSession.room.members.forEach(async (member) => {
-          await lineUtil.sendSimpleTextMessage(
-            member.userId,
-            `ROOM[${currentRoomSession.room.roomCode}] TURN[${turn}] GOAL`
-          );
-        });
         return toTRoomSessionFromRoomSessionWithUsers(
-          currentRoomSession,
+          updatedRoomSession,
           currentRoomSession.room,
-          commands
+          currentRoomSession.commands
         );
       } else {
+        // 次のturnを開始できる
+        let specialCellMessage = "";
+        if (isSpecialCellsReached(tempLocation, settingContents)) {
+          const randomKingdomMember = gameUtil.getRandomKingdomMember(
+            currentRoomSession.room.members
+          );
+          if (randomKingdomMember) {
+            specialCellMessage = `\n${randomKingdomMember.role?.roleName}は${randomKingdomMember.user?.displayName}です`;
+          }
+        }
         const updatedRoomSession =
           await roomSessionRepository.updateRoomSession(
             tx,
@@ -143,14 +230,13 @@ export const roomSessionService = {
         currentRoomSession.room.members.forEach(async (member) => {
           await lineUtil.sendSimpleTextMessage(
             member.userId,
-            `ROOM[${currentRoomSession.room.roomCode}] TURN[${turn}] COMPLETED + なんちゃらかんちゃら`
+            `ROOM[${currentRoomSession.room.roomCode}] TURN[${turn}] COMPLETED \n なんちゃらかんちゃら${specialCellMessage}`
           );
         });
-
         return toTRoomSessionFromRoomSessionWithUsers(
           updatedRoomSession,
           currentRoomSession.room,
-          commands
+          currentRoomSession.commands
         );
       }
     });
@@ -235,8 +321,11 @@ export const roomSessionService = {
             roomSessionId: roomSessionId,
             memberId: member.id,
             turn: roomSession.turn,
-          }
+          },
+          roomSession.room.members,
+          member
         );
+        console.log(availableCommands);
         lineUtil.sendAvailableCommandsMessage(user.userId, availableCommands);
       });
     });

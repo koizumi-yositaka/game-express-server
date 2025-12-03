@@ -40,6 +40,8 @@ model RoomMember {
   role      MRole    @relation(fields: [roleId], references: [roleId])
   roleId    Int      @default(0)
 
+  status    Int      @default(0)
+
   joinedAt  DateTime @default(now())
   commands  Command[]
   @@unique([roomId, userId])
@@ -103,7 +105,7 @@ model CommandHistory {
   commandId      Int          @unique
 
   turn           Int
-  processed      Boolean      @default(false)
+  arg            String       @default("")
   createdAt      DateTime     @default(now())
 
   command        Command      @relation(fields: [commandId], references: [id])

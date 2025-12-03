@@ -30,6 +30,7 @@ export type DTORoom = {
 // roomに参加するmember
 export type DTORoomMember = {
   id: number;
+  status: number;
   joinedAt: string;
   user: DTOUser | null;
   role: TRole | null;
@@ -62,6 +63,7 @@ export type DTOCommandHistory = {
   memberId: number;
   commandId: number;
   turn: number;
+  arg: string;
   command: DTOCommand;
 };
 // Lambda用
