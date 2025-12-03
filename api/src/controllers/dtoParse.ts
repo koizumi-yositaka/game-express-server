@@ -87,5 +87,6 @@ export function toTRole(role: TRole): TRole {
     description: role.description,
     imageUrl: role.imageUrl,
     notionUrl: role.notionUrl,
+    group: role.group,
   };
 }
