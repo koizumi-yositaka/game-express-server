@@ -66,7 +66,9 @@ export const lineUtil = {
           const commandButton = structuredClone(
             MESSAGE_TEMPLATE.POSTBACK_COMMAND_BUTTON
           );
-          const dataString = `action=${commandButtonData.action}&formId=${commandButtonData.formId}&roomSessionId=${commandButtonData.roomSessionId}&memberId=${commandButtonData.memberId}&commandType=${commandButtonData.commandType}&turn=${commandButtonData.turn}`;
+          const dataString = commandButtonData.arg
+            ? `action=${commandButtonData.action}&formId=${commandButtonData.formId}&roomSessionId=${commandButtonData.roomSessionId}&memberId=${commandButtonData.memberId}&commandType=${commandButtonData.commandType}&turn=${commandButtonData.turn}&arg=${commandButtonData.arg}`
+            : `action=${commandButtonData.action}&formId=${commandButtonData.formId}&roomSessionId=${commandButtonData.roomSessionId}&memberId=${commandButtonData.memberId}&commandType=${commandButtonData.commandType}&turn=${commandButtonData.turn}`;
           commandButton.action.label = commandButtonData.label;
           commandButton.action.displayText = commandButtonData.displayText;
           commandButton.action.data = dataString;

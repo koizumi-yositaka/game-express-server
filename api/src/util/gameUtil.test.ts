@@ -476,7 +476,7 @@ describe("gameUtil", () => {
 
     const mockGameSetting = {
       roleSetting: {
-        1: {
+        EMPEROR: {
           availableCommands: [
             "SPECIAL",
             "SKIP",
