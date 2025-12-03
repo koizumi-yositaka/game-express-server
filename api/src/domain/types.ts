@@ -44,6 +44,7 @@ export type TCommand = {
   memberId: number;
   commandType: TCommandType;
   processed: boolean;
+  arg: string;
 };
 
 export type TCommandHistory = {
@@ -69,7 +70,7 @@ export type RoomSessionSettingJsonContents = {
   initialCell: [number, number];
   initialDirection: TDirection;
   specialCells: [number, number][];
-  goalCell: [number, number];
+  goalCell: [number, number][];
 };
 
 export const CommandTypeSchema = z.enum([

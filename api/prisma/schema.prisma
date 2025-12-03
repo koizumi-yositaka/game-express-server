@@ -87,6 +87,7 @@ model Command {
 
   commandType    CommandType
   processed      Boolean      @default(false)
+  arg            String       @default("")
   createdAt      DateTime     @default(now())
   processedAt    DateTime?
 

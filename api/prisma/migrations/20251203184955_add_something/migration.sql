@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `Command` ADD COLUMN `arg` VARCHAR(191) NOT NULL DEFAULT '';

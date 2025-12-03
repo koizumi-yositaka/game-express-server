@@ -147,6 +147,7 @@ export function toTCommand(command: Command): TCommand {
     memberId: command.memberId,
     commandType: command.commandType,
     processed: command.processed,
+    arg: command.arg,
   };
 }
 

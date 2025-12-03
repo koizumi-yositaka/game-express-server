@@ -101,8 +101,11 @@ export const roomSessionService = {
       }
       // ゴールに到達したかどうかを判断する
       if (
-        tempLocation.posX === settingContents.goalCell[0] &&
-        tempLocation.posY === settingContents.goalCell[1]
+        settingContents.goalCell.some(
+          (goalCell) =>
+            tempLocation.posX === goalCell[0] &&
+            tempLocation.posY === goalCell[1]
+        )
       ) {
         // ゴールに到達した場合はゲームを終了する
         console.log("ゴールに到達しました");

@@ -25,6 +25,7 @@ export const addCommandsBodySchema = z.object({
     z.object({
       memberId: z.number(),
       commandType: CommandTypeSchema,
+      arg: z.string(),
     })
   ),
 });
@@ -99,6 +100,7 @@ export const roomSessionController = {
         memberId: command.memberId,
         commandType: command.commandType,
         processed: false,
+        arg: command.arg,
       }));
       const result = await roomSessionService.addCommands(
         Number(req.params.roomSessionId),

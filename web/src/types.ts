@@ -62,7 +62,7 @@ export type RoomSessionSettingJsonContents = {
   initialCell: [number, number];
   initialDirection: TDirection;
   specialCells: [number, number][];
-  goalCell: [number, number];
+  goalCell: [number, number][];
 };
 
 // 以下上書き禁止

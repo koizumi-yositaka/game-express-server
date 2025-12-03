@@ -6,7 +6,7 @@ interface GameGridProps {
   direction: TDirection;
   specialCells: [number, number][];
   currentCell: [number, number];
-  goalCell: [number, number];
+  goalCell: [number, number][];
 }
 
 const GameGrid = ({
@@ -45,7 +45,7 @@ const GameGrid = ({
     r === currentCell[0] && c === currentCell[1];
 
   const isGoalCell = (r: number, c: number) =>
-    r === goalCell[0] && c === goalCell[1];
+    goalCell.some(([gr, gc]) => gr === r && gc === c);
 
   return (
     <>

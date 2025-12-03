@@ -53,6 +53,7 @@ export type DTOCommand = {
   memberId: number;
   commandType: TCommandType;
   processed: boolean;
+  arg: string;
 };
 
 export type DTOCommandHistory = {

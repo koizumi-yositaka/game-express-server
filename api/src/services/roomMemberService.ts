@@ -162,6 +162,7 @@ export const roomMemberService = {
         if (member?.role?.roleName) {
           roleSpecialMoveExecutor.executeInitialize(
             member?.role?.roleName as keyof typeof ROLE_NAME_MAP,
+            member,
             roomSession
           );
         } else {

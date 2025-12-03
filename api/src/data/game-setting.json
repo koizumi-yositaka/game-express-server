@@ -1,6 +1,6 @@
 {
   "roleSetting": {
-    "0": {
+    "EMPEROR": {
       "availableCommands": [
         "SPECIAL",
         "SKIP",
@@ -9,14 +9,23 @@
         "TURN_LEFT"
       ]
     },
-    "1": {
+    "DEATH": {
       "availableCommands": ["SPECIAL", "SKIP", "FORWARD", "TURN_RIGHT"]
     },
-    "2": {
+    "HIEROPHANT": {
       "availableCommands": ["SPECIAL", "SKIP", "FORWARD"]
     },
-    "3": {
+    "FOOL": {
       "availableCommands": ["SPECIAL", "SKIP", "TURN_RIGHT", "TURN_LEFT"]
+    },
+    "HIGH_PRIESTESS": {
+      "availableCommands": ["SPECIAL", "SKIP", "TURN_RIGHT", "TURN_LEFT"]
+    },
+    "HERMIT": {
+      "availableCommands": ["SPECIAL", "SKIP"]
+    },
+    "THE_TOWER": {
+      "availableCommands": ["SPECIAL", "SKIP", "TURN_RIGHT"]
     }
   }
 }

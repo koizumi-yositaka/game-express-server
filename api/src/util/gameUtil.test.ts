@@ -81,10 +81,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "TURN_RIGHT",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 3, direction: "N" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -103,10 +104,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "TURN_RIGHT",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 3, direction: "E" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -123,10 +125,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "TURN_RIGHT",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 3, direction: "S" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -143,10 +146,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "TURN_RIGHT",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 3, direction: "W" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -165,10 +169,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "TURN_LEFT",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 3, direction: "N" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -185,10 +190,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "TURN_LEFT",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 3, direction: "W" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -207,10 +213,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "FORWARD",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 3, direction: "N" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -229,10 +236,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "FORWARD",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 3, direction: "S" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -250,10 +258,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "FORWARD",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 3, direction: "E" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -271,10 +280,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "FORWARD",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 3, direction: "W" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -292,10 +302,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "FORWARD",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 0, direction: "N" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -312,10 +323,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "FORWARD",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 6, direction: "S" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -332,10 +344,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "FORWARD",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 6, posY: 3, direction: "E" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -352,10 +365,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "FORWARD",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 0, posY: 3, direction: "W" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -374,10 +388,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "SKIP",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 3, direction: "N" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -402,10 +417,11 @@ describe("gameUtil", () => {
           memberId: 1,
           commandType: "SPECIAL",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 3, direction: "N" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -427,10 +443,11 @@ describe("gameUtil", () => {
           memberId: 999,
           commandType: "SPECIAL",
           processed: false,
+          arg: "",
         };
         const gridInfo = {
           location: { posX: 3, posY: 3, direction: "N" as TDirection },
-          goalCell: [0, 0] as [number, number],
+          goalCell: [[0, 0]] as [number, number][],
           maxX: 7,
           maxY: 7,
         };
@@ -480,6 +497,7 @@ describe("gameUtil", () => {
         roomSessionId: 1,
         memberId: 1,
         turn: 1,
+        arg: "",
       };
 
       const result = await getAvailableCommandsByRole(
@@ -512,6 +530,7 @@ describe("gameUtil", () => {
         roomSessionId: 1,
         memberId: 1,
         turn: 1,
+        arg: "",
       };
 
       const result = await getAvailableCommandsByRole(

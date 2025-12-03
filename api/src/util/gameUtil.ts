@@ -22,7 +22,10 @@ type Location = {
 };
 
 type GameSetting = {
-  roleSetting: Record<number, { availableCommands: TCommandType[] }>;
+  roleSetting: Record<
+    keyof typeof ROLE_NAME_MAP,
+    { availableCommands: TCommandType[] }
+  >;
 };
 
 let cachedGameSetting: GameSetting | null = null;
@@ -31,7 +34,7 @@ export function executeCommand(
   command: TCommand,
   gridInfo: {
     location: Location;
-    goalCell: [number, number];
+    goalCell: [number, number][];
     maxX: number;
     maxY: number;
   },
@@ -128,8 +131,10 @@ export async function getAvailableCommandsByRole(
   // commandType, displayText,labelを確定
   const gameSetting = await importGameSetting();
   const availableCommands =
-    gameSetting.roleSetting[role.roleId].availableCommands;
-  return availableCommands.map((commandType) => {
+    gameSetting.roleSetting[role.roleName as keyof typeof ROLE_NAME_MAP]
+      .availableCommands;
+
+  const commandButtonDataList = availableCommands.map((commandType) => {
     return {
       commandType,
       displayText: COMMAND_BUTTON_DATA_MAP[commandType].displayText,
@@ -139,8 +144,13 @@ export async function getAvailableCommandsByRole(
       roomSessionId: meta.roomSessionId,
       memberId: meta.memberId,
       turn: meta.turn,
+      arg: "",
     };
   });
+  if (role.roleName === "HIEROPHANT") {
+    // TODO protect someone
+  }
+  return commandButtonDataList;
 }
 
 async function importGameSetting(): Promise<GameSetting> {
@@ -178,16 +188,19 @@ function getRoomSettingJsonContents(
   return JSON.parse(jsonString) as RoomSessionSettingJsonContents;
 }
 
-function _getRandomCoordinateOfCorners(size: number): [number, number] {
-  const coordinates: [number, number][] = [
+function _getRandomCoordinateOfCorners(size: number): [number, number][] {
+  // const coordinates: [number, number][] = [
+  //   [0, 0],
+
+  //   [size - 1, size - 1],
+  // ];
+  // const randomCoordinate =
+  //   coordinates[Math.floor(Math.random() * coordinates.length)];
+  // return randomCoordinate;
+  return [
     [0, 0],
-    [0, size - 1],
-    [size - 1, 0],
     [size - 1, size - 1],
   ];
-  const randomCoordinate =
-    coordinates[Math.floor(Math.random() * coordinates.length)];
-  return randomCoordinate;
 }
 
 function _getRandomSecondOuterRingCoordinate(
@@ -233,4 +246,5 @@ export type CommandButtonData = {
   turn: number;
   displayText: string;
   label: string;
+  arg: string;
 };

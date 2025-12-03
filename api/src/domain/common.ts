@@ -68,7 +68,10 @@ const DEFAULT_SETTING: RoomSessionSettingJsonContents = {
     [2, 3],
     [4, 1],
   ],
-  goalCell: [0, 0],
+  goalCell: [
+    [0, 0],
+    [7, 7],
+  ],
 };
 
 export {

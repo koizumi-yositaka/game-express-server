@@ -50,6 +50,7 @@ export function toDTOCommand(command: TCommand): DTOCommand {
     memberId: command.memberId,
     commandType: command.commandType,
     processed: command.processed,
+    arg: command.arg ?? "",
   };
 }
 

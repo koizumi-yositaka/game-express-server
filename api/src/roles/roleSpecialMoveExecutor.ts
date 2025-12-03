@@ -3,7 +3,7 @@ import RoleIF from "./roleIF";
 
 import { ROLE_NAME_MAP } from "../domain/common";
 import Death from "./imp/death";
-import { TRoomSession } from "../domain/types";
+import { TRoomMember, TRoomSession } from "../domain/types";
 
 export const roleSpecialMoveExecutor = {
   executeSpecialMove: (className: keyof typeof ROLE_NAME_MAP): void => {
@@ -12,10 +12,11 @@ export const roleSpecialMoveExecutor = {
   },
   executeInitialize: (
     className: keyof typeof ROLE_NAME_MAP,
+    me: TRoomMember,
     roomSession: TRoomSession
   ): void => {
     const classInstance = new classNameMap[className]();
-    classInstance.executeInitialize(roomSession);
+    classInstance.executeInitialize(me, roomSession);
   },
 };
 
