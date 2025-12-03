@@ -34,6 +34,16 @@ const COMMAND_BUTTON_DATA_MAP: Record<
     displayText: "左を向く",
     label: "左を向く",
   },
+  SPECIAL: {
+    commandType: "SPECIAL",
+    displayText: "特殊",
+    label: "特殊",
+  },
+  SKIP: {
+    commandType: "SKIP",
+    displayText: "スキップ",
+    label: "スキップ",
+  },
 });
 
 const DEFAULT_SETTING: RoomSessionSettingJsonContents = {

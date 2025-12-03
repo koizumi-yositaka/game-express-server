@@ -76,6 +76,8 @@ enum CommandType {
   FORWARD
   TURN_RIGHT
   TURN_LEFT
+  SPECIAL
+  SKIP
 }
 
 model Command {
@@ -90,17 +92,21 @@ model Command {
 
   roomSession    RoomSession  @relation(fields: [roomSessionId], references: [id])
   member         RoomMember   @relation(fields: [memberId], references: [id])
+  history        CommandHistory?
 }
 
 model CommandHistory {
   id             Int          @id @default(autoincrement())
   roomSessionId  Int
   memberId       Int
-  commandId      Int
+  commandId      Int          @unique
 
   turn           Int
   processed      Boolean      @default(false)
   createdAt      DateTime     @default(now())
+
+  command        Command      @relation(fields: [commandId], references: [id])
+
 }
 
 model InvalidatedLineUserForm {

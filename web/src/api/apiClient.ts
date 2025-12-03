@@ -1,5 +1,10 @@
 import axiosInstance from "./axiousInstance";
-import type { DTORoom, DTORoomSession, DTORoomMember } from "@/types";
+import type {
+  DTORoom,
+  DTORoomSession,
+  DTORoomMember,
+  DTOCommandHistory,
+} from "@/types";
 
 export async function healthCheck() {
   try {
@@ -115,6 +120,20 @@ export async function getRoomSessionByRoomId(
     return res.data;
   } catch (error) {
     console.error("getRoomSessionByRoomId error:", error);
+    throw error;
+  }
+}
+
+export async function getCommandHistory(
+  roomSessionId: number
+): Promise<DTOCommandHistory[]> {
+  try {
+    const res = await axiosInstance.get(
+      `/sessions/${roomSessionId}/commandHistory`
+    );
+    return res.data;
+  } catch (error) {
+    console.error("getCommandHistory error:", error);
     throw error;
   }
 }

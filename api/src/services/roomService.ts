@@ -13,6 +13,7 @@ import {
 import { roomSessionService } from "./roomSessionService";
 import { toTRoom, toTRoomFromRoomWithUsers } from "../domain/typeParse";
 import { lineUtil } from "../util/lineUtil";
+import { roomSessionRepository } from "../repos/roomSessionRepository";
 
 const ATTEMPTS_LIMIT = 5;
 
@@ -65,9 +66,11 @@ export const roomService = {
       if (!closedRoom) {
         throw new InternalServerError("Failed to close room");
       }
-      const roomSession = await roomSessionService.getRoomSessionByRoomId(
+      const roomSession = await roomSessionRepository.getRoomSessionByRoomId(
+        tx,
         closedRoom.id
       );
+
       if (roomSession) {
         roomSession.room.members.forEach(async (member) => {
           await lineUtil.sendSimpleTextMessage(

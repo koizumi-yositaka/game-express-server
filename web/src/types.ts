@@ -48,6 +48,15 @@ export type DTOCommand = {
   processed: boolean;
 };
 
+export type DTOCommandHistory = {
+  id: number;
+  roomSessionId: number;
+  memberId: number;
+  commandId: number;
+  turn: number;
+  command: DTOCommand;
+};
+
 export type RoomSessionSettingJsonContents = {
   size: number;
   initialCell: [number, number];
@@ -67,7 +76,12 @@ export type TRole = {
 
 export type TDirection = "N" | "E" | "S" | "W";
 
-export type TCommandType = "FORWARD" | "TURN_RIGHT";
+export type TCommandType =
+  | "SPECIAL"
+  | "SKIP"
+  | "FORWARD"
+  | "TURN_RIGHT"
+  | "TURN_LEFT";
 
 // UI側のType
 export type TConfirmModal = {

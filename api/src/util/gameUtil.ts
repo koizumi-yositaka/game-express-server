@@ -4,6 +4,7 @@ import {
   TDirection,
   TRole,
   RoomSessionSettingJsonContents,
+  TRoomSession,
 } from "../domain/types";
 import { jsonRW } from "./jsonRW";
 import { COMMAND_BUTTON_DATA_MAP, DEFAULT_SETTING } from "../domain/common";
@@ -23,12 +24,16 @@ let cachedGameSetting: GameSetting | null = null;
 
 export function executeCommand(
   command: TCommand,
-  location: Location,
-  goalCell: [number, number],
-  maxX: number,
-  maxY: number
+  gridInfo: {
+    location: Location;
+    goalCell: [number, number];
+    maxX: number;
+    maxY: number;
+  },
+  roomSession: TRoomSession
 ): Location {
   const { commandType } = command;
+  const { location, goalCell, maxX, maxY } = gridInfo;
   let { posX, posY, direction } = location;
 
   if (commandType.startsWith("TURN_")) {
@@ -58,6 +63,11 @@ export function executeCommand(
     }
   } else {
     switch (commandType) {
+      case "SPECIAL":
+        // TODO
+        break;
+      case "SKIP":
+        break;
       case "FORWARD":
         switch (direction) {
           case "N":

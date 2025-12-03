@@ -1,16 +1,22 @@
 {
   "roleSetting": {
     "0": {
-      "availableCommands": ["FORWARD", "TURN_RIGHT", "TURN_LEFT"]
+      "availableCommands": [
+        "SPECIAL",
+        "SKIP",
+        "FORWARD",
+        "TURN_RIGHT",
+        "TURN_LEFT"
+      ]
     },
     "1": {
-      "availableCommands": ["FORWARD", "TURN_RIGHT"]
+      "availableCommands": ["SPECIAL", "SKIP", "FORWARD", "TURN_RIGHT"]
     },
     "2": {
-      "availableCommands": ["FORWARD"]
+      "availableCommands": ["SPECIAL", "SKIP", "FORWARD"]
     },
     "3": {
-      "availableCommands": ["TURN_RIGHT", "TURN_LEFT"]
+      "availableCommands": ["SPECIAL", "SKIP", "TURN_RIGHT", "TURN_LEFT"]
     }
   }
 }

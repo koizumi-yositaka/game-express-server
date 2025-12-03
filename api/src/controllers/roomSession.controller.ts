@@ -9,7 +9,7 @@ import {
   TRoomMember,
 } from "../domain/types";
 import { BadRequestError } from "../error/AppError";
-import { toDTORoomSession } from "./dtoParse";
+import { toDTOCommandHistory, toDTORoomSession } from "./dtoParse";
 
 export const roomIdSchema = z.object({
   roomId: z.string(),
@@ -131,10 +131,28 @@ export const roomSessionController = {
     next: NextFunction
   ) => {
     try {
-      await roomSessionService.sendAvailableCommandsMessage(
+      await roomSessionService.startNextTurn(Number(req.params.roomSessionId));
+      res.status(200).json({ message: "Available commands message sent" });
+    } catch (error) {
+      next(error);
+    }
+  },
+  getCommandHistory: async (
+    req: Request<RoomSessionIdSchema>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const commandHistory = await roomSessionService.getCommandHistory(
         Number(req.params.roomSessionId)
       );
-      res.status(200).json({ message: "Available commands message sent" });
+      res
+        .status(200)
+        .json(
+          commandHistory.map((commandHistory) =>
+            toDTOCommandHistory(commandHistory)
+          )
+        );
     } catch (error) {
       next(error);
     }

@@ -46,6 +46,15 @@ export type TCommand = {
   processed: boolean;
 };
 
+export type TCommandHistory = {
+  id: number;
+  roomSessionId: number;
+  memberId: number;
+  commandId: number;
+  turn: number;
+  command: TCommand;
+};
+
 export type TRole = {
   roleId: number;
   roleName: string;
@@ -62,7 +71,13 @@ export type RoomSessionSettingJsonContents = {
   goalCell: [number, number];
 };
 
-export const CommandTypeSchema = z.enum(["FORWARD", "TURN_RIGHT", "TURN_LEFT"]);
+export const CommandTypeSchema = z.enum([
+  "SPECIAL",
+  "SKIP",
+  "FORWARD",
+  "TURN_RIGHT",
+  "TURN_LEFT",
+]);
 export type TCommandType = z.infer<typeof CommandTypeSchema>;
 
 export const DirectionSchema = z.enum(["N", "E", "S", "W"]);

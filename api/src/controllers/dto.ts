@@ -55,6 +55,14 @@ export type DTOCommand = {
   processed: boolean;
 };
 
+export type DTOCommandHistory = {
+  id: number;
+  roomSessionId: number;
+  memberId: number;
+  commandId: number;
+  turn: number;
+  command: DTOCommand;
+};
 // Lambda用
 
 export type AddCommandResult = {

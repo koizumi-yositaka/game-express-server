@@ -6,6 +6,7 @@ import {
   TRoomSession,
   TCommand,
   RoomSessionSettingJsonContents,
+  TCommandHistory,
 } from "../domain/types";
 import {
   DTORoom,
@@ -13,6 +14,7 @@ import {
   DTOUser,
   DTORoomSession,
   DTOCommand,
+  DTOCommandHistory,
 } from "./dto";
 export function toDTORoomMember(roomMember: TRoomMember): DTORoomMember {
   return {
@@ -51,6 +53,18 @@ export function toDTOCommand(command: TCommand): DTOCommand {
   };
 }
 
+export function toDTOCommandHistory(
+  commandHistory: TCommandHistory
+): DTOCommandHistory {
+  return {
+    id: commandHistory.id,
+    roomSessionId: commandHistory.roomSessionId,
+    memberId: commandHistory.memberId,
+    commandId: commandHistory.commandId,
+    turn: commandHistory.turn,
+    command: toDTOCommand(commandHistory.command),
+  };
+}
 export function toDTORoomSession(roomSession: TRoomSession): DTORoomSession {
   return {
     id: roomSession.id,
@@ -63,6 +77,7 @@ export function toDTORoomSession(roomSession: TRoomSession): DTORoomSession {
     commands: roomSession.commands.map((command) => toDTOCommand(command)),
   };
 }
+
 // 消したい
 export function toTRole(role: TRole): TRole {
   return {

@@ -10,6 +10,7 @@ import SessionLayout from "@/layouts/SessionLayout";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { RequiredAuth } from "@/layouts/RequiredAuth";
 import { LoginPage } from "@/pages/LoginPage";
+import { SessionPublic } from "@/pages/session/SessionPublic";
 
 export default function AppRoutes() {
   return (
@@ -18,6 +19,9 @@ export default function AppRoutes() {
         <Route path="/" element={<Layout />}>
           <Route path="/" element={<Root />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/public">
+            <Route path=":roomSessionId" element={<SessionPublic />} />
+          </Route>
           <Route
             path="rooms"
             element={

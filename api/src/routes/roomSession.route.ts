@@ -37,6 +37,11 @@ router.post(
   validate(addCommandsBodySchema),
   roomSessionController.addCommands
 );
+router.get(
+  "/:roomSessionId/commandHistory",
+  validateParams(roomSessionIdSchema),
+  roomSessionController.getCommandHistory
+);
 // router.post(
 //   "/create/:roomId",
 //   validateParams(roomIdSchema),

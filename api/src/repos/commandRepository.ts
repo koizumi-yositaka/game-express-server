@@ -3,6 +3,13 @@ import { TCommandType } from "../domain/types";
 
 type TxClient = PrismaClient | Prisma.TransactionClient;
 
+export type CommandHistoryWithCommandAndMember =
+  Prisma.CommandHistoryGetPayload<{
+    include: {
+      command: true;
+    };
+  }>;
+
 export const commandRepository = {
   createCommand: async (
     tx: TxClient,
@@ -50,13 +57,16 @@ export const commandRepository = {
     tx: TxClient,
     roomSessionId: number,
     turn?: number
-  ) => {
+  ): Promise<CommandHistoryWithCommandAndMember[]> => {
     const condition = { roomSessionId: roomSessionId };
 
     return await tx.commandHistory.findMany({
       where: {
         ...condition,
         ...(turn ? { turn: turn } : {}),
+      },
+      include: {
+        command: true,
       },
     });
   },

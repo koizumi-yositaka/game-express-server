@@ -5,6 +5,7 @@ import {
   RoomMember,
   RoomSession,
   Command,
+  CommandHistory,
 } from "../generated/prisma/client";
 import {
   TRoom,
@@ -13,10 +14,12 @@ import {
   TRole,
   TRoomSession,
   TCommand,
+  TCommandHistory,
 } from "./types";
 import { RoomWithUsers } from "../repos/roomRepository";
 import { RoomMemberWithUsers } from "../repos/roomMemberRepository";
 import { RoomSessionWithMembersAndCommands } from "../repos/roomSessionRepository";
+import { CommandHistoryWithCommandAndMember } from "../repos/commandRepository";
 
 export function toTRoom(room: Room, members: RoomMember[]): TRoom {
   return {
@@ -143,5 +146,18 @@ export function toTCommand(command: Command): TCommand {
     memberId: command.memberId,
     commandType: command.commandType,
     processed: command.processed,
+  };
+}
+
+export function toTCommandHistory(
+  commandHistory: CommandHistoryWithCommandAndMember
+): TCommandHistory {
+  return {
+    id: commandHistory.id,
+    roomSessionId: commandHistory.roomSessionId,
+    memberId: commandHistory.memberId,
+    commandId: commandHistory.commandId,
+    turn: commandHistory.turn,
+    command: toTCommand(commandHistory.command),
   };
 }

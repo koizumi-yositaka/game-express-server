@@ -1,5 +1,5 @@
 import { roomSessionRepository } from "../repos/roomSessionRepository";
-import { TCommand, TRoomSession } from "../domain/types";
+import { TCommand, TCommandHistory, TRoomSession } from "../domain/types";
 import { prisma } from "../db/prisma";
 import { Prisma } from "../generated/prisma/client";
 import { BadRequestError, NotFoundError } from "../error/AppError";
@@ -11,6 +11,7 @@ import {
 import { gameUtil, getAvailableCommandsByRole } from "../util/gameUtil";
 import { AddCommandResult } from "../controllers/dto";
 import { invalidateLineUserFormRepo } from "../repos/invalidateLineUserFormRepo";
+import logger from "../util/logger";
 import { lineUtil } from "../util/lineUtil";
 import { v4 as uuidv4 } from "uuid";
 import { GAME_STATUS } from "../domain/common";
@@ -77,15 +78,17 @@ export const roomSessionService = {
       const commands = currentRoomSession.commands.filter(
         (command) => !command.processed
       );
-      console.log(`commands: ${commands.length}`);
       for (const command of commands) {
         // コマンドを実行する
         tempLocation = gameUtil.executeCommand(
           command,
-          tempLocation,
-          settingContents.goalCell,
-          settingContents.size,
-          settingContents.size
+          {
+            location: tempLocation,
+            goalCell: settingContents.goalCell,
+            maxX: settingContents.size,
+            maxY: settingContents.size,
+          },
+          toTRoomSessionFromRoomSessionWithMembers(currentRoomSession)
         );
         await commandRepository.updateCommand(tx, command.id, true);
         await commandRepository.createCommandHistory(
@@ -131,7 +134,6 @@ export const roomSessionService = {
             roomSessionId,
             tempLocation.posX,
             tempLocation.posY,
-            // turn + 1,
             turn,
             tempLocation.direction
           );
@@ -204,9 +206,7 @@ export const roomSessionService = {
       };
     });
   },
-  sendAvailableCommandsMessage: async (
-    roomSessionId: number
-  ): Promise<void> => {
+  startNextTurn: async (roomSessionId: number): Promise<void> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const roomSession = await roomSessionRepository.getRoomSession(
         tx,
@@ -238,6 +238,24 @@ export const roomSessionService = {
       });
     });
   },
+  getCommandHistory: async (
+    roomSessionId: number
+  ): Promise<TCommandHistory[]> => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const commandHistory = await commandRepository.getCommandHistory(
+        tx,
+        roomSessionId
+      );
+
+      return commandHistory.map((commandHistory) => {
+        return {
+          ...commandHistory,
+          command: commandHistory.command,
+        };
+      });
+    });
+  },
+
   // createRoomSession: async (roomId: number): Promise<TRoomSession> => {
   //   return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
   //     const existingRoomSession =
