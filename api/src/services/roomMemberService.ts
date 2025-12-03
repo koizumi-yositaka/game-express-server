@@ -20,13 +20,14 @@ import {
   NotFoundError,
 } from "../error/AppError";
 import { TRoomMember, TRoomSession } from "../domain/types";
-import { GAME_STATUS, IMAGE_PATH_MAP } from "../domain/common";
+import { GAME_STATUS, IMAGE_PATH_MAP, ROLE_NAME_MAP } from "../domain/common";
 import { lineUtil } from "../util/lineUtil";
 import { roleMasterService } from "./roleMasterService";
 import { RoomMemberWithUsers } from "../repos/roomMemberRepository";
 import { RoomWithUsers } from "../repos/roomRepository";
 import { roomSessionRepository } from "../repos/roomSessionRepository";
 import { toTRoomSessionFromRoomSessionWithMembers } from "../domain/typeParse";
+import { roleSpecialMoveExecutor } from "../roles/roleSpecialMoveExecutor";
 
 export const roomMemberService = {
   joinRoom: async (roomCode: string, userId: string): Promise<TRoom> => {
@@ -156,6 +157,17 @@ export const roomMemberService = {
       if (!roomSession) {
         throw new NotFoundError("Room session 作成失敗");
       }
+
+      roomSession.room.members.forEach((member) => {
+        if (member?.role?.roleName) {
+          roleSpecialMoveExecutor.executeInitialize(
+            member?.role?.roleName as keyof typeof ROLE_NAME_MAP,
+            roomSession
+          );
+        } else {
+          throw new InternalServerError("Role name is required");
+        }
+      });
       return toTRoomSessionFromRoomSessionWithMembers(roomSession);
 
       // room = await roomRepository.getRoomById(tx, room.id);

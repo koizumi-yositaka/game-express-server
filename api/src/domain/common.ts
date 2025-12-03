@@ -46,6 +46,20 @@ const COMMAND_BUTTON_DATA_MAP: Record<
   },
 });
 
+export const ROLE_NAME_MAP = {
+  EMPEROR: "EMPEROR",
+  DEATH: "DEATH",
+  HIEROPHANT: "HIEROPHANT",
+  FOOL: "FOOL",
+  HIGH_PRIESTESS: "HIGH_PRIESTESS",
+  HERMIT: "HERMIT",
+  THE_TOWER: "THE_TOWER",
+};
+export const ROLE_GROUP_MAP = Object.freeze({
+  KINGDOM: 1,
+  HELL: 2,
+  TOWER: 3,
+});
 const DEFAULT_SETTING: RoomSessionSettingJsonContents = {
   size: 7,
   initialCell: [3, 3],

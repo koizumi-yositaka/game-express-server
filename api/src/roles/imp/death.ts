@@ -1,6 +1,13 @@
+import RoleIF from "../roleIF";
+import { TRoomSession } from "../../domain/types";
+
 class Death implements RoleIF {
-  executeTurn(): void {
-    console.log("Death executeTurn");
+  executeSpecialMove(): void {
+    console.log("Death executeSpecialMove");
+  }
+  executeInitialize(roomSession: TRoomSession): void {
+    console.log("Death executeInitialize");
+    return;
   }
 }
 

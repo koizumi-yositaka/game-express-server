@@ -62,6 +62,7 @@ export type TRole = {
   description: string;
   imageUrl: string;
   notionUrl: string;
+  group: number;
 };
 export type RoomSessionSettingJsonContents = {
   size: number;

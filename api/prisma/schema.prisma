@@ -122,6 +122,7 @@ model MRole {
   description String
   imageUrl    String
   notionUrl   String        @default("")
+  group       Int           @default(0)
 
   members     RoomMember[]
 }

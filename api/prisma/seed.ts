@@ -10,6 +10,7 @@ async function main() {
       description: "皇帝",
       imageUrl: "https://d1z1o17j25srna.cloudfront.net/emperor.png",
       notionUrl: "https://flashy-visitor-ec3.notion.site/emperor",
+      group: 1,
     },
     {
       roleId: 1,
@@ -18,6 +19,7 @@ async function main() {
       description: "死神",
       imageUrl: "https://d1z1o17j25srna.cloudfront.net/death.png",
       notionUrl: "https://flashy-visitor-ec3.notion.site/death",
+      group: 2,
     },
     {
       roleId: 2,
@@ -26,6 +28,7 @@ async function main() {
       description: "祭司",
       imageUrl: "https://d1z1o17j25srna.cloudfront.net/hierophant.png",
       notionUrl: "https://flashy-visitor-ec3.notion.site/hierophant",
+      group: 1,
     },
     {
       roleId: 3,
@@ -34,6 +37,7 @@ async function main() {
       description: "愚者",
       imageUrl: "https://d1z1o17j25srna.cloudfront.net/fool.png",
       notionUrl: "https://flashy-visitor-ec3.notion.site/fool",
+      group: 1,
     },
     {
       roleId: 4,
@@ -42,6 +46,7 @@ async function main() {
       description: "女教皇",
       imageUrl: "https://d1z1o17j25srna.cloudfront.net/highpriestess.png",
       notionUrl: "https://flashy-visitor-ec3.notion.site/highpriestess",
+      group: 1,
     },
     {
       roleId: 5,
@@ -50,6 +55,7 @@ async function main() {
       description: "隠者",
       imageUrl: "https://d1z1o17j25srna.cloudfront.net/hermit.png",
       notionUrl: "https://flashy-visitor-ec3.notion.site/hermit",
+      group: 1,
     },
     {
       roleId: 6,
@@ -58,6 +64,7 @@ async function main() {
       description: "塔",
       imageUrl: "https://d1z1o17j25srna.cloudfront.net/tower.png",
       notionUrl: "https://flashy-visitor-ec3.notion.site/tower",
+      group: 3,
     },
   ];
 
@@ -70,6 +77,7 @@ async function main() {
         description: r.description,
         imageUrl: r.imageUrl,
         notionUrl: r.notionUrl,
+        group: r.group,
       },
       create: r,
     });

@@ -7,9 +7,14 @@ import {
   TRoomSession,
 } from "../domain/types";
 import { jsonRW } from "./jsonRW";
-import { COMMAND_BUTTON_DATA_MAP, DEFAULT_SETTING } from "../domain/common";
+import {
+  COMMAND_BUTTON_DATA_MAP,
+  DEFAULT_SETTING,
+  ROLE_NAME_MAP,
+} from "../domain/common";
 import path from "path";
-
+import { NotFoundError } from "../error/AppError";
+import { roleSpecialMoveExecutor } from "../roles/roleSpecialMoveExecutor";
 type Location = {
   posX: number;
   posY: number;
@@ -64,7 +69,15 @@ export function executeCommand(
   } else {
     switch (commandType) {
       case "SPECIAL":
-        // TODO
+        const role = roomSession.room.members.find(
+          (member) => member.id === command.memberId
+        );
+        if (!role) {
+          throw new NotFoundError("Role not found");
+        }
+        roleSpecialMoveExecutor.executeSpecialMove(
+          role.role?.roleName as keyof typeof ROLE_NAME_MAP
+        );
         break;
       case "SKIP":
         break;

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `MRole` ADD COLUMN `group` INTEGER NOT NULL DEFAULT 0;
