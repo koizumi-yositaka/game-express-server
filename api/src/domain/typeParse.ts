@@ -64,6 +64,7 @@ export function toTRoomMember(roomMember: RoomMember): TRoomMember {
     userId: roomMember.userId,
     roleId: roomMember.roleId,
     status: roomMember.status,
+    sort: roomMember.sort,
     joinedAt: roomMember.joinedAt,
   };
 }
@@ -77,6 +78,7 @@ export function toTRoomMemberFromRoomMemberWithUsers(
     userId: roomMember.user.userId,
     roleId: roomMember.role.roleId,
     status: roomMember.status,
+    sort: roomMember.sort,
     joinedAt: roomMember.joinedAt,
     user: toTUser(roomMember.user),
     role: toTRole(roomMember.role),

@@ -29,9 +29,13 @@ export const addCommandsBodySchema = z.object({
     })
   ),
 });
+export const gameCompleteBodySchema = z.object({
+  result: z.number(),
+});
 export type RoomIdSchema = z.infer<typeof roomIdSchema>;
 export type RoomSessionIdSchema = z.infer<typeof roomSessionIdSchema>;
 export type AddCommandsBody = z.infer<typeof addCommandsBodySchema>;
+export type GameCompleteBody = z.infer<typeof gameCompleteBodySchema>;
 export const roomSessionController = {
   getRoomSessionByRoomId: async (
     req: Request<RoomIdSchema>,
@@ -155,6 +159,22 @@ export const roomSessionController = {
             toDTOCommandHistory(commandHistory)
           )
         );
+    } catch (error) {
+      next(error);
+    }
+  },
+  gameComplete: async (
+    req: Request<RoomSessionIdSchema, unknown, GameCompleteBody>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const { result } = req.body;
+      await roomSessionService.gameComplete(
+        Number(req.params.roomSessionId),
+        result
+      );
+      res.status(200).json({ message: "Game completed" });
     } catch (error) {
       next(error);
     }

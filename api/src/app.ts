@@ -8,17 +8,17 @@ import pinoHttp from "pino-http";
 import logger from "./util/logger";
 const app = express();
 
-app.use(
-  pinoHttp({
-    logger,
-    // 必要ならログ内容をカスタマイズ
-    customLogLevel: (req, res, err) => {
-      if (err || res.statusCode >= 500) return "error";
-      if (res.statusCode >= 400) return "warn";
-      return "info";
-    },
-  })
-);
+// app.use(
+//   pinoHttp({
+//     logger,
+//     // 必要ならログ内容をカスタマイズ
+//     customLogLevel: (req, res, err) => {
+//       if (err || res.statusCode >= 500) return "error";
+//       if (res.statusCode >= 400) return "warn";
+//       return "info";
+//     },
+//   })
+// );
 app.use(cors());
 app.use(express.json());
 

@@ -42,6 +42,8 @@ model RoomMember {
 
   status    Int      @default(0)
 
+  sort      Int      @default(0)    
+
   joinedAt  DateTime @default(now())
   commands  Command[]
   @@unique([roomId, userId])

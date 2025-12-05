@@ -4,8 +4,9 @@ export type DTORoomSession = {
   posX: number;
   posY: number;
   direction: TDirection;
-  turn: number;
   setting: RoomSessionSettingJsonContents;
+  turn: number;
+  status: number;
   room: DTORoom;
   commands: DTOCommand[];
 };
@@ -23,6 +24,8 @@ export type DTORoom = {
 // roomに参加するmember
 export type DTORoomMember = {
   id: number;
+  sort: number;
+  status: number;
   joinedAt: string;
   user: DTOUser | null;
   role: TRole | null;
@@ -46,6 +49,7 @@ export type DTOCommand = {
   memberId: number;
   commandType: TCommandType;
   processed: boolean;
+  arg: string;
 };
 
 export type DTOCommandHistory = {
@@ -54,6 +58,7 @@ export type DTOCommandHistory = {
   memberId: number;
   commandId: number;
   turn: number;
+  arg: string;
   command: DTOCommand;
 };
 
@@ -72,6 +77,8 @@ export type TRole = {
   priority: number;
   description: string;
   imageUrl: string;
+  notionUrl: string;
+  group: number;
 };
 
 export type TDirection = "N" | "E" | "S" | "W";

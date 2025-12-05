@@ -137,3 +137,14 @@ export async function getCommandHistory(
     throw error;
   }
 }
+export async function gameComplete(
+  roomSessionId: number,
+  result: number
+): Promise<void> {
+  try {
+    await axiosInstance.post(`/sessions/${roomSessionId}/complete`, { result });
+  } catch (error) {
+    console.error("gameComplete error:", error);
+    throw error;
+  }
+}

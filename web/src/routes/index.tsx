@@ -11,6 +11,8 @@ import { AuthProvider } from "@/contexts/AuthContext";
 import { RequiredAuth } from "@/layouts/RequiredAuth";
 import { LoginPage } from "@/pages/LoginPage";
 import { SessionPublic } from "@/pages/session/SessionPublic";
+import { SessionComplete } from "@/pages/session/SessionComplete";
+import { SessionGameResult } from "@/pages/session/SessionGameResult";
 
 export default function AppRoutes() {
   return (
@@ -44,6 +46,11 @@ export default function AppRoutes() {
             }
           >
             <Route path=":roomSessionId" element={<SessionDetail />} />
+            <Route
+              path=":roomSessionId/complete"
+              element={<SessionComplete />}
+            />
+            <Route path="result" element={<SessionGameResult />} />
           </Route>
         </Route>
       </Routes>

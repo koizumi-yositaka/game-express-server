@@ -9,6 +9,8 @@ import { RoomMemberList } from "@/components/features/roomSession/RoomMemberList
 import { useState } from "react";
 import { ReceiptCommandList } from "@/components/features/roomSession/ReceiptCommandList";
 import { useLoading } from "@/contexts/LoadingContext";
+import { GAME_STATUS } from "@/common";
+import { SessionFinished } from "@/components/features/roomSession/SessionFinished";
 
 // まだ実行されていないコマンドのあるメンバーかどうかを判定
 const isCommandReceipt = (commands: DTOCommand[], memberId: number) => {
@@ -87,6 +89,13 @@ const SessionDetail = () => {
 
   if (!sessionInfo) {
     return <div className="p-4">部屋情報が取得できませんでした</div>;
+  }
+
+  if (
+    sessionInfo.status === GAME_STATUS.COMPLETED_GOAL ||
+    sessionInfo.status === GAME_STATUS.COMPLETED_NOT_GOAL
+  ) {
+    return <SessionFinished roomSessionId={Number(roomSessionId)} />;
   }
 
   return (

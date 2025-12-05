@@ -9,6 +9,7 @@ import {
   roomIdSchema,
   roomSessionController,
   addCommandsBodySchema,
+  gameCompleteBodySchema,
 } from "../controllers/roomSession.controller";
 
 const router = Router();
@@ -41,6 +42,11 @@ router.get(
   "/:roomSessionId/commandHistory",
   validateParams(roomSessionIdSchema),
   roomSessionController.getCommandHistory
+);
+router.post(
+  "/:roomSessionId/complete",
+  validate(gameCompleteBodySchema),
+  roomSessionController.gameComplete
 );
 // router.post(
 //   "/create/:roomId",

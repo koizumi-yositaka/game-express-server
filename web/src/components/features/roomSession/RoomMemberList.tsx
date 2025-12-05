@@ -26,28 +26,32 @@ export const RoomMemberList = ({
         </p>
       ) : (
         <ul className="space-y-1 text-sm">
-          {roomSession.room.members.map((member) => (
-            <li
-              key={member.id}
-              className="flex items-center justify-between rounded border px-3 py-1"
-            >
-              <span className="font-mono">
-                {member.user?.displayName || member.user?.userId}
-              </span>
-              {IS_DEBUG && (
-                <span className="text-xs text-gray-500">
-                  {member.role?.roleName + "  " + member.id}
+          {roomSession.room.members
+            .sort((a, b) => a.sort - b.sort)
+            .map((member) => (
+              <li
+                key={member.id}
+                className="flex items-center justify-between rounded border px-3 py-1"
+              >
+                <span className="font-mono">
+                  {member.user?.displayName || member.user?.userId}
                 </span>
-              )}
-              {isCommandReceipt(roomSession.commands, member.id) ? (
-                <span className="text-xs text-green-500">Command Received</span>
-              ) : (
-                <span className="text-xs text-red-500">
-                  Command Not Received
-                </span>
-              )}
-            </li>
-          ))}
+                {IS_DEBUG && (
+                  <span className="text-xs text-gray-500">
+                    {member.role?.roleName + "  " + member.id}
+                  </span>
+                )}
+                {isCommandReceipt(roomSession.commands, member.id) ? (
+                  <span className="text-xs text-green-500">
+                    Command Received
+                  </span>
+                ) : (
+                  <span className="text-xs text-red-500">
+                    Command Not Received
+                  </span>
+                )}
+              </li>
+            ))}
         </ul>
       )}
     </>

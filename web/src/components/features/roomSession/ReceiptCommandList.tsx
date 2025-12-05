@@ -1,5 +1,5 @@
 import type { DTOCommand, DTORoomSession } from "@/types";
-
+import { ROLE_GROUP_MAP } from "@/common";
 export const ReceiptCommandList = ({
   roomSession,
   receiptCommandList,
@@ -25,11 +25,11 @@ export const ReceiptCommandList = ({
               >
                 <span className="font-mono">{member.role?.roleName}</span>
                 <span className="text-xs text-red-500">
-                  {
-                    receiptCommandList.find(
-                      (command) => command.memberId === member.id
-                    )?.commandType
-                  }
+                  {member.role?.group === ROLE_GROUP_MAP.KINGDOM
+                    ? receiptCommandList.find(
+                        (command) => command.memberId === member.id
+                      )?.commandType
+                    : ""}
                 </span>
               </li>
             ))}

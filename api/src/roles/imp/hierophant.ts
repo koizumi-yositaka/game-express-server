@@ -18,6 +18,9 @@ class Hierophant implements RoleIF {
     if (!member) {
       throw new Error("Member not found");
     }
+    if (member.status === ROOM_MEMBER_STATUS.SKILL_USED) {
+      return;
+    }
     await roomMemberRepository.updateRoomMemberStatus(
       tx,
       roomSession.roomId,

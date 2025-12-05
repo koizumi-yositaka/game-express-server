@@ -105,6 +105,15 @@ export const roomMemberService = {
         room.id
       );
 
+      gameUtil.shuffleArray(roomMembers).forEach(async (member, index) => {
+        await roomMemberRepository.updateRoomMemberSort(
+          tx,
+          room.id,
+          member.userId,
+          index
+        );
+      });
+
       // 役割を割り当てる
       const assignedRoles = await assignRoles(roomMembers);
 
@@ -139,7 +148,7 @@ export const roomMemberService = {
         }
       });
 
-      // 10秒待つ
+      // 3秒待つ
       await new Promise((resolve) => setTimeout(resolve, 3000));
       // 初期設定
       const initailSetting = gameUtil.createGameSetting();

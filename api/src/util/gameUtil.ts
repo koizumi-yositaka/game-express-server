@@ -178,7 +178,9 @@ export async function getAvailableCommandsByRole(
   });
 
   // BLOCKされている場合はSKIPのみ
+  console.log("me.status", me.user?.displayName, me.status);
   if (me.status === ROOM_MEMBER_STATUS.BLOCKED) {
+    console.log("BLOCKされている場合はSKIPのみ");
     commandButtonDataList = commandButtonDataList.filter(
       (command) => command.commandType === "SKIP"
     );
@@ -359,7 +361,10 @@ function roomSessionChecker(roomSession: RoomSessionWithMembersAndCommands) {
     throw new BadRequestError("Room is not Open");
   }
 
-  if (roomSession.status === GAME_STATUS.COMPLETED) {
+  if (
+    roomSession.status === GAME_STATUS.COMPLETED_GOAL ||
+    roomSession.status === GAME_STATUS.COMPLETED_NOT_GOAL
+  ) {
     throw new BadRequestError("Game is completed");
   }
 }

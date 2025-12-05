@@ -53,6 +53,7 @@ describe("gameUtil", () => {
             id: m.id,
             roomId: 1,
             userId: "user1",
+            sort: 0,
             roleId: 1,
             status: 0,
             joinedAt: new Date(),
@@ -479,6 +480,7 @@ describe("gameUtil", () => {
       userId: "user1",
       roleId: 1,
       status: 0,
+      sort: 0,
       joinedAt: new Date(),
       role: mockRole,
     };
@@ -491,6 +493,7 @@ describe("gameUtil", () => {
         userId: "user2",
         roleId: 2,
         status: 0,
+        sort: 1,
         joinedAt: new Date(),
         role: {
           roleId: 2,

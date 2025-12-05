@@ -20,8 +20,16 @@ import { invalidateLineUserFormRepo } from "../repos/invalidateLineUserFormRepo"
 import logger from "../util/logger";
 import { lineUtil } from "../util/lineUtil";
 import { v4 as uuidv4 } from "uuid";
-import { GAME_STATUS, ROOM_MEMBER_STATUS } from "../domain/common";
+import {
+  GAME_RESULT_MAP,
+  GAME_STATUS,
+  ROLE_GROUP_MAP,
+  ROLE_NAME_MAP,
+  ROOM_MEMBER_STATUS,
+} from "../domain/common";
 import { roomMemberRepository } from "../repos/roomMemberRepository";
+import { roomService } from "./roomService";
+import { roomRepository } from "../repos/roomRepository";
 
 const MAX_TURN = 5;
 function isGoalReached(
@@ -101,10 +109,22 @@ export const roomSessionService = {
         throw new NotFoundError("Room session not found");
       }
       gameUtil.roomSessionChecker(currentRoomSession);
+      // BLOCKされているメンバーのblockを解除
+      currentRoomSession.room.members
+        .filter((member) => member.status === ROOM_MEMBER_STATUS.BLOCKED)
+        .forEach(async (member) => {
+          await roomMemberRepository.updateRoomMemberStatus(
+            tx,
+            currentRoomSession.roomId,
+            member.userId,
+            ROOM_MEMBER_STATUS.ACTIVE
+          );
+        });
       let { posX, posY, direction, turn, setting } = currentRoomSession;
       let tempLocation = { posX, posY, direction };
       const settingContents = gameUtil.getRoomSettingJsonContents(setting);
 
+      // 今回実行されるコマンド
       const targetCommands = currentRoomSession.commands.filter(
         (command) => !command.processed
       );
@@ -123,16 +143,17 @@ export const roomSessionService = {
       logger.info("特殊コマンドの実行");
 
       // 特殊コマンドを実行する優先順位
-      const roomMemberOrder = currentRoomSession.room.members
-        .sort((a, b) => a.role?.priority! - b.role?.priority!)
+      const specialCommandOrder = currentRoomSession.room.members
+        .sort((a, b) => b.role?.priority! - a.role?.priority!)
         .map((member) => member.id);
 
       const sortedSpecialCommands = specialCommands.sort(
         (a, b) =>
-          roomMemberOrder.indexOf(a.memberId) -
-          roomMemberOrder.indexOf(b.memberId)
+          specialCommandOrder.indexOf(a.memberId) -
+          specialCommandOrder.indexOf(b.memberId)
       );
       for (const command of sortedSpecialCommands) {
+        logger.info(`特殊コマンドの実行: ${command.memberId}`);
         await gameUtil.executeSpecialCommand(
           command,
           {
@@ -156,7 +177,18 @@ export const roomSessionService = {
         );
       }
       logger.info("通常コマンドの実行");
-      for (const command of normalCommands) {
+      // 通常コマンドを実行する優先順位
+      const normalCommandOrder = currentRoomSession.room.members
+        .sort((a, b) => a.sort - b.sort)
+        .map((member) => member.id);
+
+      const sortedNormalCommands = normalCommands.sort(
+        (a, b) =>
+          normalCommandOrder.indexOf(a.memberId) -
+          normalCommandOrder.indexOf(b.memberId)
+      );
+      for (const command of sortedNormalCommands) {
+        logger.info(`通常コマンドの実行: ${command.memberId}`);
         // コマンドを実行する
         tempLocation = gameUtil.executeCommand(
           command,
@@ -187,7 +219,7 @@ export const roomSessionService = {
             tempLocation.posY,
             turn,
             tempLocation.direction,
-            GAME_STATUS.COMPLETED
+            GAME_STATUS.COMPLETED_GOAL
           );
           currentRoomSession.room.members.forEach(async (member) => {
             await lineUtil.sendSimpleTextMessage(
@@ -201,18 +233,6 @@ export const roomSessionService = {
       }
       // 全てのコマンド完了後
       if (!isGoalReachedFlg) {
-        // BLOCKされているメンバーのblockを解除
-        currentRoomSession.room.members
-          .filter((member) => member.status === ROOM_MEMBER_STATUS.BLOCKED)
-          .forEach(async (member) => {
-            await roomMemberRepository.updateRoomMemberStatus(
-              tx,
-              currentRoomSession.roomId,
-              member.userId,
-              ROOM_MEMBER_STATUS.ACTIVE
-            );
-          });
-
         if (turn >= MAX_TURN) {
           // ゲームを終了する
           currentRoomSession.room.members.forEach(async (member) => {
@@ -228,7 +248,7 @@ export const roomSessionService = {
             tempLocation.posY,
             turn,
             tempLocation.direction,
-            GAME_STATUS.COMPLETED
+            GAME_STATUS.COMPLETED_NOT_GOAL
           );
         } else {
           // 次のturnを開始できる
@@ -361,8 +381,11 @@ export const roomSessionService = {
           roomSession.room.members,
           member
         );
-        console.log(availableCommands);
-        lineUtil.sendAvailableCommandsMessage(user.userId, availableCommands);
+
+        await lineUtil.sendAvailableCommandsMessage(
+          user.userId,
+          availableCommands
+        );
       });
     });
   },
@@ -380,6 +403,58 @@ export const roomSessionService = {
           ...commandHistory,
           command: commandHistory.command,
         };
+      });
+    });
+  },
+  gameComplete: async (
+    roomSessionId: number,
+    result: number
+  ): Promise<void> => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const roomSession = await roomSessionRepository.getRoomSession(
+        tx,
+        roomSessionId
+      );
+      if (!roomSession) {
+        throw new NotFoundError("Room session not found");
+      }
+
+      roomSession.room.members.forEach(async (member) => {
+        let message = "";
+        switch (result) {
+          case GAME_RESULT_MAP.KINGDOM_WIN:
+            if (member.role?.group === ROLE_GROUP_MAP.KINGDOM) {
+              message = "おめでとうございます！";
+            } else {
+              message = "ざんねんでした";
+            }
+            message += "\nキングダムの勝利です";
+            break;
+          case GAME_RESULT_MAP.HELL_WIN:
+            if (member.role?.group === ROLE_GROUP_MAP.HELL) {
+              message = "おめでとうございます！";
+            } else {
+              message = "ざんねんでした";
+            }
+            message += "\nヘルの勝利です";
+            break;
+          case GAME_RESULT_MAP.TOWER_WIN:
+            if (member.role?.group === ROLE_GROUP_MAP.TOWER) {
+              message = "おめでとうございます！";
+            } else {
+              message = "ざんねんでした";
+            }
+            message += "\n塔の勝利です";
+            break;
+        }
+        await lineUtil.sendSimpleTextMessage(
+          member.userId,
+          `ROOM[${roomSession.room.roomCode}] ${message}`
+        );
+      });
+
+      await roomRepository.updateRoom(tx, roomSession.room.id, {
+        openFlg: false,
       });
     });
   },

@@ -31,6 +31,7 @@ export type DTORoom = {
 // roomに参加するmember
 export type DTORoomMember = {
   id: number;
+  sort: number;
   status: number;
   joinedAt: string;
   user: DTOUser | null;

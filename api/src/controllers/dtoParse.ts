@@ -19,6 +19,7 @@ import {
 export function toDTORoomMember(roomMember: TRoomMember): DTORoomMember {
   return {
     id: roomMember.id,
+    sort: roomMember.sort,
     status: roomMember.status,
     joinedAt: roomMember.joinedAt.toISOString(),
     user: roomMember.user ? toDTOUser(roomMember.user) : null,

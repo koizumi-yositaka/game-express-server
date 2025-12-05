@@ -3,7 +3,8 @@ import { RoomSessionSettingJsonContents, TCommandType } from "./types";
 const GAME_STATUS = Object.freeze({
   NOT_STARTED: 0,
   IN_PROGRESS: 1,
-  COMPLETED: 2,
+  COMPLETED_GOAL: 2,
+  COMPLETED_NOT_GOAL: 3,
 });
 
 const IMAGE_PATH_MAP = Object.freeze({
@@ -108,16 +109,17 @@ const DEFAULT_SETTING: RoomSessionSettingJsonContents = {
   ],
 };
 
-export const ROOM_SESSION_STATUS = Object.freeze({
-  NOT_STARTED: 2,
-});
-
 export const ROOM_MEMBER_STATUS = Object.freeze({
   ACTIVE: 0,
   SKILL_USED: 1,
   BLOCKED: 2,
 });
 
+export const GAME_RESULT_MAP = Object.freeze({
+  KINGDOM_WIN: 1,
+  HELL_WIN: 2,
+  TOWER_WIN: 3,
+});
 export {
   GAME_STATUS,
   IMAGE_PATH_MAP,

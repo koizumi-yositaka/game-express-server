@@ -21,6 +21,7 @@ export type TRoomMember = {
   userId: string;
   roleId: number;
   status: number;
+  sort: number;
   joinedAt: Date;
   user?: TUser;
   role?: TRole;
