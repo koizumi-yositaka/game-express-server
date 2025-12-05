@@ -1,6 +1,8 @@
 import type { DTOCommand, DTORoomSession } from "@/types";
 import { useCallback } from "react";
 
+const IS_DEBUG = true;
+
 export const RoomMemberList = ({
   roomSession,
 }: {
@@ -32,6 +34,11 @@ export const RoomMemberList = ({
               <span className="font-mono">
                 {member.user?.displayName || member.user?.userId}
               </span>
+              {IS_DEBUG && (
+                <span className="text-xs text-gray-500">
+                  {member.role?.roleName + "  " + member.id}
+                </span>
+              )}
               {isCommandReceipt(roomSession.commands, member.id) ? (
                 <span className="text-xs text-green-500">Command Received</span>
               ) : (

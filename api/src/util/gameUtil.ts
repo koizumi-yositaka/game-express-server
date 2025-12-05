@@ -8,15 +8,17 @@ import {
   TRoomMember,
 } from "../domain/types";
 import { jsonRW } from "./jsonRW";
+import { RoomSessionWithMembersAndCommands } from "../repos/roomSessionRepository";
 import {
   COMMAND_BUTTON_DATA_MAP,
   DEFAULT_SETTING,
   ROLE_NAME_MAP,
   ROOM_MEMBER_STATUS,
   SPECIAL_COMMAND_MAP,
+  GAME_STATUS,
 } from "../domain/common";
 import path from "path";
-import { NotFoundError } from "../error/AppError";
+import { BadRequestError, NotFoundError } from "../error/AppError";
 import { roleSpecialMoveExecutor } from "../roles/roleSpecialMoveExecutor";
 import { Prisma } from "../generated/prisma/client";
 import { roleMasterService } from "../services/roleMasterService";
@@ -309,10 +311,6 @@ function assignRoles(
   const role_DEATH = roles.find((role) => role.roleName === "DEATH");
   const role_HIEROPHANT = roles.find((role) => role.roleName === "HIEROPHANT");
   const role_FOOL = roles.find((role) => role.roleName === "FOOL");
-  const role_HIGH_PRIESTESS = roles.find(
-    (role) => role.roleName === "HIGH_PRIESTESS"
-  );
-  const role_HERMIT = roles.find((role) => role.roleName === "HERMIT");
   const role_THE_TOWER = roles.find((role) => role.roleName === "THE_TOWER");
   const role_SUN = roles.find((role) => role.roleName === "SUN");
   const role_MOON = roles.find((role) => role.roleName === "MOON");
@@ -321,8 +319,6 @@ function assignRoles(
     !role_DEATH ||
     !role_HIEROPHANT ||
     !role_FOOL ||
-    !role_HIGH_PRIESTESS ||
-    !role_HERMIT ||
     !role_THE_TOWER ||
     !role_SUN ||
     !role_MOON
@@ -344,6 +340,7 @@ function assignRoles(
   }
   resultMembers.forEach((member, index) => {
     member.roleId = assignedRoles[index].roleId;
+    member.role = assignedRoles[index];
   });
   return resultMembers;
 }
@@ -356,6 +353,16 @@ function shuffleArray<T>(array: T[]): T[] {
   console.log("shuffledArray", arr);
   return arr;
 }
+
+function roomSessionChecker(roomSession: RoomSessionWithMembersAndCommands) {
+  if (!roomSession.room.openFlg) {
+    throw new BadRequestError("Room is not Open");
+  }
+
+  if (roomSession.status === GAME_STATUS.COMPLETED) {
+    throw new BadRequestError("Game is completed");
+  }
+}
 export const gameUtil = {
   DEFAULT_SETTING,
   executeCommand,
@@ -365,6 +372,7 @@ export const gameUtil = {
   getRoomSettingJsonContents,
   assignRoles,
   shuffleArray,
+  roomSessionChecker,
 };
 
 // buttonに必要なデータ

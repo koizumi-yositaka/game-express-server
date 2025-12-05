@@ -92,6 +92,7 @@ export const roomSessionService = {
   },
   reflectCommands: async (roomSessionId: number): Promise<TRoomSession> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      let isGoalReachedFlg = false;
       const currentRoomSession = await roomSessionRepository.getRoomSession(
         tx,
         roomSessionId
@@ -99,15 +100,20 @@ export const roomSessionService = {
       if (!currentRoomSession) {
         throw new NotFoundError("Room session not found");
       }
+      gameUtil.roomSessionChecker(currentRoomSession);
       let { posX, posY, direction, turn, setting } = currentRoomSession;
       let tempLocation = { posX, posY, direction };
       const settingContents = gameUtil.getRoomSettingJsonContents(setting);
+
+      const targetCommands = currentRoomSession.commands.filter(
+        (command) => !command.processed
+      );
       // 特殊コマンドと通常コマンドを取得する
-      const specialCommands = currentRoomSession.commands.filter(
+      const specialCommands = targetCommands.filter(
         (command) => command.commandType === "SPECIAL"
       );
-      const normalCommands = currentRoomSession.commands.filter(
-        (command) => !command.processed && command.commandType !== "SPECIAL"
+      const normalCommands = targetCommands.filter(
+        (command) => command.commandType !== "SPECIAL"
       );
 
       // TODO COMMANDの実行順序の確認
@@ -121,7 +127,12 @@ export const roomSessionService = {
         .sort((a, b) => a.role?.priority! - b.role?.priority!)
         .map((member) => member.id);
 
-      for (const command of specialCommands) {
+      const sortedSpecialCommands = specialCommands.sort(
+        (a, b) =>
+          roomMemberOrder.indexOf(a.memberId) -
+          roomMemberOrder.indexOf(b.memberId)
+      );
+      for (const command of sortedSpecialCommands) {
         await gameUtil.executeSpecialCommand(
           command,
           {
@@ -133,6 +144,8 @@ export const roomSessionService = {
           tx,
           toTRoomSessionFromRoomSessionWithMembers(currentRoomSession)
         );
+        // コマンドを実行済みにする
+        await commandRepository.updateCommand(tx, command.id, true);
         await roomMemberRepository.updateRoomMemberStatus(
           tx,
           currentRoomSession.roomId,
@@ -155,6 +168,7 @@ export const roomSessionService = {
           },
           toTRoomSessionFromRoomSessionWithMembers(currentRoomSession)
         );
+        // コマンドを実行済みにする
         await commandRepository.updateCommand(tx, command.id, true);
         await commandRepository.createCommandHistory(
           tx,
@@ -181,36 +195,32 @@ export const roomSessionService = {
               `ROOM[${currentRoomSession.room.roomCode}] TURN[${turn}] GOAL`
             );
           });
-          return toTRoomSessionFromRoomSessionWithUsers(
-            currentRoomSession,
-            currentRoomSession.room,
-            currentRoomSession.commands
-          );
+          isGoalReachedFlg = true;
+          break;
         }
       }
       // 全てのコマンド完了後
+      if (!isGoalReachedFlg) {
+        // BLOCKされているメンバーのblockを解除
+        currentRoomSession.room.members
+          .filter((member) => member.status === ROOM_MEMBER_STATUS.BLOCKED)
+          .forEach(async (member) => {
+            await roomMemberRepository.updateRoomMemberStatus(
+              tx,
+              currentRoomSession.roomId,
+              member.userId,
+              ROOM_MEMBER_STATUS.ACTIVE
+            );
+          });
 
-      // BLOCKされているメンバーのblockを解除
-      currentRoomSession.room.members
-        .filter((member) => member.status === ROOM_MEMBER_STATUS.BLOCKED)
-        .forEach(async (member) => {
-          await roomMemberRepository.updateRoomMemberStatus(
-            tx,
-            currentRoomSession.roomId,
-            member.userId,
-            ROOM_MEMBER_STATUS.ACTIVE
-          );
-        });
-
-      if (turn >= MAX_TURN) {
-        // ゲームを終了する
-        currentRoomSession.room.members.forEach(async (member) => {
-          await lineUtil.sendSimpleTextMessage(
-            member.userId,
-            `ROOM[${currentRoomSession.room.roomCode}] 全てのturnが終了しましたが、ゴールに到達していませんでした。`
-          );
-        });
-        const updatedRoomSession =
+        if (turn >= MAX_TURN) {
+          // ゲームを終了する
+          currentRoomSession.room.members.forEach(async (member) => {
+            await lineUtil.sendSimpleTextMessage(
+              member.userId,
+              `ROOM[${currentRoomSession.room.roomCode}] 全てのturnが終了しましたが、ゴールに到達していませんでした。`
+            );
+          });
           await roomSessionRepository.updateRoomSession(
             tx,
             roomSessionId,
@@ -220,23 +230,17 @@ export const roomSessionService = {
             tempLocation.direction,
             GAME_STATUS.COMPLETED
           );
-        return toTRoomSessionFromRoomSessionWithUsers(
-          updatedRoomSession,
-          currentRoomSession.room,
-          currentRoomSession.commands
-        );
-      } else {
-        // 次のturnを開始できる
-        let specialCellMessage = "";
-        if (isSpecialCellsReached(tempLocation, settingContents)) {
-          const randomKingdomMember = gameUtil.getRandomKingdomMember(
-            currentRoomSession.room.members
-          );
-          if (randomKingdomMember) {
-            specialCellMessage = `\n${randomKingdomMember.role?.roleName}は${randomKingdomMember.user?.displayName}です`;
+        } else {
+          // 次のturnを開始できる
+          let specialCellMessage = "";
+          if (isSpecialCellsReached(tempLocation, settingContents)) {
+            const randomKingdomMember = gameUtil.getRandomKingdomMember(
+              currentRoomSession.room.members
+            );
+            if (randomKingdomMember) {
+              specialCellMessage = `\n${randomKingdomMember.role?.roleName}は${randomKingdomMember.user?.displayName}です`;
+            }
           }
-        }
-        const updatedRoomSession =
           await roomSessionRepository.updateRoomSession(
             tx,
             roomSessionId,
@@ -245,18 +249,27 @@ export const roomSessionService = {
             turn,
             tempLocation.direction
           );
-        currentRoomSession.room.members.forEach(async (member) => {
-          await lineUtil.sendSimpleTextMessage(
-            member.userId,
-            `ROOM[${currentRoomSession.room.roomCode}] TURN[${turn}] COMPLETED \n なんちゃらかんちゃら${specialCellMessage}`
-          );
-        });
-        return toTRoomSessionFromRoomSessionWithUsers(
-          updatedRoomSession,
-          currentRoomSession.room,
-          currentRoomSession.commands
-        );
+          currentRoomSession.room.members.forEach(async (member) => {
+            await lineUtil.sendSimpleTextMessage(
+              member.userId,
+              `ROOM[${currentRoomSession.room.roomCode}] TURN[${turn}] COMPLETED \n なんちゃらかんちゃら${specialCellMessage}`
+            );
+          });
+        }
       }
+
+      const updatedRoomSession = await roomSessionRepository.getRoomSession(
+        tx,
+        roomSessionId
+      );
+      if (!updatedRoomSession) {
+        throw new NotFoundError("Room session not found");
+      }
+      return toTRoomSessionFromRoomSessionWithUsers(
+        updatedRoomSession,
+        currentRoomSession.room,
+        targetCommands
+      );
     });
   },
 
@@ -276,21 +289,26 @@ export const roomSessionService = {
         throw new NotFoundError("Room session not found");
       }
 
+      if (!roomSession.room.openFlg) {
+        throw new BadRequestError("Room is not Open");
+      }
+
       // 同じFormからの連続した命令の実行は無効にする
       const isInvalidated = await invalidateLineUserFormRepo.checkIsInvalidated(
         tx,
         formId
       );
       if (isInvalidated) {
+        logger.error("同じFORMID");
         return {
           isValid: false,
           roomSessionId: roomSessionId,
           commandsCount: 0,
         };
       }
-      console.log(roomSession.commands);
       // turnが一致しない場合は無効にする
       if (turn !== roomSession.turn) {
+        logger.error(`turnが一致しない ${turn} is not roomSession.turn`);
         return {
           isValid: false,
           roomSessionId: roomSessionId,
@@ -302,7 +320,8 @@ export const roomSessionService = {
           tx,
           roomSessionId,
           command.memberId,
-          command.commandType
+          command.commandType,
+          command.arg
         );
       }
       // formの無効化
@@ -323,11 +342,9 @@ export const roomSessionService = {
       if (!roomSession) {
         throw new NotFoundError("Room session not found");
       }
-      await roomSessionRepository.stepNextTurn(
-        tx,
-        roomSessionId,
-        roomSession.turn + 1
-      );
+      const nextTurn = roomSession.turn + 1;
+      await roomSessionRepository.stepNextTurn(tx, roomSessionId, nextTurn);
+
       const formId = uuidv4();
       roomSession.room.members.forEach(async (member) => {
         const role = member.role;
@@ -339,7 +356,7 @@ export const roomSessionService = {
             formId,
             roomSessionId: roomSessionId,
             memberId: member.id,
-            turn: roomSession.turn,
+            turn: nextTurn,
           },
           roomSession.room.members,
           member

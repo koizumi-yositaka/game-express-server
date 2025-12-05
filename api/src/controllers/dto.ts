@@ -13,6 +13,7 @@ export type DTORoomSession = {
   direction: TDirection;
   setting: RoomSessionSettingJsonContents;
   turn: number;
+  status: number;
   room: DTORoom;
   commands: DTOCommand[];
 };

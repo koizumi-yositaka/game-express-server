@@ -13,6 +13,9 @@ export const addRoomMemberParamsSchema = z.object({
 export const addRoomMemberBodySchema = z.object({
   userId: z.string(),
 });
+export const addRoomMembersBodySchema = z.object({
+  userIds: z.array(z.string()),
+});
 export const getRoomMembersParamsSchema = z.object({
   roomCode: z.string().length(4),
 });
@@ -31,6 +34,8 @@ export type AddRoomMemberBody = z.infer<typeof addRoomMemberBodySchema>;
 export type GetRoomMembersParams = z.infer<typeof getRoomMembersParamsSchema>;
 export type GetRoomMemberParams = z.infer<typeof getRoomMemberParamsSchema>;
 export type StartGameParams = z.infer<typeof startGameParamsSchema>;
+
+export type AddRoomMembersBody = z.infer<typeof addRoomMembersBodySchema>;
 
 export const roomController = {
   /**
@@ -156,6 +161,32 @@ export const roomController = {
     try {
       const room = await roomService.getRoomByRoomCode(req.params.roomCode);
       res.status(200).json(toDTORoom(room));
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  /**
+   * ルームにメンバーを追加する
+   * @param req リクエスト
+   * @param res レスポンス
+   * @param next 次のミドルウェア
+   */
+  _addRoomMembers: async (
+    req: Request<AddRoomMemberParams, unknown, AddRoomMembersBody>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const members = req.body.userIds.map((userId) => {
+        return {
+          userId: userId,
+        };
+      });
+      members.forEach(async (member) => {
+        await roomMemberService.joinRoom(req.params.roomCode, member.userId);
+      });
+      res.status(200).json({ count: members.length });
     } catch (error) {
       next(error);
     }

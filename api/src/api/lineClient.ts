@@ -1,3 +1,6 @@
+import path from "path";
+import { jsonRW } from "../util/jsonRW";
+
 export type TLineMessage = {
   userId: string;
   messages: any[];
@@ -10,6 +13,15 @@ export const lineClient = {
   sendMessage: async (userId: string, messages: any[]) => {
     console.log("sendMessage", userId, messages);
     if (dummyFlg) {
+      // dummyFlgがtrueの時は、userIdと同じ名前のファイルにmessagesをJSONで追記
+      const filePath = path.join(__dirname, "../data/test", `${userId}.json`);
+      try {
+        await jsonRW.appendJsonArray(filePath, messages);
+        console.log(`Appended messages to ${filePath}`);
+      } catch (error) {
+        console.error(`Failed to append messages to ${filePath}:`, error);
+        throw error;
+      }
       return;
     }
     try {

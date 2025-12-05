@@ -108,6 +108,10 @@ const DEFAULT_SETTING: RoomSessionSettingJsonContents = {
   ],
 };
 
+export const ROOM_SESSION_STATUS = Object.freeze({
+  NOT_STARTED: 2,
+});
+
 export const ROOM_MEMBER_STATUS = Object.freeze({
   ACTIVE: 0,
   SKILL_USED: 1,

@@ -7,6 +7,7 @@ import {
   getRoomMembersParamsSchema,
   getRoomMemberParamsSchema,
   startGameParamsSchema,
+  addRoomMembersBodySchema,
 } from "../controllers/room.controller";
 import { validate, validateParams } from "../middleware/validation";
 
@@ -27,6 +28,7 @@ router.post(
   ],
   roomController.addRoomMember
 );
+router.post("/:roomCode/_members", [], roomController._addRoomMembers);
 router.get(
   "/:roomCode/members",
   validateParams(getRoomMembersParamsSchema),

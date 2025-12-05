@@ -2,6 +2,7 @@ import RoleIF from "../roleIF";
 import { TCommand, TRoomMember, TRoomSession } from "../../domain/types";
 import { lineUtil } from "../../util/lineUtil";
 import { Prisma } from "../../generated/prisma/client";
+import logger from "../../util/logger";
 class Sun implements RoleIF {
   async executeSpecialMove(
     tx: Prisma.TransactionClient,
@@ -20,6 +21,7 @@ class Sun implements RoleIF {
       }
       return false;
     });
+    logger.info(JSON.stringify(emperor, null, 2));
     if (emperor) {
       lineUtil.sendSimpleTextMessage(
         emperor.user?.userId ?? "",

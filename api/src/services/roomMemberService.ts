@@ -139,6 +139,8 @@ export const roomMemberService = {
         }
       });
 
+      // 10秒待つ
+      await new Promise((resolve) => setTimeout(resolve, 3000));
       // 初期設定
       const initailSetting = gameUtil.createGameSetting();
       await roomSessionRepository.createRoomSession(

@@ -74,6 +74,7 @@ export function toDTORoomSession(roomSession: TRoomSession): DTORoomSession {
     posX: roomSession.posX,
     posY: roomSession.posY,
     direction: roomSession.direction,
+    status: roomSession.status,
     turn: roomSession.turn,
     setting: JSON.parse(roomSession.setting) as RoomSessionSettingJsonContents,
     room: toDTORoom(roomSession.room),

@@ -15,13 +15,15 @@ export const commandRepository = {
     tx: TxClient,
     roomSessionId: number,
     memberId: number,
-    commandType: TCommandType
+    commandType: TCommandType,
+    arg: string
   ) => {
     return await tx.command.create({
       data: {
         roomSessionId: roomSessionId,
         memberId: memberId,
         commandType: commandType,
+        arg: arg,
       },
     });
   },
