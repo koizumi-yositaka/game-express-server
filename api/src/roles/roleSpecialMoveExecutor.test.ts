@@ -138,9 +138,9 @@ describe("roleSpecialMoveExecutor", () => {
       );
     });
 
-    it("FOOL ロールで Death クラスの executeSpecialMove が呼ばれる", async () => {
+    it("FOOL ロールで Fool クラスの executeSpecialMove が呼ばれる", async () => {
       const mockExecuteSpecialMove = jest.fn().mockResolvedValue(undefined);
-      (Death as jest.MockedClass<typeof Death>).mockImplementation(() => {
+      (Fool as jest.MockedClass<typeof Fool>).mockImplementation(() => {
         return {
           executeSpecialMove: mockExecuteSpecialMove,
         } as any;
@@ -153,7 +153,7 @@ describe("roleSpecialMoveExecutor", () => {
         mockRoomSession
       );
 
-      expect(Death).toHaveBeenCalledTimes(1);
+      expect(Fool).toHaveBeenCalledTimes(1);
       expect(mockExecuteSpecialMove).toHaveBeenCalledTimes(1);
       expect(mockExecuteSpecialMove).toHaveBeenCalledWith(
         mockTx,
@@ -162,9 +162,9 @@ describe("roleSpecialMoveExecutor", () => {
       );
     });
 
-    it("THE_TOWER ロールで Death クラスの executeSpecialMove が呼ばれる", async () => {
+    it("THE_TOWER ロールで Tower クラスの executeSpecialMove が呼ばれる", async () => {
       const mockExecuteSpecialMove = jest.fn().mockResolvedValue(undefined);
-      (Death as jest.MockedClass<typeof Death>).mockImplementation(() => {
+      (Tower as jest.MockedClass<typeof Tower>).mockImplementation(() => {
         return {
           executeSpecialMove: mockExecuteSpecialMove,
         } as any;
@@ -177,7 +177,7 @@ describe("roleSpecialMoveExecutor", () => {
         mockRoomSession
       );
 
-      expect(Death).toHaveBeenCalledTimes(1);
+      expect(Tower).toHaveBeenCalledTimes(1);
       expect(mockExecuteSpecialMove).toHaveBeenCalledTimes(1);
       expect(mockExecuteSpecialMove).toHaveBeenCalledWith(
         mockTx,
