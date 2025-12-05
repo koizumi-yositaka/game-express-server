@@ -20,10 +20,9 @@ import {
   NotFoundError,
 } from "../error/AppError";
 import { TRoomMember, TRoomSession } from "../domain/types";
-import { GAME_STATUS, IMAGE_PATH_MAP, ROLE_NAME_MAP } from "../domain/common";
+import { GAME_STATUS, ROLE_NAME_MAP } from "../domain/common";
 import { lineUtil } from "../util/lineUtil";
 import { roleMasterService } from "./roleMasterService";
-import { RoomMemberWithUsers } from "../repos/roomMemberRepository";
 import { RoomWithUsers } from "../repos/roomRepository";
 import { roomSessionRepository } from "../repos/roomSessionRepository";
 import { toTRoomSessionFromRoomSessionWithMembers } from "../domain/typeParse";
@@ -106,7 +105,8 @@ export const roomMemberService = {
         room.id
       );
 
-      const assignedRoles = await assignRoles(shuffleArray(roomMembers));
+      // 役割を割り当てる
+      const assignedRoles = await assignRoles(roomMembers);
 
       assignedRoles.forEach(async (member) => {
         await roomMemberRepository.updateRoomMemberRole(
@@ -182,24 +182,5 @@ export const roomMemberService = {
 
 async function assignRoles(roomMembers: TRoomMember[]): Promise<TRoomMember[]> {
   const roles = await roleMasterService.getRoles();
-  const sortedRoles = [...roles].sort((a, b) => b.priority - a.priority);
-  return roomMembers.map((member, index) => {
-    const role = sortedRoles[index];
-
-    return {
-      ...member,
-      roleId: role?.roleId ?? 0,
-      role: role || sortedRoles[sortedRoles.length - 1],
-    };
-  });
-}
-
-function shuffleArray<T>(array: T[]): T[] {
-  const arr = [...array]; // 元の配列を破壊しない
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1)); // 0〜i のランダムな整数
-    [arr[i], arr[j]] = [arr[j], arr[i]]; // swap
-  }
-  console.log("shuffledArray", arr);
-  return arr;
+  return gameUtil.assignRoles(roomMembers, roles);
 }

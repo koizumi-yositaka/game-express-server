@@ -1,12 +1,19 @@
 import RoleIF from "../roleIF";
-import { TRoomMember, TRoomSession } from "../../domain/types";
+import { TCommand, TRoomMember, TRoomSession } from "../../domain/types";
 import { lineUtil } from "../../util/lineUtil";
-
-class Death implements RoleIF {
-  executeSpecialMove(): void {
-    console.log("Death executeSpecialMove");
+import { Prisma } from "../../generated/prisma/client";
+class Sun implements RoleIF {
+  async executeSpecialMove(
+    tx: Prisma.TransactionClient,
+    command: TCommand,
+    roomSession: TRoomSession
+  ): Promise<void> {
+    console.log("Sun executeSpecialMove");
   }
-  executeInitialize(me: TRoomMember, roomSession: TRoomSession): void {
+  async executeInitialize(
+    me: TRoomMember,
+    roomSession: TRoomSession
+  ): Promise<void> {
     const emperor = roomSession.room.members.find((member) => {
       if (member.role?.roleName === "EMPEROR") {
         return true;
@@ -21,4 +28,4 @@ class Death implements RoleIF {
     }
   }
 }
-export default Death;
+export default Sun;

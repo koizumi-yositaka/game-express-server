@@ -12,11 +12,14 @@ import {
   COMMAND_BUTTON_DATA_MAP,
   DEFAULT_SETTING,
   ROLE_NAME_MAP,
+  ROOM_MEMBER_STATUS,
   SPECIAL_COMMAND_MAP,
 } from "../domain/common";
 import path from "path";
 import { NotFoundError } from "../error/AppError";
 import { roleSpecialMoveExecutor } from "../roles/roleSpecialMoveExecutor";
+import { Prisma } from "../generated/prisma/client";
+import { roleMasterService } from "../services/roleMasterService";
 type Location = {
   posX: number;
   posY: number;
@@ -40,6 +43,7 @@ export async function executeSpecialCommand(
     maxX: number;
     maxY: number;
   },
+  tx: Prisma.TransactionClient,
   roomSession: TRoomSession
 ): Promise<void> {
   const { commandType } = command;
@@ -51,8 +55,11 @@ export async function executeSpecialCommand(
   if (!role) {
     throw new NotFoundError("Role not found");
   }
-  roleSpecialMoveExecutor.executeSpecialMove(
-    role.role?.roleName as keyof typeof ROLE_NAME_MAP
+  await roleSpecialMoveExecutor.executeSpecialMove(
+    role.role?.roleName as keyof typeof ROLE_NAME_MAP,
+    tx,
+    command,
+    roomSession
   );
 }
 
@@ -153,6 +160,7 @@ export async function getAvailableCommandsByRole(
     gameSetting.roleSetting[role.roleName as keyof typeof ROLE_NAME_MAP]
       .availableCommands;
 
+  // 基本のコマンドリスト
   let commandButtonDataList = availableCommands.map((commandType) => {
     return {
       commandType,
@@ -166,31 +174,42 @@ export async function getAvailableCommandsByRole(
       arg: "",
     };
   });
-  console.log(role.roleName);
-  if (role.roleName === "HIEROPHANT") {
+
+  // BLOCKされている場合はSKIPのみ
+  if (me.status === ROOM_MEMBER_STATUS.BLOCKED) {
     commandButtonDataList = commandButtonDataList.filter(
-      (command) => command.commandType !== "SPECIAL"
+      (command) => command.commandType === "SKIP"
     );
-    members
-      .filter((member) => member.id !== me.id)
-      .forEach((member) => {
-        commandButtonDataList.push({
-          commandType: "SPECIAL",
-          displayText: SPECIAL_COMMAND_MAP[
-            role.roleName as keyof typeof ROLE_NAME_MAP
-          ].displayText.replace("${userName}", member.user?.displayName ?? ""),
-          label: SPECIAL_COMMAND_MAP[
-            role.roleName as keyof typeof ROLE_NAME_MAP
-          ].label.replace("${userName}", member.user?.displayName ?? ""),
-          formId: meta.formId,
-          action: `${actionName}`,
-          roomSessionId: meta.roomSessionId,
-          memberId: meta.memberId,
-          turn: meta.turn,
-          arg: member.id.toString(),
+  } else {
+    if (role.roleName === "HIEROPHANT") {
+      commandButtonDataList = commandButtonDataList.filter(
+        (command) => command.commandType !== "SPECIAL"
+      );
+      members
+        .filter((member) => member.id !== me.id)
+        .forEach((member) => {
+          commandButtonDataList.push({
+            commandType: "SPECIAL",
+            displayText: SPECIAL_COMMAND_MAP[
+              role.roleName as keyof typeof ROLE_NAME_MAP
+            ].displayText.replace(
+              "${userName}",
+              member.user?.displayName ?? ""
+            ),
+            label: SPECIAL_COMMAND_MAP[
+              role.roleName as keyof typeof ROLE_NAME_MAP
+            ].label.replace("${userName}", member.user?.displayName ?? ""),
+            formId: meta.formId,
+            action: `${actionName}`,
+            roomSessionId: meta.roomSessionId,
+            memberId: meta.memberId,
+            turn: meta.turn,
+            arg: member.id.toString(),
+          });
         });
-      });
+    }
   }
+
   return commandButtonDataList;
 }
 
@@ -281,6 +300,62 @@ function _getRandomSecondOuterRingCoordinate(
   return result;
 }
 
+function assignRoles(
+  roomMembers: TRoomMember[],
+  roles: TRole[]
+): TRoomMember[] {
+  let assignedRoles: TRole[] = [];
+  const role_EMPEROR = roles.find((role) => role.roleName === "EMPEROR");
+  const role_DEATH = roles.find((role) => role.roleName === "DEATH");
+  const role_HIEROPHANT = roles.find((role) => role.roleName === "HIEROPHANT");
+  const role_FOOL = roles.find((role) => role.roleName === "FOOL");
+  const role_HIGH_PRIESTESS = roles.find(
+    (role) => role.roleName === "HIGH_PRIESTESS"
+  );
+  const role_HERMIT = roles.find((role) => role.roleName === "HERMIT");
+  const role_THE_TOWER = roles.find((role) => role.roleName === "THE_TOWER");
+  const role_SUN = roles.find((role) => role.roleName === "SUN");
+  const role_MOON = roles.find((role) => role.roleName === "MOON");
+  if (
+    !role_EMPEROR ||
+    !role_DEATH ||
+    !role_HIEROPHANT ||
+    !role_FOOL ||
+    !role_HIGH_PRIESTESS ||
+    !role_HERMIT ||
+    !role_THE_TOWER ||
+    !role_SUN ||
+    !role_MOON
+  ) {
+    throw new NotFoundError("Role not found");
+  }
+
+  const baseRoles = [role_EMPEROR, role_DEATH, role_HIEROPHANT, role_FOOL];
+  const resultMembers: TRoomMember[] = shuffleArray(roomMembers);
+  // ４人以下の場合　というか４人の場合
+  if (roomMembers.length <= 4) {
+    assignedRoles = baseRoles;
+  } else if (roomMembers.length === 5) {
+    assignedRoles = [...baseRoles, role_MOON];
+  } else if (roomMembers.length === 6) {
+    assignedRoles = [...baseRoles, role_MOON, role_SUN];
+  } else if (roomMembers.length === 7) {
+    assignedRoles = [...baseRoles, role_MOON, role_SUN, role_THE_TOWER];
+  }
+  resultMembers.forEach((member, index) => {
+    member.roleId = assignedRoles[index].roleId;
+  });
+  return resultMembers;
+}
+function shuffleArray<T>(array: T[]): T[] {
+  const arr = [...array]; // 元の配列を破壊しない
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1)); // 0〜i のランダムな整数
+    [arr[i], arr[j]] = [arr[j], arr[i]]; // swap
+  }
+  console.log("shuffledArray", arr);
+  return arr;
+}
 export const gameUtil = {
   DEFAULT_SETTING,
   executeCommand,
@@ -288,6 +363,8 @@ export const gameUtil = {
   getRandomKingdomMember,
   createGameSetting,
   getRoomSettingJsonContents,
+  assignRoles,
+  shuffleArray,
 };
 
 // buttonに必要なデータ

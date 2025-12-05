@@ -51,9 +51,9 @@ export const ROLE_NAME_MAP = {
   DEATH: "DEATH",
   HIEROPHANT: "HIEROPHANT",
   FOOL: "FOOL",
-  HIGH_PRIESTESS: "HIGH_PRIESTESS",
-  HERMIT: "HERMIT",
   THE_TOWER: "THE_TOWER",
+  SUN: "SUN",
+  MOON: "MOON",
 };
 
 export const SPECIAL_COMMAND_MAP: Record<
@@ -76,15 +76,15 @@ export const SPECIAL_COMMAND_MAP: Record<
     displayText: "",
     label: "",
   },
-  HIGH_PRIESTESS: {
-    displayText: "",
-    label: "",
-  },
-  HERMIT: {
-    displayText: "",
-    label: "",
-  },
   THE_TOWER: {
+    displayText: "",
+    label: "",
+  },
+  SUN: {
+    displayText: "",
+    label: "",
+  },
+  MOON: {
     displayText: "",
     label: "",
   },
@@ -111,6 +111,7 @@ const DEFAULT_SETTING: RoomSessionSettingJsonContents = {
 export const ROOM_MEMBER_STATUS = Object.freeze({
   ACTIVE: 0,
   SKILL_USED: 1,
+  BLOCKED: 2,
 });
 
 export {

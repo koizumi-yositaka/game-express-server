@@ -1,15 +1,22 @@
 import RoleIF from "../roleIF";
-import { TRoomMember, TRoomSession } from "../../domain/types";
-
+import { TCommand, TRoomMember, TRoomSession } from "../../domain/types";
+import { Prisma } from "../../generated/prisma/client";
 import { ROLE_GROUP_MAP } from "../../domain/common";
 import logger from "../../util/logger";
 import { lineUtil } from "../../util/lineUtil";
 
 class Emperor implements RoleIF {
-  executeSpecialMove(): void {
+  async executeSpecialMove(
+    tx: Prisma.TransactionClient,
+    command: TCommand,
+    roomSession: TRoomSession
+  ): Promise<void> {
     console.log("Emperor executeTurn");
   }
-  executeInitialize(me: TRoomMember, roomSession: TRoomSession): void {
+  async executeInitialize(
+    me: TRoomMember,
+    roomSession: TRoomSession
+  ): Promise<void> {
     let kingdomMemberString = "";
 
     roomSession.room.members

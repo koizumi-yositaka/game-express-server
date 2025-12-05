@@ -4,9 +4,14 @@ export type TLineMessage = {
 };
 
 const LINE_LAMBDA_ENDPOINT = process.env.LINE_LAMBDA_ENDPOINT ?? "";
+const dummyFlg = true;
 
 export const lineClient = {
   sendMessage: async (userId: string, messages: any[]) => {
+    console.log("sendMessage", userId, messages);
+    if (dummyFlg) {
+      return;
+    }
     try {
       console.log(`Sending message to ${userId}`, LINE_LAMBDA_ENDPOINT);
       console.dir({ userId, messages }, { depth: null });

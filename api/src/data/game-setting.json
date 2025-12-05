@@ -1,16 +1,10 @@
 {
   "roleSetting": {
     "EMPEROR": {
-      "availableCommands": [
-        "SPECIAL",
-        "SKIP",
-        "FORWARD",
-        "TURN_RIGHT",
-        "TURN_LEFT"
-      ]
+      "availableCommands": ["SKIP", "FORWARD", "TURN_RIGHT", "TURN_LEFT"]
     },
     "DEATH": {
-      "availableCommands": ["SPECIAL", "SKIP", "FORWARD", "TURN_RIGHT"]
+      "availableCommands": ["SKIP", "FORWARD", "TURN_RIGHT"]
     },
     "HIEROPHANT": {
       "availableCommands": ["SPECIAL", "SKIP", "FORWARD"]
@@ -26,6 +20,12 @@
     },
     "THE_TOWER": {
       "availableCommands": ["SPECIAL", "SKIP", "TURN_RIGHT"]
+    },
+    "SUN": {
+      "availableCommands": ["SKIP", "TURN_RIGHT", "TURN_LEFT"]
+    },
+    "MOON": {
+      "availableCommands": ["SKIP", "TURN_RIGHT", "TURN_LEFT"]
     }
   }
 }

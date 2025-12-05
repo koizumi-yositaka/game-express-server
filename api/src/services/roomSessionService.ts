@@ -116,6 +116,11 @@ export const roomSessionService = {
       // 特殊コマンドを実行する
       logger.info("特殊コマンドの実行");
 
+      // 特殊コマンドを実行する優先順位
+      const roomMemberOrder = currentRoomSession.room.members
+        .sort((a, b) => a.role?.priority! - b.role?.priority!)
+        .map((member) => member.id);
+
       for (const command of specialCommands) {
         await gameUtil.executeSpecialCommand(
           command,
@@ -125,6 +130,7 @@ export const roomSessionService = {
             maxX: settingContents.size,
             maxY: settingContents.size,
           },
+          tx,
           toTRoomSessionFromRoomSessionWithMembers(currentRoomSession)
         );
         await roomMemberRepository.updateRoomMemberStatus(
@@ -184,6 +190,18 @@ export const roomSessionService = {
       }
       // 全てのコマンド完了後
 
+      // BLOCKされているメンバーのblockを解除
+      currentRoomSession.room.members
+        .filter((member) => member.status === ROOM_MEMBER_STATUS.BLOCKED)
+        .forEach(async (member) => {
+          await roomMemberRepository.updateRoomMemberStatus(
+            tx,
+            currentRoomSession.roomId,
+            member.userId,
+            ROOM_MEMBER_STATUS.ACTIVE
+          );
+        });
+
       if (turn >= MAX_TURN) {
         // ゲームを終了する
         currentRoomSession.room.members.forEach(async (member) => {
@@ -242,6 +260,7 @@ export const roomSessionService = {
     });
   },
 
+  // コマンドの受理
   addCommands: async (
     roomSessionId: number,
     turn: number,
