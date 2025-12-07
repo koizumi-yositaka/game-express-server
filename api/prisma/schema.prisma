@@ -16,6 +16,7 @@ model User {
   createdAt     DateTime      @default(now())
 
   roomMembers   RoomMember[]
+  proofRoomMembers ProofRoomMember[]
 }
 
 model Room {
@@ -132,3 +133,76 @@ model MRole {
   members     RoomMember[]
 }
 
+
+
+model ProofRoom {
+  id           Int           @id @default(autoincrement())
+  roomCode     String        @unique
+  status       Int           @default(0)
+  openFlg      Boolean       @default(true)
+  createdAt    DateTime      @default(now())
+
+  members      ProofRoomMember[]
+  sessions     ProofRoomSession[]
+}
+
+model ProofRoomMember {
+  id        Int         @id @default(autoincrement())
+  room      ProofRoom   @relation(fields: [roomId], references: [id])
+  roomId    Int
+
+  user      User        @relation(fields: [userId], references: [userId])
+  userId    String
+
+  role      MProofRole  @relation(fields: [roleId], references: [roleId])
+  roleId    Int         @default(0)
+
+  status    Int         @default(0)
+
+  sort      Int         @default(0)    
+
+  joinedAt  DateTime @default(now())
+  @@unique([roomId, userId])
+}
+
+model ProofRoomSession {
+  id         Int        @id @default(autoincrement())
+  roomId     Int        @unique
+  turn       Int        @default(0)
+  focusOn    Int        @default(0)
+
+
+  setting    String     @default("")
+
+  status     Int        @default(0)
+
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+
+  room            ProofRoom       @relation(fields: [roomId], references: [id])
+}
+
+model ProofList {
+  id            Int        @id @default(autoincrement())
+  roomSessionId Int        
+  code          String     @unique
+  rank          String     @default("")
+  status        String     @default("1") 
+  title         String     @default("") 
+  description   String     @default("") 
+  revealedBy    String     @default("") 
+  createdAt     DateTime   @default(now())
+  updatedAt     DateTime   @updatedAt
+}
+
+model MProofRole {
+  roleId      Int           @id
+  roleName    String
+  priority    Int           @default(0)
+  description String
+  imageUrl    String
+  notionUrl   String        @default("")
+  group       Int           @default(0)
+
+  members     ProofRoomMember[]
+}

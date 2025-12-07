@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `ProofList` ADD COLUMN `revealedBy` INTEGER NOT NULL DEFAULT 0;

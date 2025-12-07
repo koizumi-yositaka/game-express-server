@@ -78,7 +78,7 @@ export function executeCommand(
   const { commandType } = command;
   const { location, goalCell, maxX, maxY } = gridInfo;
   let { posX, posY, direction } = location;
-
+  let progress = roomSession.status === GAME_STATUS.FOOL_SKILL_USED ? 2 : 1;
   if (commandType.startsWith("TURN_")) {
     switch (commandType) {
       case "TURN_RIGHT":
@@ -113,20 +113,32 @@ export function executeCommand(
       case "FORWARD":
         switch (direction) {
           case "N":
-            if (posY - 1 < 0) break;
-            posY -= 1;
+            if (posY - progress < 0) {
+              posY = 0;
+            } else {
+              posY -= progress;
+            }
             break;
           case "S":
-            if (posY + 1 > maxY - 1) break;
-            posY += 1;
+            if (posY + progress > maxY - 1) {
+              posY = maxY - 1;
+            } else {
+              posY += progress;
+            }
             break;
           case "E":
-            if (posX + 1 > maxX - 1) break;
-            posX += 1;
+            if (posX + progress > maxX - 1) {
+              posX = maxX - 1;
+            } else {
+              posX += progress;
+            }
             break;
           case "W":
-            if (posX - 1 < 0) break;
-            posX -= 1;
+            if (posX - progress < 0) {
+              posX = 0;
+            } else {
+              posX -= progress;
+            }
             break;
         }
         break;
@@ -184,6 +196,13 @@ export async function getAvailableCommandsByRole(
     commandButtonDataList = commandButtonDataList.filter(
       (command) => command.commandType === "SKIP"
     );
+    // SKILL_USEDの場合はHIEROPHANT以外はSPECIALを使えない
+  } else if (me.status === ROOM_MEMBER_STATUS.SKILL_USED) {
+    if (role.roleName !== "HIEROPHANT") {
+      commandButtonDataList = commandButtonDataList.filter(
+        (command) => command.commandType !== "SPECIAL"
+      );
+    }
   } else {
     if (role.roleName === "HIEROPHANT") {
       commandButtonDataList = commandButtonDataList.filter(
@@ -213,6 +232,7 @@ export async function getAvailableCommandsByRole(
         });
     }
   }
+  console.log("commandButtonDataList", commandButtonDataList);
 
   return commandButtonDataList;
 }
@@ -274,6 +294,8 @@ function _getRandomCoordinateOfCorners(size: number): [number, number][] {
   // return randomCoordinate;
   return [
     [0, 0],
+    [0, size - 1],
+    [size - 1, 0],
     [size - 1, size - 1],
   ];
 }

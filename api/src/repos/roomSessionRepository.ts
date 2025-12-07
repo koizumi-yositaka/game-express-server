@@ -55,6 +55,16 @@ export const roomSessionRepository = {
         status !== undefined ? { ...updateData, status: status } : updateData,
     });
   },
+  updateRoomSessionStatus: async (
+    tx: TxClient,
+    roomSessionId: number,
+    status: number
+  ) => {
+    return await tx.roomSession.update({
+      where: { id: roomSessionId },
+      data: { status: status },
+    });
+  },
   stepNextTurn: async (tx: TxClient, roomSessionId: number, turn: number) => {
     return await tx.roomSession.update({
       where: { id: roomSessionId },

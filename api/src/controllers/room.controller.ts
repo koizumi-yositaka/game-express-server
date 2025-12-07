@@ -183,9 +183,9 @@ export const roomController = {
           userId: userId,
         };
       });
-      members.forEach(async (member) => {
+      for (const member of members) {
         await roomMemberService.joinRoom(req.params.roomCode, member.userId);
-      });
+      }
       res.status(200).json({ count: members.length });
     } catch (error) {
       next(error);

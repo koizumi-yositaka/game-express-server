@@ -105,33 +105,35 @@ export const roomMemberService = {
         room.id
       );
 
-      gameUtil.shuffleArray(roomMembers).forEach(async (member, index) => {
+      for (const [index, member] of gameUtil
+        .shuffleArray(roomMembers)
+        .entries()) {
         await roomMemberRepository.updateRoomMemberSort(
           tx,
           room.id,
           member.userId,
           index
         );
-      });
+      }
 
       // 役割を割り当てる
       const assignedRoles = await assignRoles(roomMembers);
 
-      assignedRoles.forEach(async (member) => {
+      for (const member of assignedRoles) {
         await roomMemberRepository.updateRoomMemberRole(
           tx,
           room!.id,
           member.userId,
           member.roleId
         );
-      });
+      }
       await roomRepository.updateRoom(tx, room.id, {
         status: GAME_STATUS.IN_PROGRESS,
       });
       // if (roomMembers.length < 2) {
       //   throw new BadRequestError("部屋に参加者が2人未満です");
       // }
-      assignedRoles.forEach(async (member) => {
+      for (const member of assignedRoles) {
         const { success } = await lineUtil.sendNoticeRoleMessage(
           member.userId,
           member.role?.roleName ?? "",
@@ -146,7 +148,7 @@ export const roomMemberService = {
           );
           throw new InternalServerError("Failed to send notice role message");
         }
-      });
+      }
 
       // 3秒待つ
       await new Promise((resolve) => setTimeout(resolve, 3000));

@@ -110,16 +110,17 @@ export const roomSessionService = {
       }
       gameUtil.roomSessionChecker(currentRoomSession);
       // BLOCKされているメンバーのblockを解除
-      currentRoomSession.room.members
-        .filter((member) => member.status === ROOM_MEMBER_STATUS.BLOCKED)
-        .forEach(async (member) => {
-          await roomMemberRepository.updateRoomMemberStatus(
-            tx,
-            currentRoomSession.roomId,
-            member.userId,
-            ROOM_MEMBER_STATUS.ACTIVE
-          );
-        });
+      const blockedMembers = currentRoomSession.room.members.filter(
+        (member) => member.status === ROOM_MEMBER_STATUS.BLOCKED
+      );
+      for (const member of blockedMembers) {
+        await roomMemberRepository.updateRoomMemberStatus(
+          tx,
+          currentRoomSession.roomId,
+          member.userId,
+          ROOM_MEMBER_STATUS.ACTIVE
+        );
+      }
       let { posX, posY, direction, turn, setting } = currentRoomSession;
       let tempLocation = { posX, posY, direction };
       const settingContents = gameUtil.getRoomSettingJsonContents(setting);
@@ -221,12 +222,12 @@ export const roomSessionService = {
             tempLocation.direction,
             GAME_STATUS.COMPLETED_GOAL
           );
-          currentRoomSession.room.members.forEach(async (member) => {
+          for (const member of currentRoomSession.room.members) {
             await lineUtil.sendSimpleTextMessage(
               member.userId,
               `ROOM[${currentRoomSession.room.roomCode}] TURN[${turn}] GOAL`
             );
-          });
+          }
           isGoalReachedFlg = true;
           break;
         }
@@ -235,12 +236,12 @@ export const roomSessionService = {
       if (!isGoalReachedFlg) {
         if (turn >= MAX_TURN) {
           // ゲームを終了する
-          currentRoomSession.room.members.forEach(async (member) => {
+          for (const member of currentRoomSession.room.members) {
             await lineUtil.sendSimpleTextMessage(
               member.userId,
               `ROOM[${currentRoomSession.room.roomCode}] 全てのturnが終了しましたが、ゴールに到達していませんでした。`
             );
-          });
+          }
           await roomSessionRepository.updateRoomSession(
             tx,
             roomSessionId,
@@ -261,20 +262,22 @@ export const roomSessionService = {
               specialCellMessage = `\n${randomKingdomMember.role?.roleName}は${randomKingdomMember.user?.displayName}です`;
             }
           }
+          // FOOLの効果を取り消す
           await roomSessionRepository.updateRoomSession(
             tx,
             roomSessionId,
             tempLocation.posX,
             tempLocation.posY,
             turn,
-            tempLocation.direction
+            tempLocation.direction,
+            GAME_STATUS.IN_PROGRESS
           );
-          currentRoomSession.room.members.forEach(async (member) => {
+          for (const member of currentRoomSession.room.members) {
             await lineUtil.sendSimpleTextMessage(
               member.userId,
               `ROOM[${currentRoomSession.room.roomCode}] TURN[${turn}] COMPLETED \n なんちゃらかんちゃら${specialCellMessage}`
             );
-          });
+          }
         }
       }
 
@@ -366,7 +369,7 @@ export const roomSessionService = {
       await roomSessionRepository.stepNextTurn(tx, roomSessionId, nextTurn);
 
       const formId = uuidv4();
-      roomSession.room.members.forEach(async (member) => {
+      for (const member of roomSession.room.members) {
         const role = member.role;
         const user = member.user;
         const availableCommands = await getAvailableCommandsByRole(
@@ -386,7 +389,7 @@ export const roomSessionService = {
           user.userId,
           availableCommands
         );
-      });
+      }
     });
   },
   getCommandHistory: async (
@@ -419,7 +422,7 @@ export const roomSessionService = {
         throw new NotFoundError("Room session not found");
       }
 
-      roomSession.room.members.forEach(async (member) => {
+      for (const member of roomSession.room.members) {
         let message = "";
         switch (result) {
           case GAME_RESULT_MAP.KINGDOM_WIN:
@@ -451,7 +454,7 @@ export const roomSessionService = {
           member.userId,
           `ROOM[${roomSession.room.roomCode}] ${message}`
         );
-      });
+      }
 
       await roomRepository.updateRoom(tx, roomSession.room.id, {
         openFlg: false,

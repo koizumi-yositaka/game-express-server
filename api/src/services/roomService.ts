@@ -72,12 +72,12 @@ export const roomService = {
       );
 
       if (roomSession) {
-        roomSession.room.members.forEach(async (member) => {
+        for (const member of roomSession.room.members) {
           await lineUtil.sendSimpleTextMessage(
             member.userId,
             `ROOM[${closedRoom.roomCode}] CLOSED`
           );
-        });
+        }
       }
       return toTRoom(closedRoom, []);
     });

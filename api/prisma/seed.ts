@@ -91,6 +91,79 @@ async function main() {
       create: r,
     });
   }
+
+  const proofRoles = [
+    {
+      roleId: 0,
+      roleName: "NONE",
+      priority: 0,
+      description: "None",
+      imageUrl: "https://d1z1o17j25srna.cloudfront.net/none.png",
+      notionUrl: "https://flashy-visitor-ec3.notion.site/none",
+      group: 1,
+    },
+    {
+      roleId: 1,
+      roleName: "BOMBER",
+      priority: 0,
+      description: "爆弾",
+      imageUrl: "https://d1z1o17j25srna.cloudfront.net/bomber.png",
+      notionUrl: "https://flashy-visitor-ec3.notion.site/bomber",
+      group: 1,
+    },
+    {
+      roleId: 2,
+      roleName: "BOMB_SQUAD",
+      priority: 10,
+      description: "鑑定士",
+      imageUrl: "https://d1z1o17j25srna.cloudfront.net/bomb_squad.png",
+      notionUrl: "https://flashy-visitor-ec3.notion.site/bomb_squad",
+      group: 2,
+    },
+    {
+      roleId: 3,
+      roleName: "DETECTIVE",
+      priority: 0,
+      description: "探偵",
+      imageUrl: "https://d1z1o17j25srna.cloudfront.net/detective.png",
+      notionUrl: "https://flashy-visitor-ec3.notion.site/detective",
+      group: 2,
+    },
+    {
+      roleId: 4,
+      roleName: "LIER",
+      priority: 0,
+      description: "嘘つき",
+      imageUrl: "https://d1z1o17j25srna.cloudfront.net/lier.png",
+      notionUrl: "https://flashy-visitor-ec3.notion.site/lier",
+      group: 1,
+    },
+    {
+      roleId: 5,
+      roleName: "INFORMER",
+      priority: 0,
+      description: "情報屋",
+      imageUrl: "https://d1z1o17j25srna.cloudfront.net/informer.png",
+      notionUrl: "https://flashy-visitor-ec3.notion.site/informer",
+      group: 2,
+    },
+    {
+      roleId: 6,
+      roleName: "MAGICIAN",
+      priority: 0,
+      description: "魔術師",
+      imageUrl: "https://d1z1o17j25srna.cloudfront.net/magician.png",
+      notionUrl: "https://flashy-visitor-ec3.notion.site/magician",
+      group: 1,
+    },
+  ];
+  for (const r of proofRoles) {
+    await prisma.mProofRole.upsert({
+      where: { roleId: r.roleId },
+      update: r,
+      create: r,
+    });
+  }
 }
 
 main()

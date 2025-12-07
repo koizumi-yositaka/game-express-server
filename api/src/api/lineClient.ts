@@ -11,7 +11,7 @@ const dummyFlg = true;
 
 export const lineClient = {
   sendMessage: async (userId: string, messages: any[]) => {
-    console.log("sendMessage", userId, messages);
+    console.log("sendMessage", userId, JSON.stringify(messages, null, 2));
     if (dummyFlg) {
       // dummyFlgがtrueの時は、userIdと同じ名前のファイルにmessagesをJSONで追記
       const filePath = path.join(__dirname, "../data/test", `${userId}.json`);

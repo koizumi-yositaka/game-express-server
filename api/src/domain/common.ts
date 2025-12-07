@@ -5,6 +5,7 @@ const GAME_STATUS = Object.freeze({
   IN_PROGRESS: 1,
   COMPLETED_GOAL: 2,
   COMPLETED_NOT_GOAL: 3,
+  FOOL_SKILL_USED: 4,
 });
 
 const IMAGE_PATH_MAP = Object.freeze({

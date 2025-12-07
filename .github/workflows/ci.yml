@@ -19,6 +19,7 @@ jobs:
       DB_NAME: "game_db"
       S3_ENDPOINT: "https://d1z1o17j25srna.cloudfront.net/"
       LINE_LAMBDA_ENDPOINT: "https://k3m40eunkh.execute-api.us-east-1.amazonaws.com/prod/line/"
+      SECRET_PASSWORD: ${{ secrets.SECRET_PASSWORD }}
 
     defaults:
       run:

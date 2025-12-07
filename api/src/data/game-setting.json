@@ -4,28 +4,28 @@
       "availableCommands": ["SKIP", "FORWARD", "TURN_RIGHT", "TURN_LEFT"]
     },
     "DEATH": {
-      "availableCommands": ["SKIP", "FORWARD", "TURN_RIGHT"]
+      "availableCommands": ["SKIP", "FORWARD"]
     },
     "HIEROPHANT": {
       "availableCommands": ["SPECIAL", "SKIP", "FORWARD"]
     },
     "FOOL": {
-      "availableCommands": ["SPECIAL", "SKIP", "TURN_RIGHT", "TURN_LEFT"]
-    },
-    "HIGH_PRIESTESS": {
-      "availableCommands": ["SPECIAL", "SKIP", "TURN_RIGHT", "TURN_LEFT"]
-    },
-    "HERMIT": {
-      "availableCommands": ["SPECIAL", "SKIP"]
+      "availableCommands": [
+        "SPECIAL",
+        "SKIP",
+        "TURN_RIGHT",
+        "TURN_LEFT",
+        "FORWARD"
+      ]
     },
     "THE_TOWER": {
-      "availableCommands": ["SPECIAL", "SKIP", "TURN_RIGHT"]
+      "availableCommands": ["SKIP"]
     },
     "SUN": {
-      "availableCommands": ["SKIP", "TURN_RIGHT", "TURN_LEFT"]
+      "availableCommands": ["SKIP", "FORWARD"]
     },
     "MOON": {
-      "availableCommands": ["SKIP", "TURN_RIGHT", "TURN_LEFT"]
+      "availableCommands": ["SKIP", "FORWARD"]
     }
   }
 }

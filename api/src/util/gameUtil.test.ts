@@ -610,7 +610,7 @@ describe("gameUtil", () => {
       expect(result.initialCell).toEqual(initialCell);
       expect(result.initialDirection).toBe(initialDirection);
       expect(result.specialCells).toEqual(specialCells);
-      expect(result.goalCell).toHaveLength(2);
+      expect(result.goalCell).toHaveLength(4);
     });
 
     it("createGameSetting がデフォルト値を使用する", () => {
@@ -620,7 +620,7 @@ describe("gameUtil", () => {
       expect(result.initialCell).toEqual(DEFAULT_SETTING.initialCell);
       expect(result.initialDirection).toBe(DEFAULT_SETTING.initialDirection);
       expect(result.specialCells).toHaveLength(2);
-      expect(result.goalCell).toHaveLength(2);
+      expect(result.goalCell).toHaveLength(4);
     });
 
     it("getRoomSettingJsonContents が正しくJSONをパースする", () => {
