@@ -1,5 +1,9 @@
 import { Router } from "express";
-import { validate, validateParams } from "../middleware/validation";
+import {
+  validate,
+  validateParams,
+  validateQuery,
+} from "../middleware/validation";
 import {
   proofController,
   roomCodeParamsSchema,
@@ -7,8 +11,11 @@ import {
   roomSessionIdSchema,
   revealProofBodySchema,
   createBombBodySchema,
+  addRoomMemberBodySchema,
+  tokenBodySchema,
+  memberIdSchema,
 } from "../controllers/proof.controller";
-import { addRoomMemberBodySchema } from "../controllers/room.controller";
+
 const router = Router();
 router.post("/rooms", proofController.createRoom);
 router.get("/rooms", proofController.getAllRooms);
@@ -40,6 +47,14 @@ router.get(
   proofController.getRoomSessionById
 );
 router.get("/sessions/", proofController.getRoomSessionByRoomId);
+router.get(
+  "/sessions/:roomSessionId/status/:proofCode",
+  [
+    validateParams(roomSessionIdAndProofCodeSchema),
+    validateQuery(memberIdSchema),
+  ],
+  proofController.getProofStatus
+);
 router.post(
   "/sessions/:roomSessionId/reveal/:proofCode",
   [
@@ -49,8 +64,35 @@ router.post(
   proofController.getProofByRoomSessionIdAndCode
 );
 router.post(
+  "/sessions/:roomSessionId/bombInit",
+  [validateParams(roomSessionIdSchema), validate(createBombBodySchema)],
+  proofController.initializeBomb
+);
+router.post(
   "/sessions/:roomSessionId/bomb",
   [validateParams(roomSessionIdSchema), validate(createBombBodySchema)],
-  proofController.createBomb
+  proofController.initializeBomb
 );
+
+router.post(
+  "/sessions/:roomSessionId/turn/start",
+  [validateParams(roomSessionIdSchema)],
+  proofController.startTurn
+);
+
+router.post(
+  "/sessions/:roomSessionId/order/start",
+  [validateParams(roomSessionIdSchema)],
+  proofController.startOrder
+);
+
+router.post(
+  "/sessions/:roomSessionId/order/end",
+  [validateParams(roomSessionIdSchema)],
+  proofController.endOrder
+);
+
+router.post("/sessions/_forceFocus", proofController._forceFocus);
+
+router.post("/token", [validate(tokenBodySchema)], proofController.decodeToken);
 export default router;

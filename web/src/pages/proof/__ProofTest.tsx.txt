@@ -1,0 +1,70 @@
+import { decodeToken } from "@/api/apiClient";
+import { useParams, useSearchParams } from "react-router-dom";
+import { useChat } from "@/hooks/useChat";
+import type { ChatMessage } from "@/lib/socket/socketTypes";
+import { useAuthSocket } from "@/hooks/useSocket";
+import { useState } from "react";
+import { useEffect } from "react";
+import { useAuth } from "@/contexts/AuthContext";
+import { RevealRequest } from "@/components/features/proof/RevealRequest";
+export const ProofTest = () => {
+  const { roomSessionId } = useParams();
+  const [searchParams] = useSearchParams();
+  const { user, setUser } = useAuth();
+  const { isConnected } = useAuthSocket();
+  const token = searchParams.get("token");
+
+  useEffect(() => {
+    if (!token) return;
+    const fetchUser = async () => {
+      const user = await decodeToken(token);
+      setUser(user);
+    };
+    fetchUser();
+  }, [token, setUser]);
+
+  if (!isConnected) {
+    return <div>Not connected</div>;
+  }
+
+  return (
+    <div>
+      ProofTest {roomSessionId}
+      {user?.displayName}
+      {user && isConnected && <ChatMessageComponent />}
+    </div>
+  );
+};
+
+const ChatMessageComponent = () => {
+  const { messages, sendMessage } = useChat();
+  console.log("messages", messages);
+  return (
+    <>
+      <div>
+        {messages.map((message: ChatMessage) => (
+          <div key={message.id}>{message.text}</div>
+        ))}
+      </div>
+      <ChatInput onSend={sendMessage} />
+      <RevealRequest />
+    </>
+  );
+};
+
+const ChatInput = ({ onSend }: { onSend: (text: string) => void }) => {
+  const [message, setMessage] = useState<string>("");
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessage(e.target.value);
+  };
+  const handleSend = () => {
+    onSend(message);
+    setMessage("");
+  };
+  return (
+    <>
+      <input type="text" onChange={handleChange} value={message} />
+      <button onClick={handleSend}>Send</button>
+    </>
+  );
+};

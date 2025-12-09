@@ -58,6 +58,7 @@ export function toDTOProofRoomSession(
     id: roomSession.id,
     status: roomSession.status,
     turn: roomSession.turn,
+    focusOn: roomSession.focusOn,
     setting: JSON.parse(
       roomSession.setting
     ) as ProofRoomSessionSettingJsonContents,

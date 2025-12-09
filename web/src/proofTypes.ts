@@ -1,8 +1,8 @@
 import {
   PROOF_MEMBER_STATUS,
-  PROOF_ROLE_NAME_MAP,
-} from "../../domain/proof/proofCommon";
-import { ProofRoomSessionSettingJsonContents } from "../../domain/proof/types";
+  REVEALED_RESULT_CODE,
+} from "@/common/proofCommon";
+
 // roomのセッション情報
 export type DTOProofRoomSession = {
   id: number;
@@ -67,10 +67,41 @@ export type DTOProof = {
   revealedBy: number[];
 };
 
+export type ProofRoomSessionSettingJsonContents = {
+  aCount: number;
+  aDummyCount: number;
+  bCount: number;
+  bDummyCount: number;
+  cCount: number;
+  cDummyCount: number;
+  featureB: Record<keyof typeof PROOF_ROLE_NAME_MAP, RoleFeatureB>;
+};
+
+export const PROOF_ROLE_NAME_MAP = Object.freeze({
+  DETECTIVE: "DETECTIVE",
+  BOMBER: "BOMBER",
+  BOMB_SQUAD: "BOMB_SQUAD",
+  LIER: "LIER",
+  INFORMER: "INFORMER",
+  MAGICIAN: "MAGICIAN",
+});
+export type RoleFeatureB = {
+  borned: string;
+  favariteFood: string;
+  birthDay: string;
+  yesterday: string;
+};
+
 export type DTOProofStatus = {
   isExists: boolean;
   ableToOpenToPublic: boolean;
   ableToOpenToPrivate: boolean;
+};
+
+export type RevealResult = {
+  result: (typeof REVEALED_RESULT_CODE)[keyof typeof REVEALED_RESULT_CODE];
+  message: string;
+  proof?: DTOProof;
 };
 
 export type DecodedUserInfo = {

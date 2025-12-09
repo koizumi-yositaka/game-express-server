@@ -131,6 +131,7 @@ export function toTProofRoomSessionFromProofRoomSessionWithUsers(
     id: roomSession.id,
     roomId: roomSession.roomId,
     turn: roomSession.turn,
+    focusOn: roomSession.focusOn,
     status: roomSession.status,
     setting: roomSession.setting,
     room: toTProofRoomFromProofRoomWithUsers(room),
@@ -148,6 +149,7 @@ export function toTProofRoomSession(
     turn: roomSession.turn,
     status: roomSession.status,
     setting: roomSession.setting,
+    focusOn: roomSession.focusOn,
     room: toTProofRoom(room, members),
   };
 }

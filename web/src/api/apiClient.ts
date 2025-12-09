@@ -5,6 +5,12 @@ import type {
   DTORoomMember,
   DTOCommandHistory,
 } from "@/types";
+import type {
+  DTOProofRoomSession,
+  DTOProofStatus,
+  DecodedUserInfo,
+  RevealResult,
+} from "@/proofTypes";
 
 export async function healthCheck() {
   try {
@@ -145,6 +151,62 @@ export async function gameComplete(
     await axiosInstance.post(`/sessions/${roomSessionId}/complete`, { result });
   } catch (error) {
     console.error("gameComplete error:", error);
+    throw error;
+  }
+}
+// proof
+export async function getProofSession(
+  roomSessionId: number
+): Promise<DTOProofRoomSession> {
+  try {
+    const res = await axiosInstance.get(`/proofs/sessions/${roomSessionId}`);
+    return res.data;
+  } catch (error) {
+    console.error("getProofSession error:", error);
+    throw error;
+  }
+}
+
+export async function decodeToken(token: string): Promise<DecodedUserInfo> {
+  try {
+    const res = await axiosInstance.post("/proofs/token", { token });
+    return res.data;
+  } catch (error) {
+    console.error("decodeToken error:", error);
+    throw error;
+  }
+}
+
+export async function getProofStatus(
+  roomSessionId: number,
+  proofCode: string,
+  memberId: number
+): Promise<DTOProofStatus> {
+  try {
+    const res = await axiosInstance.get(
+      `/proofs/sessions/${roomSessionId}/status/${proofCode}?memberId=${memberId}`
+    );
+    return res.data;
+  } catch (error) {
+    console.error("getProofStatus error:", error);
+    throw error;
+  }
+}
+
+export async function revealProof(
+  roomSessionId: number,
+  proofCode: string,
+  memberId: number,
+  isEntire: boolean
+): Promise<RevealResult> {
+  try {
+    const res = await axiosInstance.post(
+      `/proofs/sessions/${roomSessionId}/reveal/${proofCode}`,
+      { memberId, isEntire }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("revealProof error:", error);
     throw error;
   }
 }

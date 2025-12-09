@@ -8,13 +8,18 @@ import {
 } from "./proof/dtoParse";
 import { BadRequestError } from "../error/AppError";
 import { myUtil } from "../util/myUtil";
-import { UserToken } from "../domain/proof/types";
-
+import { DecodedUserInfo, UserToken } from "../domain/proof/types";
+import { DTOProofStatus, DTOProofUser } from "./proof/dto";
+import { PROOF_MEMBER_STATUS, PROOF_STATUS } from "../domain/proof/proofCommon";
 export const roomCodeParamsSchema = z.object({
   roomCode: z.string().length(4),
 });
 export const addRoomMemberBodySchema = z.object({
   userId: z.string(),
+});
+
+export const memberIdSchema = z.object({
+  memberId: z.string(),
 });
 
 export const addRoomMembersBodySchema = z.object({
@@ -47,6 +52,13 @@ export const createBombBodySchema = z.object({
   memberId: z.number(),
 });
 
+export const forceFocusBodySchema = z.object({
+  memberId: z.number(),
+  roomSessionId: z.number(),
+  isFocus: z.boolean(),
+});
+
+export type MemberIdSchema = z.infer<typeof memberIdSchema>;
 export type RevealProofBody = z.infer<typeof revealProofBodySchema>;
 export type RoomCodeParams = z.infer<typeof roomCodeParamsSchema>;
 export type AddRoomMemberBody = z.infer<typeof addRoomMemberBodySchema>;
@@ -58,6 +70,7 @@ export type RoomSessionIdAndProofCodeSchema = z.infer<
 >;
 export type CreateBombBodySchema = z.infer<typeof createBombBodySchema>;
 export type TokenBody = z.infer<typeof tokenBodySchema>;
+export type ForceFocusBodySchema = z.infer<typeof forceFocusBodySchema>;
 export const proofController = {
   getHealth: (_req: Request, res: Response, _next: NextFunction) => {
     res.status(200).json({ message: "ok" });
@@ -181,8 +194,7 @@ export const proofController = {
         throw new BadRequestError("roomSessionId must be a number");
       }
       const roomSession = await proofService.getRoomSession(
-        Number(req.params.roomSessionId),
-        false
+        Number(req.params.roomSessionId)
       );
       res.status(200).json(toDTOProofRoomSession(roomSession));
     } catch (error) {
@@ -190,6 +202,33 @@ export const proofController = {
     }
   },
 
+  getProofStatus: async (
+    req: Request<RoomSessionIdAndProofCodeSchema, MemberIdSchema>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const memberId = req.query.memberId;
+      const proof = await proofService.getProofStatus(
+        Number(req.params.roomSessionId),
+        req.params.proofCode
+      );
+      console.log("proof", proof);
+
+      const dtoProofStatus: DTOProofStatus = {
+        isExists: proof !== null,
+        ableToOpenToPublic:
+          proof !== null && proof.status !== PROOF_STATUS.REVEALED_TO_ALL,
+        ableToOpenToPrivate:
+          proof !== null &&
+          proof.status !== PROOF_STATUS.REVEALED_TO_ALL &&
+          !proof.revealedBy.includes(Number(memberId)),
+      };
+      res.status(200).json(dtoProofStatus);
+    } catch (error) {
+      next(error);
+    }
+  },
   getProofByRoomSessionIdAndCode: async (
     req: Request<RoomSessionIdAndProofCodeSchema, unknown, RevealProofBody>,
     res: Response,
@@ -211,13 +250,13 @@ export const proofController = {
       next(error);
     }
   },
-  createBomb: async (
+  initializeBomb: async (
     req: Request<RoomSessionIdSchema, unknown, CreateBombBodySchema>,
     res: Response,
     next: NextFunction
   ) => {
     try {
-      await proofService.createBomb(
+      await proofService.initializeBomb(
         Number(req.params.roomSessionId),
         req.body.proofCodes,
         req.body.memberId
@@ -234,10 +273,84 @@ export const proofController = {
     next: NextFunction
   ) => {
     try {
-      const token = await myUtil.decrypt(req.body.token);
-      const userToken = JSON.parse(token) as UserToken;
+      //await new Promise((resolve) => setTimeout(resolve, 2000));
+      // const token = await myUtil.decrypt(req.body.token);
+      // const userToken = JSON.parse(token) as UserToken;
+      const userInfo: DecodedUserInfo = {
+        userId: "a",
+        roomSessionId: 18,
+        roomCode: "8920",
+        displayName: "test",
+        memberId: 11,
+        roleName: "DETECTIVE",
+        status: PROOF_MEMBER_STATUS.ENTERED,
+      };
+      res.status(200).json(userInfo);
+    } catch (error) {
+      next(error);
+    }
+  },
 
-      res.status(200).json(userToken);
+  // turn
+  startTurn: async (
+    req: Request<RoomSessionIdSchema>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const nextTurn = await proofService.startTurn(
+        Number(req.params.roomSessionId)
+      );
+      res.status(200).json({ result: `success ${nextTurn}` });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  startOrder: async (
+    req: Request<RoomSessionIdSchema>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      await proofService.startOrder(
+        Number(req.params.roomSessionId),
+        req.app.locals.io
+      );
+      res.status(200).json({ result: "success" });
+    } catch (error) {
+      next(error);
+    }
+  },
+  endOrder: async (
+    req: Request<RoomSessionIdSchema>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const nextFocusOnMemberId = await proofService.endOrder(
+        Number(req.params.roomSessionId),
+        req.app.locals.io
+      );
+      res.status(200).json({ nextFocusOnMemberId: nextFocusOnMemberId });
+    } catch (error) {
+      next(error);
+    }
+  },
+
+  _forceFocus: async (
+    req: Request<unknown, unknown, ForceFocusBodySchema>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      await proofService._forceFocus(
+        req.body.roomSessionId,
+        req.app.locals.io,
+        req.body.memberId,
+        req.body.isFocus
+      );
+      res.status(200).json({ result: "success" });
     } catch (error) {
       next(error);
     }

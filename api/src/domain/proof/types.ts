@@ -1,5 +1,5 @@
 import z from "zod";
-import { PROOF_ROLE_NAME_MAP } from "./proofCommon";
+import { PROOF_MEMBER_STATUS, PROOF_ROLE_NAME_MAP } from "./proofCommon";
 export type TProofRoom = {
   id: number;
   roomCode: string;
@@ -34,6 +34,7 @@ export type TProofRoomSession = {
   turn: number;
   status: number;
   setting: string;
+  focusOn: number;
   room: TProofRoom;
 };
 
@@ -83,6 +84,13 @@ export type RoleFeatureB = {
   yesterday: string;
 };
 
+export const PROOF_ROLE_FEATURE_B_KEYS = Object.freeze({
+  BORNED: "borned",
+  FAVARITE_FOOD: "favariteFood",
+  BIRTH_DAY: "birthDay",
+  YESTERDAY: "yesterday",
+});
+
 export type RoleFeatureC = {};
 // export const CommandTypeSchema = z.enum([
 //   "SPECIAL",
@@ -101,6 +109,7 @@ export type UserToken = {
   memberId: number;
   roleId: number;
 };
+
 export const REVEALED_RESULT_CODE = Object.freeze({
   SUCCESS: "SUCCESS",
   DISARM_SUCCESS: "DISARM_SUCCESS",
@@ -112,4 +121,20 @@ export type TRevealedResult = {
   result: (typeof REVEALED_RESULT_CODE)[keyof typeof REVEALED_RESULT_CODE];
   message: string;
   proof?: TProof;
+};
+
+export type DTOProofStatus = {
+  isExists: boolean;
+  ableToOpenToPublic: boolean;
+  ableToOpenToPrivate: boolean;
+};
+
+export type DecodedUserInfo = {
+  roomSessionId: number;
+  roomCode: string;
+  displayName: string;
+  userId: string;
+  memberId: number;
+  roleName: keyof typeof PROOF_ROLE_NAME_MAP;
+  status: (typeof PROOF_MEMBER_STATUS)[keyof typeof PROOF_MEMBER_STATUS];
 };

@@ -14,10 +14,10 @@ import { toTProofRoomSessionFromProofRoomSessionWithMembers } from "../../domain
 import { gameUtil } from "../../util/gameUtil";
 import { proofUtil } from "../../util/proofUtil";
 import { lineUtil } from "../../util/lineUtil";
-import { GAME_STATUS } from "../../domain/common";
 import { toTProofFromProofList } from "../../domain/proof/typeParse";
 import {
   PROOF_MEMBER_STATUS,
+  PROOF_ROOM_STATUS,
   PROOF_ROLE_NAME_MAP,
   PROOF_STATUS,
 } from "../../domain/proof/proofCommon";
@@ -40,9 +40,9 @@ export const proofProcess = {
     }
     const roomMembers = await proofRepository.getRoomMembers(tx, room.id);
 
-    for (const [index, member] of gameUtil
-      .shuffleArray(roomMembers)
-      .entries()) {
+    const shuffledRoomMembers = gameUtil.shuffleArray(roomMembers);
+    let topMemberId = shuffledRoomMembers[0].id;
+    for (const [index, member] of shuffledRoomMembers.entries()) {
       await proofRepository.updateRoomMemberSort(
         tx,
         room.id,
@@ -51,7 +51,7 @@ export const proofProcess = {
       );
     }
     const roles = await proofRepository.getRoles(tx);
-
+    const initailSetting = await proofUtil.createGameSetting();
     const assignedMembers = proofUtil.assignRoles(roomMembers, roles);
     for (const member of assignedMembers) {
       await proofRepository.updateRoomMemberRole(
@@ -78,14 +78,16 @@ export const proofProcess = {
 
     // 初期設定
     // TODO
-    const initailSetting = await proofUtil.createGameSetting();
+    //const
+
     await proofRepository.updateRoom(tx, room.id, {
-      status: GAME_STATUS.IN_PROGRESS,
+      status: PROOF_ROOM_STATUS.IN_PROGRESS,
     });
     await proofRepository.createRoomSession(
       tx,
       room.id,
-      JSON.stringify(initailSetting)
+      JSON.stringify(initailSetting),
+      topMemberId
     );
 
     const roomSession = await proofRepository.getRoomSessionByRoomId(
@@ -132,6 +134,12 @@ export const proofProcess = {
       throw new NotFoundError("Member not found");
     }
 
+    if (
+      member.role.roleName === PROOF_ROLE_NAME_MAP.BOMBER &&
+      params.isEntire
+    ) {
+      throw new BadRequestError("Bomber cannot reveal entire");
+    }
     const proof = await proofRepository.getProofByRoomSessionIdAndCode(
       tx,
       params.roomSessionId,
@@ -197,7 +205,11 @@ export const proofProcess = {
         };
       }
       // 鑑定士の場合
-      if (member.role.roleName === PROOF_ROLE_NAME_MAP.BOMB_SQUAD) {
+      // 全体開示でない場合のみ解除可能
+      if (
+        member.role.roleName === PROOF_ROLE_NAME_MAP.BOMB_SQUAD &&
+        !params.isEntire
+      ) {
         await proofProcess.revealProcess(tx, {
           roomSession: parsedRoomSession,
           proof: toTProofFromProofList(updatedProof),
@@ -267,7 +279,7 @@ export const proofProcess = {
   ): Promise<void> => {
     if (params.isEntire) {
       for (const member of params.roomSession.room.members) {
-        if (member.roleId !== 1) {
+        if (member.role?.roleName !== PROOF_ROLE_NAME_MAP.BOMBER) {
           await lineUtil.sendSimpleTextMessage(
             member.userId,
             "爆死です。ボマーの勝利です"

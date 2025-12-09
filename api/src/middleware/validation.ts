@@ -34,6 +34,7 @@ export const validateQuery =
   (schema: z.ZodTypeAny) =>
   (req: Request, res: Response, next: NextFunction) => {
     try {
+      console.log("req.query", req.query);
       schema.parse(req.query);
       next();
     } catch (err: any) {

@@ -2,6 +2,7 @@ import {
   DEFAULT_PROOF_COUNT,
   PROOF_BOMB_RESERVED_WORD,
   PROOF_RANK,
+  PROOF_ROLE_NAME_MAP,
   PROOF_STATUS,
 } from "../domain/proof/proofCommon";
 import {
@@ -9,9 +10,13 @@ import {
   ProofForm,
   TProofRoomMember,
   TProofRoomSession,
+  PROOF_ROLE_FEATURE_B_KEYS,
+  RoleFeatureB,
 } from "../domain/proof/types";
 import { TProofRole } from "../domain/proof/types";
 import { gameUtil } from "./gameUtil";
+import { myUtil } from "./myUtil";
+import { Server } from "socket.io";
 
 export const proofUtil = {
   assignRoles: (
@@ -30,7 +35,9 @@ export const proofUtil = {
     return resultMembers;
   },
   createGameSetting: async (): Promise<ProofRoomSessionSettingJsonContents> => {
-    return {
+    const featureBKeys = Object.values(PROOF_ROLE_FEATURE_B_KEYS);
+
+    const temp = {
       aCount: DEFAULT_PROOF_COUNT.A_NORMAL,
       aDummyCount: DEFAULT_PROOF_COUNT.A_DUMMY,
       bCount: DEFAULT_PROOF_COUNT.B_NORMAL,
@@ -76,6 +83,15 @@ export const proofUtil = {
         },
       },
     };
+    for (const role of Object.values(PROOF_ROLE_NAME_MAP)) {
+      const selectedFeatureBKeys = myUtil.conbination(featureBKeys, 2);
+      selectedFeatureBKeys.forEach((key) => {
+        temp.featureB[role as keyof typeof PROOF_ROLE_NAME_MAP][
+          key as keyof RoleFeatureB
+        ] = getRandomFeatureB(key as keyof RoleFeatureB);
+      });
+    }
+    return temp;
   },
 
   createProofs: async (
@@ -90,9 +106,15 @@ export const proofUtil = {
 
     const result: ProofForm[] = [];
 
-    result.push(...createProofList(proofRoomSession, codeAList, PROOF_RANK.A));
-    result.push(...createProofList(proofRoomSession, codeBList, PROOF_RANK.B));
-    result.push(...createProofList(proofRoomSession, codeCList, PROOF_RANK.C));
+    result.push(
+      ...createProofList(setting, proofRoomSession, codeAList, PROOF_RANK.A)
+    );
+    result.push(
+      ...createProofList(setting, proofRoomSession, codeBList, PROOF_RANK.B)
+    );
+    result.push(
+      ...createProofList(setting, proofRoomSession, codeCList, PROOF_RANK.C)
+    );
 
     return result;
   },
@@ -118,6 +140,7 @@ function createCodeList(rank: string) {
 }
 
 function createProofList(
+  setting: ProofRoomSessionSettingJsonContents,
   proofRoomSession: TProofRoomSession,
   codeList: string[],
   rank: keyof typeof PROOF_RANK
@@ -128,7 +151,7 @@ function createProofList(
       result = _createAProofList(proofRoomSession, codeList);
       break;
     case PROOF_RANK.B:
-      result = _createBProofList(proofRoomSession, codeList);
+      result = _createBProofList(setting, proofRoomSession, codeList);
       break;
     case PROOF_RANK.C:
       result = _createCProofList(proofRoomSession, codeList);
@@ -194,6 +217,7 @@ function _createAProofList(
   return result;
 }
 function _createBProofList(
+  setting: ProofRoomSessionSettingJsonContents,
   proofRoomSession: TProofRoomSession,
   codeList: string[]
 ) {
@@ -207,6 +231,8 @@ function _createBProofList(
     );
   }
 
+  const featureB = getFeatureB(setting);
+
   for (let i = 0; i < codeList.length; i++) {
     if (i < normalCount) {
       result.push({
@@ -214,8 +240,8 @@ function _createBProofList(
         code: codeList[i],
         rank: PROOF_RANK.B,
         status: PROOF_STATUS.NORMAL,
-        title: PROOF_RANK.B + codeList[i],
-        description: "Proof" + i,
+        title: featureB[i].title,
+        description: featureB[i].description,
       });
     } else {
       result.push({
@@ -277,3 +303,70 @@ function getMemberInfoString(member: TProofRoomMember) {
     memberId: `${member.user?.displayName}の正体`,
   };
 }
+
+function getRandomFeatureB(
+  featureBKey: (typeof PROOF_ROLE_FEATURE_B_KEYS)[keyof typeof PROOF_ROLE_FEATURE_B_KEYS]
+) {
+  switch (featureBKey) {
+    case PROOF_ROLE_FEATURE_B_KEYS.BORNED:
+      return myUtil.getNationNames()[
+        myUtil.getRandomInt(0, myUtil.getNationNames().length - 1)
+      ];
+    case PROOF_ROLE_FEATURE_B_KEYS.FAVARITE_FOOD:
+      return myUtil.getFoodNames()[
+        myUtil.getRandomInt(0, myUtil.getFoodNames().length - 1)
+      ];
+    case PROOF_ROLE_FEATURE_B_KEYS.BIRTH_DAY:
+      return myUtil.getBirthDay()[
+        myUtil.getRandomInt(0, myUtil.getBirthDay().length - 1)
+      ];
+    case PROOF_ROLE_FEATURE_B_KEYS.YESTERDAY:
+      return myUtil.getYesterday()[
+        myUtil.getRandomInt(0, myUtil.getYesterday().length - 1)
+      ];
+  }
+}
+
+function getFeatureB(setting: ProofRoomSessionSettingJsonContents) {
+  const result = [];
+  for (const role of Object.values(PROOF_ROLE_NAME_MAP)) {
+    for (const key of Object.values(PROOF_ROLE_FEATURE_B_KEYS)) {
+      const featureB =
+        setting.featureB[role as keyof typeof PROOF_ROLE_NAME_MAP][
+          key as keyof RoleFeatureB
+        ];
+      if (featureB) {
+        result.push({
+          description: `${role}の${keyToName(key)}は${featureB}`,
+          title: `${role}のヒント`,
+        });
+      }
+    }
+  }
+  return result;
+}
+
+export const activateUser = (
+  io: Server,
+  userId: string,
+  isActivate: boolean
+) => {
+  console.log("activateUser", userId, isActivate);
+  io.to(`user:${userId}`).emit(
+    isActivate ? "order:activate" : "order:deactivate",
+    isActivate ? "activate" : "deactivate"
+  );
+};
+
+const keyToName = (key: keyof RoleFeatureB) => {
+  switch (key) {
+    case PROOF_ROLE_FEATURE_B_KEYS.BORNED:
+      return "出身国";
+    case PROOF_ROLE_FEATURE_B_KEYS.FAVARITE_FOOD:
+      return "好きな食べ物";
+    case PROOF_ROLE_FEATURE_B_KEYS.BIRTH_DAY:
+      return "誕生日";
+    case PROOF_ROLE_FEATURE_B_KEYS.YESTERDAY:
+      return "昨日の出来事";
+  }
+};

@@ -1,13 +1,17 @@
 import { useAuth } from "@/contexts/AuthContext";
 import { Navigate, useLocation } from "react-router-dom";
 
-export const RequiredAuth = ({ children }: { children: React.ReactNode }) => {
+export const RequiredTokenUser = ({
+  children,
+}: {
+  children: React.ReactNode;
+}) => {
   const { user } = useAuth();
   const location = useLocation();
 
-  if (!user || user.userId !== "1") {
+  if (!user) {
     // ログインしていなければ login へリダイレクト
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to="/proof" state={{ from: location }} replace />;
   }
 
   // ログイン済みならそのまま表示

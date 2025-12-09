@@ -1,16 +1,3 @@
-export const PROOF_ROOM_STATUS = Object.freeze({
-  NOT_STARTED: 0,
-  IN_PROGRESS: 1,
-});
-
-export const PROOF_ROOM_SESSION_STATUS = Object.freeze({
-  GAME_STARTED: 0,
-  TURN_STARTED: 1,
-  ORDER_WAITING: 2,
-  ORDER_COMPLETED: 3,
-  TURN_ENDED: 4,
-});
-
 export const PROOF_STATUS = Object.freeze({
   NORMAL: "1",
   DUMMY: "2",
@@ -55,4 +42,12 @@ export const PROOF_ROLE_NAME_MAP = Object.freeze({
 export const PROOF_ROLE_GROUP_MAP = Object.freeze({
   ONE: 1,
   TWO: 2,
+});
+
+export const REVEALED_RESULT_CODE = Object.freeze({
+  SUCCESS: "SUCCESS",
+  DISARM_SUCCESS: "DISARM_SUCCESS",
+  ALREADY_REVEALED: "ALREADY_REVEALED",
+  BOMBED: "BOMBED",
+  INVALID_CODE: "INVALID_CODE",
 });

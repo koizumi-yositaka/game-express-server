@@ -1,26 +1,52 @@
 // AuthContext.tsx
 import { createContext, useContext, useState, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
+import { PROOF_MEMBER_STATUS } from "@/common/proofCommon";
+import { type ExtendedUserInfo } from "@/lib/socket/socketTypes";
+
 type AuthContextType = {
-  user: { name: string } | null;
+  user: ExtendedUserInfo | null;
+  setUser: (user: ExtendedUserInfo) => void;
   login: () => void;
   logout: () => void;
+  toggleIsFocusing: (isFocusing: boolean) => void;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const navigate = useNavigate();
-  const [user, setUser] = useState<{ name: string } | null>(null);
+  const [user, setExtendedUser] = useState<ExtendedUserInfo | null>(null);
 
   const login = () => {
-    setUser({ name: "Yoshi" }); // 本当はAPI叩いたりする
+    setExtendedUser({
+      userId: "1",
+      roomSessionId: 1,
+      roomCode: "1234",
+      displayName: "test",
+      memberId: 1,
+      roleName: "DETECTIVE",
+      status: PROOF_MEMBER_STATUS.ENTERED,
+      isFocusing: false,
+    }); // 本当はAPI叩いたりする
     navigate("/rooms");
   };
-  const logout = () => setUser(null);
+  const logout = () => setExtendedUser(null);
+  const setUser = (user: ExtendedUserInfo) => {
+    console.log("setUser", user);
+    setExtendedUser(user);
+  };
+  const toggleIsFocusing = (isFocusing: boolean) => {
+    setExtendedUser((prev) => ({
+      ...prev!,
+      isFocusing,
+    }));
+  };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout }}>
+    <AuthContext.Provider
+      value={{ user, setUser, login, logout, toggleIsFocusing }}
+    >
       {children}
     </AuthContext.Provider>
   );

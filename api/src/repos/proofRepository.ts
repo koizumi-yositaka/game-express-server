@@ -1,5 +1,9 @@
 import { GAME_STATUS } from "../domain/common";
-import { PROOF_MEMBER_STATUS } from "../domain/proof/proofCommon";
+import {
+  PROOF_ROOM_STATUS,
+  PROOF_MEMBER_STATUS,
+  PROOF_ROOM_SESSION_STATUS,
+} from "../domain/proof/proofCommon";
 import { ProofForm } from "../domain/proof/types";
 import {
   PrismaClient,
@@ -41,7 +45,7 @@ export const proofRepository = {
     return await tx.proofRoom.create({
       data: {
         roomCode: roomCode,
-        status: GAME_STATUS.NOT_STARTED,
+        status: PROOF_ROOM_STATUS.NOT_STARTED,
         openFlg: true,
       },
     });
@@ -196,25 +200,58 @@ export const proofRepository = {
     return updatedRoom;
   },
   /**###################### ROOMSESSION ######################**/
-  createRoomSession: async (tx: TxClient, roomId: number, setting: string) => {
+  createRoomSession: async (
+    tx: TxClient,
+    roomId: number,
+    setting: string,
+    focusOn: number
+  ) => {
     return await tx.proofRoomSession.create({
       data: {
         roomId: roomId,
         setting: setting,
+        focusOn: focusOn,
+        status: PROOF_ROOM_SESSION_STATUS.GAME_STARTED,
       },
     });
   },
 
-  updateRoomSessionStatus: async (
+  updateRoomSession: async (
     tx: TxClient,
     roomSessionId: number,
-    status: number
+    updateVal: { turn?: number; focusOn?: number; status?: number }
   ) => {
     return await tx.proofRoomSession.update({
       where: { id: roomSessionId },
-      data: { status: status },
+      data: updateVal,
     });
   },
+  // updateRoomSessionStatus: async (
+  //   tx: TxClient,
+  //   roomSessionId: number,
+  //   status: number
+  // ) => {
+  //   return await tx.proofRoomSession.update({
+  //     where: { id: roomSessionId },
+  //     data: { status: status },
+  //   });
+  // },
+  // stepNextTurn: async (tx: TxClient, roomSessionId: number, turn: number) => {
+  //   return await tx.proofRoomSession.update({
+  //     where: { id: roomSessionId },
+  //     data: { turn: turn },
+  //   });
+  // },
+  // updateRoomSessionFocusOn: async (
+  //   tx: TxClient,
+  //   roomSessionId: number,
+  //   focusOn: number
+  // ) => {
+  //   return await tx.proofRoomSession.update({
+  //     where: { id: roomSessionId },
+  //     data: { focusOn: focusOn },
+  //   });
+  // },
   getRoomSession: async (
     tx: TxClient,
     roomSessionId: number
