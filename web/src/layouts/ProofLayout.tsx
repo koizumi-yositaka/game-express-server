@@ -6,17 +6,15 @@ import { Outlet } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { decodeToken } from "@/api/apiClient";
 import { useAuthSocket } from "@/hooks/useSocket";
-import { useOrderSocket } from "@/hooks/useOrderSocket";
 
 export const ProofLayout = () => {
   const navigate = useNavigate();
   const { user, setUser } = useAuth();
   const { login } = useAuthSocket();
-  const { dummy } = useOrderSocket();
   const { roomSessionId } = useParams();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
-  console.log("dummy", dummy);
+
   let currentSessionRoomID =
     roomSessionId ?? localStorage.getItem("currentSessionRoomID");
   let currentSessionToken =
@@ -58,13 +56,13 @@ export const ProofLayout = () => {
     }
   };
   return (
-    <div className="flex flex-col gap-4 p-4">
-      <div className="flex justify-between items-center">
+    <div className="flex flex-col h-screen overflow-hidden">
+      <div className="sticky top-0 z-10 bg-background border-b p-4 flex justify-between items-center">
         <Button onClick={handleBack} variant="outline">
           Proof Back
         </Button>
       </div>
-      <div className="flex-1">
+      <div className="flex-1 overflow-y-auto p-4">
         <Outlet />
       </div>
     </div>

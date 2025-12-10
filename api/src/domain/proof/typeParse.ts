@@ -163,6 +163,10 @@ export function toTProofFromProofList(proofList: ProofList): TProof {
     status: proofList.status,
     title: proofList.title,
     description: proofList.description,
-    revealedBy: proofList.revealedBy.split(",").map((id) => parseInt(id)) ?? [],
+    revealedBy:
+      proofList.revealedBy
+        .split(",")
+        .filter((id) => id !== "" && id !== null && id !== undefined)
+        .map((id) => Number(id)) ?? [],
   };
 }

@@ -1,11 +1,21 @@
 // client/src/hooks/useAuthSocket.ts
-import { useEffect } from "react";
+import { useCallback, useEffect } from "react";
 import { socket } from "../lib/socket/socket";
 import { useAuth } from "@/contexts/AuthContext";
-export const useOrderSocket = () => {
+import type { DTOProofRoomSession } from "@/proofTypes";
+import type { SessonRoomInfo } from "@/lib/socket/socketTypes";
+export const useOrderSocket = ({
+  setSessionRoom,
+}: {
+  setSessionRoom?: (sessionRoom: DTOProofRoomSession | null) => void;
+}) => {
   console.log("useChat");
   const { toggleIsFocusing } = useAuth();
-  const dummy = "";
+
+  const requestOrderAll = useCallback((sessionRoomId: number) => {
+    console.log("requestOrderAll", sessionRoomId);
+    socket.emit("order:all", sessionRoomId);
+  }, []);
 
   useEffect(() => {
     const handleOrderActivate = (message: string) => {
@@ -16,14 +26,20 @@ export const useOrderSocket = () => {
       console.log("handleOrderDeactivate", message);
       toggleIsFocusing(false);
     };
+    const handleOrderAll = (sessionRoomInfo: SessonRoomInfo) => {
+      console.log("handleOrderAll", sessionRoomInfo);
+      if (setSessionRoom) {
+        setSessionRoom(sessionRoomInfo.sessionRoom);
+      }
+    };
     socket.on("order:activate", handleOrderActivate);
     socket.on("order:deactivate", handleOrderDeactivate);
-
+    socket.on("order:all", handleOrderAll);
     return () => {
       socket.off("order:activate", handleOrderActivate);
       socket.off("order:deactivate", handleOrderDeactivate);
+      socket.off("order:all", handleOrderAll);
     };
   }, []);
-
-  return { dummy };
+  return { requestOrderAll };
 };

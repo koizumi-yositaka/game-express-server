@@ -20,6 +20,18 @@ export const getUserStatusParamsSchema = z.object({
 export type GetUserStatusParams = z.infer<typeof getUserStatusParamsSchema>;
 
 export const userController = {
+  login: async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { id, password } = req.body;
+      if (password === "q") {
+        res.status(200).json({ result: "ok" });
+      } else {
+        res.status(200).json({ result: "ng" });
+      }
+    } catch (error) {
+      next(error);
+    }
+  },
   /**
    * ユーザーを取得する
    * @param req リクエスト

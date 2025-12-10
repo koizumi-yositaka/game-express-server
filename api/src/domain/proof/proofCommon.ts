@@ -56,3 +56,5 @@ export const PROOF_ROLE_GROUP_MAP = Object.freeze({
   ONE: 1,
   TWO: 2,
 });
+
+export const PROOF_ADMIN_USER_ID = "admin";

@@ -1,5 +1,6 @@
 import {
   DEFAULT_PROOF_COUNT,
+  PROOF_ADMIN_USER_ID,
   PROOF_BOMB_RESERVED_WORD,
   PROOF_RANK,
   PROOF_ROLE_NAME_MAP,
@@ -12,11 +13,14 @@ import {
   TProofRoomSession,
   PROOF_ROLE_FEATURE_B_KEYS,
   RoleFeatureB,
+  DecodedUserInfo,
 } from "../domain/proof/types";
 import { TProofRole } from "../domain/proof/types";
+
 import { gameUtil } from "./gameUtil";
 import { myUtil } from "./myUtil";
 import { Server } from "socket.io";
+import { toDTOProofRoomSession } from "../controllers/proof/dtoParse";
 
 export const proofUtil = {
   assignRoles: (
@@ -92,6 +96,10 @@ export const proofUtil = {
       });
     }
     return temp;
+  },
+
+  createToken: async (userInfo: DecodedUserInfo) => {
+    return await myUtil.encrypt(JSON.stringify(userInfo));
   },
 
   createProofs: async (
@@ -356,6 +364,15 @@ export const activateUser = (
     isActivate ? "order:activate" : "order:deactivate",
     isActivate ? "activate" : "deactivate"
   );
+};
+
+export const noticeAllUserInfo = (
+  io: Server,
+  roomSession: TProofRoomSession
+) => {
+  io.to(`user:${PROOF_ADMIN_USER_ID}`).emit("order:all", {
+    sessionRoom: toDTOProofRoomSession(roomSession),
+  });
 };
 
 const keyToName = (key: keyof RoleFeatureB) => {

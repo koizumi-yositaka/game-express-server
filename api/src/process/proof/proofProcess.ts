@@ -20,8 +20,12 @@ import {
   PROOF_ROOM_STATUS,
   PROOF_ROLE_NAME_MAP,
   PROOF_STATUS,
+  PROOF_ADMIN_USER_ID,
 } from "../../domain/proof/proofCommon";
 import { REVEALED_RESULT_CODE } from "../../domain/proof/types";
+import { Server } from "socket.io";
+
+const FRONT_URL = process.env.FRONT_URL ?? "http://localhost:5173";
 export const proofProcess = {
   startGame: async (
     tx: Prisma.TransactionClient,
@@ -35,9 +39,9 @@ export const proofProcess = {
       tx,
       room.id
     );
-    if (existingRoomSession) {
-      throw new BadRequestError("Room session already exists");
-    }
+    // if (existingRoomSession) {
+    //   throw new BadRequestError("Room session already exists");
+    // }
     const roomMembers = await proofRepository.getRoomMembers(tx, room.id);
 
     const shuffledRoomMembers = gameUtil.shuffleArray(roomMembers);
@@ -83,10 +87,11 @@ export const proofProcess = {
     await proofRepository.updateRoom(tx, room.id, {
       status: PROOF_ROOM_STATUS.IN_PROGRESS,
     });
+    const dummy = {};
     await proofRepository.createRoomSession(
       tx,
       room.id,
-      JSON.stringify(initailSetting),
+      JSON.stringify(dummy),
       topMemberId
     );
 
@@ -98,10 +103,30 @@ export const proofProcess = {
       throw new NotFoundError("Room session 作成失敗");
     }
 
+    if (roomSession.room.members.some((member) => !member.role)) {
+      throw new BadRequestError("Role not assigned");
+    }
+
     // 証拠作成
     // await proofRepository.deleteProofByRoomSessionId(tx, roomSession.id);
     const proofs = await proofUtil.createProofs(initailSetting, roomSession);
     await proofRepository.createProofs(tx, roomSession.id, proofs);
+
+    for (const member of roomSession.room.members) {
+      const token = await proofUtil.createToken({
+        roomSessionId: roomSession.id,
+        memberId: member.id,
+        roleName: member.role.roleName as keyof typeof PROOF_ROLE_NAME_MAP,
+        status: PROOF_MEMBER_STATUS.ENTERED,
+        displayName: member.user.displayName,
+        userId: member.user.userId,
+        roomCode: room.roomCode,
+      });
+      await lineUtil.sendSimpleTextMessage(
+        member.userId,
+        `${FRONT_URL}/public/proof/${roomSession.id}?token=${token}`
+      );
+    }
 
     return {
       roomSession:
@@ -110,6 +135,7 @@ export const proofProcess = {
   },
   revealProofProcess: async (
     tx: Prisma.TransactionClient,
+    io: Server,
     params: {
       roomSessionId: number;
       code: string;
@@ -185,13 +211,14 @@ export const proofProcess = {
           ? PROOF_STATUS.REVEALED_TO_ALL
           : PROOF_STATUS.REVEALED_TO_ONE,
         revealedBy: newRevealedBy,
+        revealedTurn: parsedRoomSession.turn,
       }
     );
     // 爆弾の場合
     if (proof.status === PROOF_STATUS.BOMBED) {
       // ボマーの場合
       if (member.role.roleName === PROOF_ROLE_NAME_MAP.BOMBER) {
-        await proofProcess.revealProcess(tx, {
+        await proofProcess.revealProcess(tx, io, {
           roomSession: parsedRoomSession,
           proof: toTProofFromProofList(updatedProof),
           revealedMemberId: member.id,
@@ -210,7 +237,7 @@ export const proofProcess = {
         member.role.roleName === PROOF_ROLE_NAME_MAP.BOMB_SQUAD &&
         !params.isEntire
       ) {
-        await proofProcess.revealProcess(tx, {
+        await proofProcess.revealProcess(tx, io, {
           roomSession: parsedRoomSession,
           proof: toTProofFromProofList(updatedProof),
           revealedMemberId: member.id,
@@ -224,7 +251,7 @@ export const proofProcess = {
         };
       }
       // 爆発時の処理
-      await proofProcess.bombedProcess(tx, {
+      await proofProcess.bombedProcess(tx, io, {
         roomSession: parsedRoomSession,
         userId: member.userId,
         isEntire: params.isEntire,
@@ -234,7 +261,7 @@ export const proofProcess = {
         message: "このカードは爆弾です",
       };
     }
-    await proofProcess.revealProcess(tx, {
+    await proofProcess.revealProcess(tx, io, {
       roomSession: parsedRoomSession,
       proof: toTProofFromProofList(updatedProof),
       revealedMemberId: member.id,
@@ -249,6 +276,7 @@ export const proofProcess = {
   },
   revealProcess: async (
     tx: Prisma.TransactionClient,
+    io: Server,
     params: {
       roomSession: TProofRoomSession;
       proof: TProof;
@@ -258,10 +286,25 @@ export const proofProcess = {
     }
   ): Promise<void> => {
     const proofInfo = params.proof.title + params.proof.description;
+
+    const revealedByMember = params.roomSession.room.members.find(
+      (member) => member.userId === params.revealedMemberUserId
+    );
+    if (!revealedByMember) {
+      throw new NotFoundError("Member not found");
+    }
+    const message = `${
+      revealedByMember.user?.displayName ?? "someone"
+    }がカード「${params.proof.rank}${params.proof.code}」を開示しました`;
     if (params.isEntire) {
       for (const member of params.roomSession.room.members) {
         await lineUtil.sendSimpleTextMessage(member.userId, proofInfo);
       }
+      io.to(`user:${PROOF_ADMIN_USER_ID}`).emit("proof:revealResult", {
+        result: REVEALED_RESULT_CODE.SUCCESS,
+        message: message,
+        proof: params.proof,
+      });
     } else {
       await lineUtil.sendSimpleTextMessage(
         params.revealedMemberUserId,
@@ -271,6 +314,7 @@ export const proofProcess = {
   },
   bombedProcess: async (
     tx: Prisma.TransactionClient,
+    io: Server,
     params: {
       roomSession: TProofRoomSession;
       userId: string;
@@ -278,6 +322,10 @@ export const proofProcess = {
     }
   ): Promise<void> => {
     if (params.isEntire) {
+      io.to(`user:${PROOF_ADMIN_USER_ID}`).emit("proof:revealResult", {
+        result: REVEALED_RESULT_CODE.BOMBED,
+        message: "このカードは爆弾です",
+      });
       for (const member of params.roomSession.room.members) {
         if (member.role?.roleName !== PROOF_ROLE_NAME_MAP.BOMBER) {
           await lineUtil.sendSimpleTextMessage(

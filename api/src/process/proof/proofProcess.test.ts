@@ -7,10 +7,12 @@ import {
   PROOF_STATUS,
   PROOF_MEMBER_STATUS,
   PROOF_ROLE_NAME_MAP,
+  PROOF_ADMIN_USER_ID,
 } from "../../domain/proof/proofCommon";
 import { REVEALED_RESULT_CODE } from "../../domain/proof/types";
 import { NotFoundError } from "../../error/AppError";
 import { Prisma } from "../../generated/prisma/client";
+import { Server } from "socket.io";
 
 // モックのセットアップ
 jest.mock("../../repos/proofRepository");
@@ -36,6 +38,10 @@ jest.mock("../../domain/proof/typeParse");
 
 describe("proofProcess.revealProofProcess", () => {
   const mockTx = {} as Prisma.TransactionClient;
+  const mockIo = {
+    to: jest.fn().mockReturnThis(),
+    emit: jest.fn(),
+  } as unknown as Server;
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -235,7 +241,7 @@ describe("proofProcess.revealProofProcess", () => {
         success: true,
       });
 
-      const result = await proofProcess.revealProofProcess(mockTx, {
+      const result = await proofProcess.revealProofProcess(mockTx, mockIo, {
         roomSessionId: 1,
         code: "CODE1",
         revealedBy: 1,
@@ -251,6 +257,7 @@ describe("proofProcess.revealProofProcess", () => {
         {
           status: PROOF_STATUS.REVEALED_TO_ONE,
           revealedBy: "1",
+          revealedTurn: 1,
         }
       );
       expect(lineUtil.sendSimpleTextMessage).toHaveBeenCalledWith(
@@ -298,7 +305,7 @@ describe("proofProcess.revealProofProcess", () => {
         success: true,
       });
 
-      const result = await proofProcess.revealProofProcess(mockTx, {
+      const result = await proofProcess.revealProofProcess(mockTx, mockIo, {
         roomSessionId: 1,
         code: "CODE1",
         revealedBy: 1,
@@ -314,6 +321,7 @@ describe("proofProcess.revealProofProcess", () => {
         {
           status: PROOF_STATUS.REVEALED_TO_ALL,
           revealedBy: "1",
+          revealedTurn: 1,
         }
       );
       expect(lineUtil.sendSimpleTextMessage).toHaveBeenCalledTimes(2);
@@ -325,6 +333,12 @@ describe("proofProcess.revealProofProcess", () => {
         "user2",
         "Test ProofTest Description"
       );
+      expect(mockIo.to).toHaveBeenCalledWith(`user:${PROOF_ADMIN_USER_ID}`);
+      expect(mockIo.emit).toHaveBeenCalledWith("proof:revealResult", {
+        result: REVEALED_RESULT_CODE.SUCCESS,
+        message: "User 1がカード「ACODE1」を開示しました",
+        proof: tProof,
+      });
     });
   });
 
@@ -347,7 +361,7 @@ describe("proofProcess.revealProofProcess", () => {
         toTProofRoomSessionFromProofRoomSessionWithMembers as jest.Mock
       ).mockReturnValue(tProofRoomSession);
 
-      const result = await proofProcess.revealProofProcess(mockTx, {
+      const result = await proofProcess.revealProofProcess(mockTx, mockIo, {
         roomSessionId: 1,
         code: "CODE1",
         revealedBy: 1,
@@ -377,7 +391,7 @@ describe("proofProcess.revealProofProcess", () => {
         toTProofRoomSessionFromProofRoomSessionWithMembers as jest.Mock
       ).mockReturnValue(tProofRoomSession);
 
-      const result = await proofProcess.revealProofProcess(mockTx, {
+      const result = await proofProcess.revealProofProcess(mockTx, mockIo, {
         roomSessionId: 1,
         code: "CODE1",
         revealedBy: 1,
@@ -431,7 +445,7 @@ describe("proofProcess.revealProofProcess", () => {
         success: true,
       });
 
-      const result = await proofProcess.revealProofProcess(mockTx, {
+      const result = await proofProcess.revealProofProcess(mockTx, mockIo, {
         roomSessionId: 1,
         code: "CODE1",
         revealedBy: 1,
@@ -440,6 +454,12 @@ describe("proofProcess.revealProofProcess", () => {
 
       expect(result.result).toBe(REVEALED_RESULT_CODE.SUCCESS);
       expect(proofRepository.updateProofStatus).toHaveBeenCalled();
+      expect(mockIo.to).toHaveBeenCalledWith(`user:${PROOF_ADMIN_USER_ID}`);
+      expect(mockIo.emit).toHaveBeenCalledWith("proof:revealResult", {
+        result: REVEALED_RESULT_CODE.SUCCESS,
+        message: "User 1がカード「ACODE1」を開示しました",
+        proof: tProof,
+      });
     });
 
     it("REVEALED_TO_ONE で、異なるmemberが開示する場合（isEntire: false）、正常に処理される", async () => {
@@ -483,7 +503,7 @@ describe("proofProcess.revealProofProcess", () => {
         success: true,
       });
 
-      const result = await proofProcess.revealProofProcess(mockTx, {
+      const result = await proofProcess.revealProofProcess(mockTx, mockIo, {
         roomSessionId: 1,
         code: "CODE1",
         revealedBy: 2,
@@ -499,6 +519,7 @@ describe("proofProcess.revealProofProcess", () => {
         {
           status: PROOF_STATUS.REVEALED_TO_ONE,
           revealedBy: "1,2",
+          revealedTurn: 1,
         }
       );
       expect(lineUtil.sendSimpleTextMessage).toHaveBeenCalledWith(
@@ -548,7 +569,7 @@ describe("proofProcess.revealProofProcess", () => {
         success: true,
       });
 
-      const result = await proofProcess.revealProofProcess(mockTx, {
+      const result = await proofProcess.revealProofProcess(mockTx, mockIo, {
         roomSessionId: 1,
         code: "CODE1",
         revealedBy: 2,
@@ -557,6 +578,12 @@ describe("proofProcess.revealProofProcess", () => {
 
       expect(result.result).toBe(REVEALED_RESULT_CODE.SUCCESS);
       expect(proofRepository.updateProofStatus).toHaveBeenCalled();
+      expect(mockIo.to).toHaveBeenCalledWith(`user:${PROOF_ADMIN_USER_ID}`);
+      expect(mockIo.emit).toHaveBeenCalledWith("proof:revealResult", {
+        result: REVEALED_RESULT_CODE.SUCCESS,
+        message: "User 2がカード「ACODE1」を開示しました",
+        proof: tProof,
+      });
     });
   });
 
@@ -599,7 +626,7 @@ describe("proofProcess.revealProofProcess", () => {
         success: true,
       });
 
-      const result = await proofProcess.revealProofProcess(mockTx, {
+      const result = await proofProcess.revealProofProcess(mockTx, mockIo, {
         roomSessionId: 1,
         code: "CODE1",
         revealedBy: 1,
@@ -653,7 +680,7 @@ describe("proofProcess.revealProofProcess", () => {
         success: true,
       });
 
-      const result = await proofProcess.revealProofProcess(mockTx, {
+      const result = await proofProcess.revealProofProcess(mockTx, mockIo, {
         roomSessionId: 1,
         code: "CODE1",
         revealedBy: 1,
@@ -700,7 +727,7 @@ describe("proofProcess.revealProofProcess", () => {
         null
       );
 
-      const result = await proofProcess.revealProofProcess(mockTx, {
+      const result = await proofProcess.revealProofProcess(mockTx, mockIo, {
         roomSessionId: 1,
         code: "CODE1",
         revealedBy: 1,
@@ -758,7 +785,7 @@ describe("proofProcess.revealProofProcess", () => {
         null
       );
 
-      const result = await proofProcess.revealProofProcess(mockTx, {
+      const result = await proofProcess.revealProofProcess(mockTx, mockIo, {
         roomSessionId: 1,
         code: "CODE1",
         revealedBy: 1,
@@ -767,6 +794,12 @@ describe("proofProcess.revealProofProcess", () => {
 
       expect(result.result).toBe(REVEALED_RESULT_CODE.BOMBED);
       expect(result.message).toBe("このカードは爆弾です");
+      // socket.ioでemitされる
+      expect(mockIo.to).toHaveBeenCalledWith(`user:${PROOF_ADMIN_USER_ID}`);
+      expect(mockIo.emit).toHaveBeenCalledWith("proof:revealResult", {
+        result: REVEALED_RESULT_CODE.BOMBED,
+        message: "このカードは爆弾です",
+      });
       // ボマー以外に爆死メッセージを送信
       expect(lineUtil.sendSimpleTextMessage).toHaveBeenCalledWith(
         "user1",
@@ -802,7 +835,7 @@ describe("proofProcess.revealProofProcess", () => {
       (proofRepository.getRoomSession as jest.Mock).mockResolvedValue(null);
 
       await expect(
-        proofProcess.revealProofProcess(mockTx, {
+        proofProcess.revealProofProcess(mockTx, mockIo, {
           roomSessionId: 999,
           code: "CODE1",
           revealedBy: 1,
@@ -810,7 +843,7 @@ describe("proofProcess.revealProofProcess", () => {
         })
       ).rejects.toThrow(NotFoundError);
       await expect(
-        proofProcess.revealProofProcess(mockTx, {
+        proofProcess.revealProofProcess(mockTx, mockIo, {
           roomSessionId: 999,
           code: "CODE1",
           revealedBy: 1,
@@ -832,7 +865,7 @@ describe("proofProcess.revealProofProcess", () => {
       ).mockReturnValue(tProofRoomSession);
 
       await expect(
-        proofProcess.revealProofProcess(mockTx, {
+        proofProcess.revealProofProcess(mockTx, mockIo, {
           roomSessionId: 1,
           code: "CODE1",
           revealedBy: 999,
@@ -840,7 +873,7 @@ describe("proofProcess.revealProofProcess", () => {
         })
       ).rejects.toThrow(NotFoundError);
       await expect(
-        proofProcess.revealProofProcess(mockTx, {
+        proofProcess.revealProofProcess(mockTx, mockIo, {
           roomSessionId: 1,
           code: "CODE1",
           revealedBy: 999,
@@ -865,7 +898,7 @@ describe("proofProcess.revealProofProcess", () => {
       ).mockReturnValue(tProofRoomSession);
 
       await expect(
-        proofProcess.revealProofProcess(mockTx, {
+        proofProcess.revealProofProcess(mockTx, mockIo, {
           roomSessionId: 1,
           code: "INVALID_CODE",
           revealedBy: 1,
@@ -873,7 +906,7 @@ describe("proofProcess.revealProofProcess", () => {
         })
       ).rejects.toThrow(NotFoundError);
       await expect(
-        proofProcess.revealProofProcess(mockTx, {
+        proofProcess.revealProofProcess(mockTx, mockIo, {
           roomSessionId: 1,
           code: "INVALID_CODE",
           revealedBy: 1,

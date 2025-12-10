@@ -40,7 +40,7 @@ export const RevealRequest = () => {
     const revealedResult = await asyncWrapper(
       revealProof(user.roomSessionId, rank + proofCode, user.memberId, isEntire)
     );
-    navigate(`/public/proof/reveal/result`, {
+    navigate("/public/proof/reveal/result", {
       state: { result: revealedResult },
     });
     hide();

@@ -104,12 +104,6 @@ export type RoleFeatureC = {};
 // export const DirectionSchema = z.enum(["N", "E", "S", "W"]);
 // export type TDirection = z.infer<typeof DirectionSchema>;
 
-export type UserToken = {
-  roomSessionId: number;
-  memberId: number;
-  roleId: number;
-};
-
 export const REVEALED_RESULT_CODE = Object.freeze({
   SUCCESS: "SUCCESS",
   DISARM_SUCCESS: "DISARM_SUCCESS",

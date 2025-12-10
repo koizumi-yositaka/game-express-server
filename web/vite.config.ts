@@ -9,4 +9,12 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
     },
   },
+  server: {
+    allowedHosts: [
+      "localhost",
+      "127.0.0.1",
+      "0.0.0.0",
+      "joelle-unreleasable-defeatedly.ngrok-free.dev",
+    ],
+  },
 });

@@ -1,9 +1,29 @@
+export const PROOF_ROOM_STATUS = Object.freeze({
+  NOT_STARTED: 0,
+  IN_PROGRESS: 1,
+});
+
+export const PROOF_ROOM_SESSION_STATUS = Object.freeze({
+  GAME_STARTED: 0,
+  TURN_STARTED: 1,
+  ORDER_WAITING: 2,
+  ORDER_COMPLETED: 3,
+  TURN_ENDED: 4,
+});
 export const PROOF_STATUS = Object.freeze({
   NORMAL: "1",
   DUMMY: "2",
   BOMBED: "3",
   REVEALED_TO_ONE: "4",
   REVEALED_TO_ALL: "5",
+});
+
+export const PROOF_STATUS_MAP = Object.freeze({
+  NORMAL: "未開封",
+  DUMMY: "ダミー",
+  BOMBED: "爆弾",
+  REVEALED_TO_ONE: "知らない人がいる",
+  REVEALED_TO_ALL: "全体に公開済み",
 });
 
 export const PROOF_RANK = Object.freeze({
@@ -51,3 +71,5 @@ export const REVEALED_RESULT_CODE = Object.freeze({
   BOMBED: "BOMBED",
   INVALID_CODE: "INVALID_CODE",
 });
+
+export const PROOF_ADMIN_USER_ID = "admin";

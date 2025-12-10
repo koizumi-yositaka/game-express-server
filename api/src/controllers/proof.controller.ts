@@ -8,7 +8,7 @@ import {
 } from "./proof/dtoParse";
 import { BadRequestError } from "../error/AppError";
 import { myUtil } from "../util/myUtil";
-import { DecodedUserInfo, UserToken } from "../domain/proof/types";
+import { DecodedUserInfo } from "../domain/proof/types";
 import { DTOProofStatus, DTOProofUser } from "./proof/dto";
 import { PROOF_MEMBER_STATUS, PROOF_STATUS } from "../domain/proof/proofCommon";
 export const roomCodeParamsSchema = z.object({
@@ -21,7 +21,9 @@ export const addRoomMemberBodySchema = z.object({
 export const memberIdSchema = z.object({
   memberId: z.string(),
 });
-
+export const optionalMemberIdParamsSchema = z.object({
+  memberId: z.string().optional(),
+});
 export const addRoomMembersBodySchema = z.object({
   userIds: z.array(z.string()),
 });
@@ -68,6 +70,9 @@ export type RoomSessionIdSchema = z.infer<typeof roomSessionIdSchema>;
 export type RoomSessionIdAndProofCodeSchema = z.infer<
   typeof roomSessionIdAndProofCodeSchema
 >;
+export type OptionalMemberIdParamsSchema = z.infer<
+  typeof optionalMemberIdParamsSchema
+>;
 export type CreateBombBodySchema = z.infer<typeof createBombBodySchema>;
 export type TokenBody = z.infer<typeof tokenBodySchema>;
 export type ForceFocusBodySchema = z.infer<typeof forceFocusBodySchema>;
@@ -75,6 +80,7 @@ export const proofController = {
   getHealth: (_req: Request, res: Response, _next: NextFunction) => {
     res.status(200).json({ message: "ok" });
   },
+
   createRoom: async (_: Request, res: Response, next: NextFunction) => {
     try {
       // roomの情報
@@ -202,6 +208,24 @@ export const proofController = {
     }
   },
 
+  getProofList: async (
+    req: Request<RoomSessionIdSchema, OptionalMemberIdParamsSchema>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const memberId = req.query.memberId
+        ? Number(req.query.memberId)
+        : undefined;
+      const proofs = await proofService.getProofList(
+        Number(req.params.roomSessionId),
+        memberId
+      );
+      res.status(200).json(proofs.map((proof) => toDTOProof(proof)));
+    } catch (error) {
+      next(error);
+    }
+  },
   getProofStatus: async (
     req: Request<RoomSessionIdAndProofCodeSchema, MemberIdSchema>,
     res: Response,
@@ -239,7 +263,8 @@ export const proofController = {
         Number(req.params.roomSessionId),
         req.params.proofCode,
         req.body.memberId,
-        req.body.isEntire
+        req.body.isEntire,
+        req.app.locals.io
       );
       res.status(200).json({
         result: revealedResult.result,
@@ -274,17 +299,8 @@ export const proofController = {
   ) => {
     try {
       //await new Promise((resolve) => setTimeout(resolve, 2000));
-      // const token = await myUtil.decrypt(req.body.token);
-      // const userToken = JSON.parse(token) as UserToken;
-      const userInfo: DecodedUserInfo = {
-        userId: "a",
-        roomSessionId: 18,
-        roomCode: "8920",
-        displayName: "test",
-        memberId: 11,
-        roleName: "DETECTIVE",
-        status: PROOF_MEMBER_STATUS.ENTERED,
-      };
+      const token = await myUtil.decrypt(req.body.token);
+      const userInfo = JSON.parse(token) as DecodedUserInfo;
       res.status(200).json(userInfo);
     } catch (error) {
       next(error);
@@ -328,11 +344,11 @@ export const proofController = {
     next: NextFunction
   ) => {
     try {
-      const nextFocusOnMemberId = await proofService.endOrder(
+      const { turnFinished, currentTurn } = await proofService.endOrder(
         Number(req.params.roomSessionId),
         req.app.locals.io
       );
-      res.status(200).json({ nextFocusOnMemberId: nextFocusOnMemberId });
+      res.status(200).json({ turnFinished, currentTurn });
     } catch (error) {
       next(error);
     }

@@ -9,6 +9,7 @@ import {
 
 const router = Router();
 router.post("/", validate(registerUserSchema), userController.registerUser);
+router.post("/login", userController.login);
 router.post(
   "/:userId/invalidate",
   validateParams(invalidateUserSchema),

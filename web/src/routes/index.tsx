@@ -19,59 +19,112 @@ import { RevealResult } from "@/components/features/proof/RevealResult";
 import { NotFount } from "@/pages/NotFount";
 import { ProofError } from "@/pages/proof/ProofError";
 import { ProofRequestReveal } from "@/pages/proof/ProofRequestReveal";
+import { CenterAuthProvider } from "@/contexts/CenterAuthContext";
+import ProofRoomsLayout from "@/layouts/ProofRoomsLayout";
+import ProofRooms from "@/pages/proof/rooms/ProofRooms";
+import ProofRoomNew from "@/pages/proof/rooms/ProofRoomNew";
+import ProofRoomPrepare from "@/pages/proof/rooms/ProofRoomPrepare";
+import ProofSessionLayout from "@/layouts/ProofSessionLayout";
+import { SessionBase } from "@/pages/proof/session/SessionBase";
+import { ProofList } from "@/components/features/proof/ProofList";
 
 export default function AppRoutes() {
   return (
-    <AuthProvider>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route path="/" element={<Root />} />
-          <Route path="/login" element={<LoginPage />} />
-          <Route path="/public">
-            <Route path="sessions/:roomSessionId" element={<SessionPublic />} />
-
-            <Route path="proof" element={<ProofLayout />}>
-              <Route path="" element={<NotFount />} />
-              <Route path=":roomSessionId" element={<ProofSession />} />
+    <CenterAuthProvider>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route path="/" element={<Root />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/proof">
               <Route
-                path=":roomSessionId/reveal/request"
-                element={<ProofRequestReveal />}
+                path="rooms"
+                element={
+                  <RequiredAuth>
+                    <ProofRoomsLayout />
+                  </RequiredAuth>
+                }
+              >
+                <Route index element={<ProofRooms />} />
+                <Route path=":roomCode/new" element={<ProofRoomNew />} />
+                <Route
+                  path=":roomCode/prepare"
+                  element={<ProofRoomPrepare />}
+                />
+              </Route>
+
+              <Route path="session" element={<ProofSessionLayout />}>
+                <Route path=":roomSessionId" element={<SessionBase />} />
+                <Route
+                  path=":roomSessionId/reveal/request"
+                  element={<ProofRequestReveal />}
+                />
+                <Route
+                  path=":roomSessionId/reveal/result"
+                  element={<RevealResult />}
+                />
+                <Route
+                  path=":roomSessionId/complete"
+                  element={<>NOW WORKING</>}
+                />
+                <Route path="result" element={<>NOW WORKING</>} />
+                <Route path="error" element={<ProofError />} />
+              </Route>
+            </Route>
+
+            <Route path="/public">
+              <Route
+                path="sessions/:roomSessionId"
+                element={<SessionPublic />}
               />
-              <Route path="reveal/result" element={<RevealResult />} />
-              <Route path="error" element={<ProofError />} />
+
+              <Route path="proof" element={<ProofLayout />}>
+                <Route path="" element={<NotFount />} />
+                <Route path=":roomSessionId" element={<ProofSession />} />
+                <Route
+                  path=":roomSessionId/proofList"
+                  element={<ProofList />}
+                />
+                <Route
+                  path=":roomSessionId/reveal/request"
+                  element={<ProofRequestReveal />}
+                />
+                <Route path="reveal/result" element={<RevealResult />} />
+                <Route path="error" element={<ProofError />} />
+              </Route>
+            </Route>
+            <Route
+              path="rooms"
+              element={
+                <RequiredAuth>
+                  <RoomsLayout />
+                </RequiredAuth>
+              }
+            >
+              <Route index element={<Rooms />} />
+              <Route path=":roomCode/new" element={<RoomNew />} />
+              <Route path=":roomCode/prepare" element={<RoomPrepare />} />
+              {/* <Route path=":roomCode/detail" element={<RoomDetail />} /> */}
+            </Route>
+            <Route
+              path="session"
+              element={
+                <RequiredAuth>
+                  <SessionLayout />
+                </RequiredAuth>
+              }
+            >
+              <Route path=":roomSessionId" element={<SessionDetail />} />
+              <Route
+                path=":roomSessionId/complete"
+                element={<SessionComplete />}
+              />
+              <Route path="result" element={<SessionGameResult />} />
             </Route>
           </Route>
-          <Route
-            path="rooms"
-            element={
-              <RequiredAuth>
-                <RoomsLayout />
-              </RequiredAuth>
-            }
-          >
-            <Route index element={<Rooms />} />
-            <Route path=":roomCode/new" element={<RoomNew />} />
-            <Route path=":roomCode/prepare" element={<RoomPrepare />} />
-            {/* <Route path=":roomCode/detail" element={<RoomDetail />} /> */}
-          </Route>
-          <Route
-            path="session"
-            element={
-              <RequiredAuth>
-                <SessionLayout />
-              </RequiredAuth>
-            }
-          >
-            <Route path=":roomSessionId" element={<SessionDetail />} />
-            <Route
-              path=":roomSessionId/complete"
-              element={<SessionComplete />}
-            />
-            <Route path="result" element={<SessionGameResult />} />
-          </Route>
-        </Route>
-        <Route path="*" element={<NotFount />} />
-      </Routes>
-    </AuthProvider>
+          <Route path="*" element={<NotFount />} />
+        </Routes>
+      </AuthProvider>
+    </CenterAuthProvider>
   );
 }

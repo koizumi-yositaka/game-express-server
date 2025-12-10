@@ -8,7 +8,7 @@ export const RevealResult = () => {
   const result = state?.result as TRevealResult;
   console.log("result", result);
   if (!result || !result.proof) {
-    navigate("/public/proof/error", {
+    navigate("/proof/error", {
       state: {
         message: "proof not found",
       },

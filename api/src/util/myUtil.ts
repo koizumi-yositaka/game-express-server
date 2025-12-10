@@ -1,4 +1,9 @@
 import crypto from "crypto";
+import zlib from "zlib";
+import { promisify } from "util";
+
+const deflate = promisify(zlib.deflate);
+const inflate = promisify(zlib.inflate);
 const SECRET_PASSWORD =
   process.env.SECRET_PASSWORD ?? "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 export const myUtil = {
@@ -8,25 +13,39 @@ export const myUtil = {
   encrypt: async (text: string) => {
     const key = await deriveKey(SECRET_PASSWORD);
 
+    // テキストを圧縮
+    const compressed = await deflate(Buffer.from(text, "utf8"));
+
     // 12 バイトのランダム IV（GCM 推奨サイズ）
     const iv = crypto.randomBytes(12);
 
     const cipher = crypto.createCipheriv("aes-256-gcm", key, iv);
 
     const encrypted = Buffer.concat([
-      cipher.update(text, "utf8"),
+      cipher.update(compressed),
       cipher.final(),
     ]);
     const authTag = cipher.getAuthTag();
 
-    // iv, authTag, encrypted を結合して base64 で返す
-    const payload = Buffer.concat([iv, authTag, encrypted]).toString("base64");
-    return payload;
+    // iv, authTag, encrypted を結合して base64url で返す（URLセーフ）
+    // + を - に、/ を _ に置き換え、パディングの = を削除
+    const base64 = Buffer.concat([iv, authTag, encrypted]).toString("base64");
+    const base64url = base64
+      .replace(/\+/g, "-")
+      .replace(/\//g, "_")
+      .replace(/=/g, "");
+    return base64url;
   },
   decrypt: async (payloadBase64: string) => {
     const key = await deriveKey(SECRET_PASSWORD);
 
-    const payload = Buffer.from(payloadBase64, "base64");
+    // base64url を base64 に変換（- を + に、_ を / に戻す）
+    // パディングを補正（base64文字列は4の倍数の長さである必要がある）
+    let base64 = payloadBase64.replace(/-/g, "+").replace(/_/g, "/");
+    const padding = (4 - (base64.length % 4)) % 4;
+    base64 = base64 + "=".repeat(padding);
+
+    const payload = Buffer.from(base64, "base64");
 
     // 先頭 12 バイト: IV
     const iv = payload.subarray(0, 12);
@@ -43,7 +62,10 @@ export const myUtil = {
       decipher.final(),
     ]);
 
-    return decrypted.toString("utf8");
+    // 圧縮されたデータを展開
+    const decompressed = await inflate(decrypted);
+
+    return decompressed.toString("utf8");
   },
   conbination: <T>(array: T[], size: number): T[] => {
     const result = [];

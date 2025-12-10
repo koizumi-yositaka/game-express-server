@@ -18,6 +18,7 @@ import {
 import { chatHandler } from "./socket/handlers/chatHandler";
 import { authHandler } from "./socket/handlers/authHandler";
 import { proofHandler } from "./socket/handlers/proofHandler";
+import { orderHandler } from "./socket/handlers/orderHandler";
 const app = express();
 
 // app.use(
@@ -42,7 +43,7 @@ const io = new Server<
 >(server, {
   path: "/api/socket.io",
   cors: {
-    origin: "http://localhost:5173",
+    origin: ["http://localhost:5173"],
     methods: ["GET", "POST"],
     credentials: true,
   },
@@ -62,6 +63,7 @@ io.on("connection", (socket) => {
   authHandler(io, socket);
   chatHandler(io, socket);
   proofHandler(io, socket);
+  orderHandler(io, socket);
   socket.on("disconnect", () => {
     console.log("disconnected:", socket.id);
   });

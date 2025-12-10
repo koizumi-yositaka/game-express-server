@@ -7,11 +7,15 @@ const SessionLayout = () => {
     navigate("/rooms");
   };
   return (
-    <div>
-      <Button onClick={handleBack} variant="outline">
-        Session Back
-      </Button>
-      <Outlet />
+    <div className="flex flex-col gap-4 p-4">
+      <div className="flex justify-between items-center">
+        <Button onClick={handleBack} variant="outline">
+          Proof Back
+        </Button>
+      </div>
+      <div className="flex-1">
+        <Outlet />
+      </div>
     </div>
   );
 };

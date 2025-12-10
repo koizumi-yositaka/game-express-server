@@ -14,6 +14,7 @@ import {
   addRoomMemberBodySchema,
   tokenBodySchema,
   memberIdSchema,
+  optionalMemberIdParamsSchema,
 } from "../controllers/proof.controller";
 
 const router = Router();
@@ -47,6 +48,14 @@ router.get(
   proofController.getRoomSessionById
 );
 router.get("/sessions/", proofController.getRoomSessionByRoomId);
+router.get(
+  "/sessions/:roomSessionId/proofList",
+  [
+    validateParams(roomSessionIdSchema),
+    validateQuery(optionalMemberIdParamsSchema),
+  ],
+  proofController.getProofList
+);
 router.get(
   "/sessions/:roomSessionId/status/:proofCode",
   [

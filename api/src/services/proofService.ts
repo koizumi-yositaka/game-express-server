@@ -39,7 +39,8 @@ import { myUtil } from "../util/myUtil";
 import { proofSpecialMoveExecutor } from "../roles/proof/roleSpecialMoveExecutor";
 import { roomSessionService } from "./roomSessionService";
 import { Server } from "socket.io";
-import { activateUser } from "../util/proofUtil";
+import { activateUser, noticeAllUserInfo } from "../util/proofUtil";
+
 const ATTEMPTS_LIMIT = 5;
 export const proofService = {
   createProofRoom: async () => {
@@ -244,6 +245,47 @@ export const proofService = {
       );
     });
   },
+
+  getProofList: async (
+    roomSessionId: number,
+    memberId?: number
+  ): Promise<TProof[]> => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const proofs = await proofRepository.getProofsByRoomSessionId(
+        tx,
+        roomSessionId
+      );
+      const isAvaliableProof = (proof: TProof) => {
+        if (memberId) {
+          return (
+            proof.status === PROOF_STATUS.REVEALED_TO_ALL ||
+            (proof.status === PROOF_STATUS.REVEALED_TO_ONE &&
+              proof.revealedBy.includes(memberId))
+          );
+        } else {
+          return proof.status === PROOF_STATUS.REVEALED_TO_ALL;
+        }
+      };
+      const mask = (proof: TProof) => {
+        return {
+          ...proof,
+          ...{
+            title: "???",
+            description: "???",
+            status: "???",
+          },
+        };
+      };
+      return proofs.map(toTProofFromProofList).map((proof) => {
+        if (!isAvaliableProof(proof)) {
+          return mask(proof);
+        } else {
+          return proof;
+        }
+      });
+    });
+  },
+
   getProofStatus: async (
     roomSessionId: number,
     code: string
@@ -265,10 +307,11 @@ export const proofService = {
     roomSessionId: number,
     code: string,
     revealedBy: number,
-    isEntire: boolean
+    isEntire: boolean,
+    io: Server
   ): Promise<TRevealedResult> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const revealedResult = await proofProcess.revealProofProcess(tx, {
+      const revealedResult = await proofProcess.revealProofProcess(tx, io, {
         roomSessionId,
         code,
         revealedBy,
@@ -338,9 +381,16 @@ export const proofService = {
         );
         activateUser(io, member.userId, member.id === focusOnMember.id);
       });
+      noticeAllUserInfo(
+        io,
+        toTProofRoomSessionFromProofRoomSessionWithMembers(roomSession)
+      );
     });
   },
-  endOrder: async (roomSessionId: number, io: Server): Promise<number> => {
+  endOrder: async (
+    roomSessionId: number,
+    io: Server
+  ): Promise<{ turnFinished: boolean; currentTurn: number }> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const roomSession = await proofRepository.getRoomSession(
         tx,
@@ -357,8 +407,11 @@ export const proofService = {
       const focusOnMember = roomMembers.find(
         (member) => member.id === roomSession.focusOn
       );
+      if (!focusOnMember) {
+        throw new NotFoundError("Focus on member not found");
+      }
       let nextFocusOnMember = roomMembers.find(
-        (member) => member.id === roomSession.focusOn + 1
+        (member) => member.sort === focusOnMember.sort + 1
       );
       let finishFlg = false;
       if (!nextFocusOnMember) {
@@ -377,10 +430,15 @@ export const proofService = {
       roomMembers.forEach((member) => {
         activateUser(io, member.userId, false);
       });
+      noticeAllUserInfo(
+        io,
+        toTProofRoomSessionFromProofRoomSessionWithMembers(roomSession)
+      );
 
-      console.log("endOrder", nextFocusOnMember.user.displayName);
-
-      return nextFocusOnMember.id;
+      return {
+        turnFinished: finishFlg,
+        currentTurn: roomSession.turn,
+      };
     });
   },
   _forceFocus: async (
@@ -394,6 +452,7 @@ export const proofService = {
         tx,
         roomSessionId
       );
+      console.log("memberId", memberId);
       if (!roomSession) {
         throw new NotFoundError("Room session not found");
       }
@@ -406,7 +465,17 @@ export const proofService = {
       await proofRepository.updateRoomSession(tx, roomSessionId, {
         focusOn: isFocus ? member.id : 0,
       });
-      activateUser(io, member.userId, isFocus);
+      const updatedRoomSession = await proofRepository.getRoomSession(
+        tx,
+        roomSessionId
+      );
+      if (updatedRoomSession) {
+        activateUser(io, member.userId, isFocus);
+        noticeAllUserInfo(
+          io,
+          toTProofRoomSessionFromProofRoomSessionWithMembers(updatedRoomSession)
+        );
+      }
     });
   },
 };

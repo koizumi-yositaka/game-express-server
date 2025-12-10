@@ -324,6 +324,7 @@ export const proofRepository = {
       revealedBy?: string;
       title?: string;
       description?: string;
+      revealedTurn?: number;
     }
   ) => {
     const updateData = {
@@ -334,6 +335,9 @@ export const proofRepository = {
       ...(updateVal.title !== undefined && { title: updateVal.title }),
       ...(updateVal.description !== undefined && {
         description: updateVal.description,
+      }),
+      ...(updateVal.revealedTurn !== undefined && {
+        revealedTurn: updateVal.revealedTurn,
       }),
     };
     return await tx.proofList.update({

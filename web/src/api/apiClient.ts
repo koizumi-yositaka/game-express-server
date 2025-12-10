@@ -6,12 +6,24 @@ import type {
   DTOCommandHistory,
 } from "@/types";
 import type {
+  DTOProofRoom,
+  DTOProofRoomMember,
   DTOProofRoomSession,
   DTOProofStatus,
   DecodedUserInfo,
   RevealResult,
+  DTOProof,
 } from "@/proofTypes";
 
+export async function centerLogin(id: string, password: string): Promise<void> {
+  try {
+    const res = await axiosInstance.post("/users/login", { id, password });
+    return res.data;
+  } catch (error) {
+    console.error("login error:", error);
+    throw error;
+  }
+}
 export async function healthCheck() {
   try {
     const res = await axiosInstance.get(`/health`);
@@ -155,6 +167,88 @@ export async function gameComplete(
   }
 }
 // proof
+
+export async function getProofList(
+  roomSessionId: number,
+  memberId?: number
+): Promise<DTOProof[]> {
+  try {
+    const res = await axiosInstance.get(
+      memberId
+        ? `/proofs/sessions/${roomSessionId}/proofList?memberId=${memberId}`
+        : `/proofs/sessions/${roomSessionId}/proofList`
+    );
+    return res.data;
+  } catch (error) {
+    console.error("getProofList error:", error);
+    throw error;
+  }
+}
+
+export async function getProofRooms(): Promise<DTOProofRoom[]> {
+  try {
+    const res = await axiosInstance.get("/proofs/rooms");
+    return res.data;
+  } catch (error) {
+    console.error("getRooms error:", error);
+    throw error;
+  }
+}
+
+export async function getProofRoomByRoomCode(
+  roomCode: string
+): Promise<DTOProofRoom> {
+  try {
+    const res = await axiosInstance.get(`/proofs/rooms/${roomCode}`);
+    return res.data;
+  } catch (error) {
+    console.error("getRoomByRoomCode error:", error);
+    throw error;
+  }
+}
+export async function createProofRoom(): Promise<DTOProofRoom> {
+  try {
+    const res = await axiosInstance.post("/proofs/rooms");
+    return res.data;
+  } catch (error) {
+    console.error("createRoom error:", error);
+    throw error;
+  }
+}
+
+export async function getProofRoomMembers(
+  roomCode: string
+): Promise<DTOProofRoomMember[]> {
+  try {
+    const res = await axiosInstance.get(`/proofs/rooms/${roomCode}/members`);
+    return res.data;
+  } catch (error) {
+    console.error("getRoomMembers error:", error);
+    throw error;
+  }
+}
+
+export async function closeProofRoom(roomCode: string): Promise<void> {
+  try {
+    await axiosInstance.post(`/proofs/rooms/${roomCode}/close`);
+  } catch (error) {
+    console.error("deleteRoom error:", error);
+    throw error;
+  }
+}
+
+export async function startProofGame(
+  roomCode: string
+): Promise<DTOProofRoomSession> {
+  try {
+    const res = await axiosInstance.post(`/proofs/rooms/${roomCode}/start`);
+    return res.data;
+  } catch (error) {
+    console.error("startGame error:", error);
+    throw error;
+  }
+}
+
 export async function getProofSession(
   roomSessionId: number
 ): Promise<DTOProofRoomSession> {
@@ -167,12 +261,55 @@ export async function getProofSession(
   }
 }
 
+export async function getProofSessionByRoomId(
+  roomId: number
+): Promise<DTOProofRoomSession> {
+  try {
+    const res = await axiosInstance.get(`/proofs/sessions?roomId=${roomId}`);
+    return res.data;
+  } catch (error) {
+    console.error("getRoomSessionByRoomId error:", error);
+    throw error;
+  }
+}
+
 export async function decodeToken(token: string): Promise<DecodedUserInfo> {
   try {
     const res = await axiosInstance.post("/proofs/token", { token });
     return res.data;
   } catch (error) {
     console.error("decodeToken error:", error);
+    throw error;
+  }
+}
+
+export async function startProofTurn(roomSessionId: number): Promise<void> {
+  try {
+    await axiosInstance.post(`/proofs/sessions/${roomSessionId}/turn/start`);
+  } catch (error) {
+    console.error("startProofTurn error:", error);
+    throw error;
+  }
+}
+export async function startOrder(roomSessionId: number): Promise<void> {
+  try {
+    await axiosInstance.post(`/proofs/sessions/${roomSessionId}/order/start`);
+  } catch (error) {
+    console.error("startOrder error:", error);
+    throw error;
+  }
+}
+
+export async function endOrder(
+  roomSessionId: number
+): Promise<{ turnFinished: boolean; currentTurn: number }> {
+  try {
+    const res = await axiosInstance.post(
+      `/proofs/sessions/${roomSessionId}/order/end`
+    );
+    return res.data;
+  } catch (error) {
+    console.error("endOrder error:", error);
     throw error;
   }
 }

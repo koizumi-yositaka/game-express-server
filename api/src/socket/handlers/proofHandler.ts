@@ -10,6 +10,7 @@ import {
 } from "../../domain/proof/proofCommon";
 export const proofHandler = (io: Server, socket: Socket) => {
   socket.on("proof:init", async (roomSessionId, memberId) => {
+    console.log("proof:init", roomSessionId, memberId);
     let currentInfo: ExtendedUserInfo | null = null;
     try {
       const roomSession = await proofService.getRoomSession(roomSessionId);
