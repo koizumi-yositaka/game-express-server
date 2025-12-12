@@ -142,6 +142,28 @@ export const proofRepository = {
       data: { status: status },
     });
   },
+  updateRoomMemberInfoDuringTurn: async (
+    tx: TxClient,
+    roomId: number,
+    userId: string,
+    updateVal: {
+      skillUsedTime?: number;
+      penalty?: string[];
+    }
+  ) => {
+    const updateData = {
+      ...(updateVal.skillUsedTime !== undefined && {
+        skillUsedTime: updateVal.skillUsedTime,
+      }),
+      ...(updateVal.penalty !== undefined && {
+        penalty: updateVal.penalty?.join(",") ?? "",
+      }),
+    };
+    return await tx.proofRoomMember.update({
+      where: { roomId_userId: { roomId: roomId, userId: userId } },
+      data: updateData,
+    });
+  },
   updateRoomMemberSort: async (
     tx: TxClient,
     roomId: number,
@@ -256,23 +278,65 @@ export const proofRepository = {
     tx: TxClient,
     roomSessionId: number
   ): Promise<ProofRoomSessionWithMembers | null> => {
-    return await tx.proofRoomSession.findUnique({
+    const roomSession = await tx.proofRoomSession.findUnique({
       where: { id: roomSessionId },
-      include: {
-        room: { include: { members: { include: { user: true, role: true } } } },
+      select: {
+        id: true,
+        turn: true,
+        status: true,
+        focusOn: true,
+        roomId: true,
+        createdAt: true,
+        updatedAt: true,
+        room: {
+          include: {
+            members: { include: { user: true, role: true } },
+          },
+        },
       },
     });
+    return roomSession
+      ? {
+          ...roomSession,
+          setting: "",
+        }
+      : null;
   },
   getRoomSessionByRoomId: async (
     tx: TxClient,
     roomId: number
   ): Promise<ProofRoomSessionWithMembers | null> => {
-    return await tx.proofRoomSession.findFirst({
+    const roomSession = await tx.proofRoomSession.findFirst({
       where: { roomId: roomId },
-      include: {
+      select: {
+        id: true,
+        turn: true,
+        status: true,
+        focusOn: true,
+        roomId: true,
+        createdAt: true,
+        updatedAt: true,
         room: { include: { members: { include: { user: true, role: true } } } },
       },
     });
+    return roomSession
+      ? {
+          ...roomSession,
+          setting: "",
+        }
+      : null;
+  },
+  getRoleSetting: async (
+    tx: TxClient,
+    roomSessionId: number
+  ): Promise<string | null> => {
+    const roomSession = await tx.proofRoomSession.findUnique({
+      where: { id: roomSessionId },
+      select: {
+        setting: true,
+      },
+    });
+    return roomSession ? roomSession.setting : null;
   },
   createProofs: async (
     tx: TxClient,
@@ -293,6 +357,18 @@ export const proofRepository = {
   getProofsByRoomSessionId: async (tx: TxClient, roomSessionId: number) => {
     return await tx.proofList.findMany({
       where: { roomSessionId: roomSessionId },
+    });
+  },
+  getProofsByRoomSessionIdAndTurn: async (
+    tx: TxClient,
+    roomSessionId: number,
+    turn: number
+  ) => {
+    return await tx.proofList.findMany({
+      where: {
+        roomSessionId: roomSessionId,
+        revealedTurn: turn,
+      },
     });
   },
   getProofByRoomSessionIdAndCode: async (
@@ -325,6 +401,7 @@ export const proofRepository = {
       title?: string;
       description?: string;
       revealedTurn?: number;
+      bomFlg?: boolean;
     }
   ) => {
     const updateData = {
@@ -339,6 +416,7 @@ export const proofRepository = {
       ...(updateVal.revealedTurn !== undefined && {
         revealedTurn: updateVal.revealedTurn,
       }),
+      ...(updateVal.bomFlg !== undefined && { bomFlg: updateVal.bomFlg }),
     };
     return await tx.proofList.update({
       where: { id: proofId },
@@ -347,8 +425,6 @@ export const proofRepository = {
   },
   deleteProofByRoomSessionId: async (tx: TxClient, roomSessionId: number) => {
     console.log("deleteProofByRoomSessionId", roomSessionId);
-    return await tx.proofList.deleteMany({
-      where: { roomSessionId: roomSessionId },
-    });
+    return await tx.proofList.deleteMany();
   },
 };

@@ -12,6 +12,7 @@ import {
 } from "../../../domain/proof/proofCommon";
 import { myUtil } from "../../../util/myUtil";
 import { NotFoundError } from "../../../error/AppError";
+import { Server } from "socket.io";
 
 class Bomber implements ProofIF {
   async executeInitialize(
@@ -64,9 +65,7 @@ class Bomber implements ProofIF {
           description: `${randomProofCode}は爆弾です`,
         });
       }
-      await proofRepository.updateProofStatus(tx, proof.id, {
-        status: PROOF_STATUS.BOMBED,
-      });
+      await proofRepository.updateProofStatus(tx, proof.id, {});
     }
 
     const bombProof = proofRankAList.find(
@@ -79,6 +78,14 @@ class Bomber implements ProofIF {
         description: `${randomProofCode}は爆弾です`,
       });
     }
+  }
+  async executeUseSkill(
+    tx: Prisma.TransactionClient,
+    me: TProofRoomMember,
+    roomSession: TProofRoomSession,
+    io: Server
+  ): Promise<void> {
+    console.log("Bomber executeUseSkill");
   }
 }
 

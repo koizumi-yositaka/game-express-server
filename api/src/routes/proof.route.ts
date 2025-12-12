@@ -15,6 +15,8 @@ import {
   tokenBodySchema,
   memberIdSchema,
   optionalMemberIdParamsSchema,
+  judgeAlreadyRevealedBodySchema,
+  roomSessionIdAndMemberIdSchema,
 } from "../controllers/proof.controller";
 
 const router = Router();
@@ -104,4 +106,14 @@ router.post(
 router.post("/sessions/_forceFocus", proofController._forceFocus);
 
 router.post("/token", [validate(tokenBodySchema)], proofController.decodeToken);
+router.post(
+  "/judgeAlreadyRevealed",
+  [validate(judgeAlreadyRevealedBodySchema)],
+  proofController.judgeAlreadyRevealed
+);
+router.get(
+  "/sessions/:roomSessionId/roleSetting/:memberId",
+  [validateParams(roomSessionIdAndMemberIdSchema)],
+  proofController.getRoleSetting
+);
 export default router;

@@ -48,6 +48,10 @@ export const PROOF_MEMBER_STATUS = Object.freeze({
   BOMBED: 99,
 });
 
+export const PROOF_PENALTY_MAP = Object.freeze({
+  LIE: "1",
+});
+
 export const PROOF_BOMB_RESERVED_WORD = "BOMB";
 
 export const PROOF_ROLE_NAME_MAP = Object.freeze({

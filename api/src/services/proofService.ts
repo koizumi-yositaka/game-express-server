@@ -13,13 +13,16 @@ import {
   toTProofRoomSessionFromProofRoomSessionWithMembers,
   toTProofRoomSession,
   toTProofFromProofList,
+  toTProofRoomMember,
 } from "../domain/proof/typeParse";
 import {
   TProof,
   TProofRoom,
   TProofRoomSession,
   TRevealedResult,
-  REVEALED_RESULT_CODE,
+  RoleFeatureB,
+  ProofRoomSessionSettingJsonContents,
+  TProofRoomMember,
 } from "../domain/proof/types";
 import { lineUtil } from "../util/lineUtil";
 import { userRepository } from "../repos/userRepository";
@@ -34,12 +37,14 @@ import {
   PROOF_STATUS,
   PROOF_MEMBER_STATUS,
   PROOF_ROLE_NAME_MAP,
+  PROOF_PENALTY_MAP,
 } from "../domain/proof/proofCommon";
 import { myUtil } from "../util/myUtil";
 import { proofSpecialMoveExecutor } from "../roles/proof/roleSpecialMoveExecutor";
 import { roomSessionService } from "./roomSessionService";
 import { Server } from "socket.io";
-import { activateUser, noticeAllUserInfo } from "../util/proofUtil";
+import { activateUser, isBomber, noticeAllUserInfo } from "../util/proofUtil";
+import { PROOF_ROLE_SETTING } from "../domain/proof/proofCommon";
 
 const ATTEMPTS_LIMIT = 5;
 export const proofService = {
@@ -210,11 +215,10 @@ export const proofService = {
     });
   },
 
-  initializeBomb: async (
+  getRoleSetting: async (
     roomSessionId: number,
-    proofCodes: string[],
     memberId: number
-  ) => {
+  ): Promise<RoleFeatureB> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const roomSession = await proofRepository.getRoomSession(
         tx,
@@ -229,7 +233,58 @@ export const proofService = {
       if (!member) {
         throw new NotFoundError("Member not found");
       }
+      const roleName = member.role
+        ?.roleName as keyof typeof PROOF_ROLE_NAME_MAP;
+      const setting = await proofRepository.getRoleSetting(tx, roomSessionId);
+      if (setting) {
+        const parsedSetting = JSON.parse(
+          setting
+        ) as ProofRoomSessionSettingJsonContents;
+        return parsedSetting.featureB[roleName];
+      } else {
+        throw new NotFoundError("Role setting not found");
+      }
+    });
+  },
+  initializeBomb: async (
+    roomSessionId: number,
+    proofCodes: string[],
+    memberId: number,
+    io: Server
+  ) => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const roomSession = await _getSessionRoom(tx, roomSessionId);
+      const member = await _getSessionRoomMember(tx, roomSessionId, memberId);
 
+      if (proofCodes.length !== 3) {
+        throw new BadRequestError("Proof codes must be 3");
+      }
+
+      // 手札に爆弾を１枚作成
+      let bombHintProof: TProof | null = null;
+      let bombProof: TProof | null = null;
+      const shuffledProofCodes = myUtil.shuffleArray(proofCodes);
+      for (const proofCode of shuffledProofCodes) {
+        const proof = await _getProofByRoomSessionIdAndCode(
+          tx,
+          roomSessionId,
+          proofCode
+        );
+        if (proof.title === PROOF_BOMB_RESERVED_WORD) {
+          bombHintProof = proof;
+          continue;
+        }
+        // 爆弾化
+        await proofRepository.updateProofStatus(tx, proof.id, { bomFlg: true });
+        bombProof = proof;
+        break;
+      }
+      if (bombHintProof && bombProof) {
+        await proofRepository.updateProofStatus(tx, bombProof.id, {
+          title: "PROOF_BOMB_RESERVED_WORD",
+          description: `${bombProof.code}は爆弾です`,
+        });
+      }
       await proofSpecialMoveExecutor.executeInitialize(
         member.role?.roleName as keyof typeof PROOF_ROLE_NAME_MAP,
         tx,
@@ -237,15 +292,55 @@ export const proofService = {
         roomSession,
         proofCodes
       );
+
       await proofRepository.updateRoomMemberStatus(
         tx,
         roomSession.room.id,
         member.userId,
         PROOF_MEMBER_STATUS.APPLY_CARD
       );
+      noticeAllUserInfo(io, roomSession);
     });
   },
 
+  turnIntoBomb: async (
+    roomSessionId: number,
+    memberId: number,
+    proofCodes: string[]
+  ): Promise<string[]> => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const member = await _getSessionRoomMember(tx, roomSessionId, memberId);
+      if (!isBomber(member)) {
+        // ボマーじゃない時
+      }
+
+      const bomHintProof = (
+        await proofRepository.getProofsByRoomSessionId(tx, roomSessionId)
+      ).find((proof) => proof.title === PROOF_BOMB_RESERVED_WORD);
+
+      for (const code of proofCodes) {
+        const proof = await _getProofByRoomSessionIdAndCode(
+          tx,
+          roomSessionId,
+          code
+        );
+        await proofRepository.updateProofStatus(tx, proof.id, { bomFlg: true });
+      }
+      // 爆弾のヒントには足跡を残す
+      if (
+        bomHintProof &&
+        bomHintProof.status !== PROOF_STATUS.REVEALED_TO_ALL
+      ) {
+        await proofRepository.updateProofStatus(tx, bomHintProof.id, {
+          title: PROOF_BOMB_RESERVED_WORD,
+          description: `${proofCodes.join(",")}は爆弾になりました`,
+          status: PROOF_STATUS.NORMAL,
+        });
+      }
+
+      return proofCodes;
+    });
+  },
   getProofList: async (
     roomSessionId: number,
     memberId?: number
@@ -270,7 +365,7 @@ export const proofService = {
         return {
           ...proof,
           ...{
-            title: "???",
+            title: "???", // TODO ??? は固定値に
             description: "???",
             status: "???",
           },
@@ -303,6 +398,15 @@ export const proofService = {
       }
     });
   },
+  judgeAlreadyRevealed: async (
+    roomSessionId: number,
+    turn: number,
+    memberId: number
+  ): Promise<boolean> => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      return await _judgeAlreadyRevealed(tx, roomSessionId, turn, memberId);
+    });
+  },
   revealProof: async (
     roomSessionId: number,
     code: string,
@@ -311,6 +415,22 @@ export const proofService = {
     io: Server
   ): Promise<TRevealedResult> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const roomSession = await proofRepository.getRoomSession(
+        tx,
+        roomSessionId
+      );
+      if (!roomSession) {
+        throw new NotFoundError("Room session not found");
+      }
+      const isAlreadyRevealed = await _judgeAlreadyRevealed(
+        tx,
+        roomSessionId,
+        roomSession.turn,
+        revealedBy
+      );
+      if (isAlreadyRevealed) {
+        throw new BadRequestError("Already revealed");
+      }
       const revealedResult = await proofProcess.revealProofProcess(tx, io, {
         roomSessionId,
         code,
@@ -392,13 +512,7 @@ export const proofService = {
     io: Server
   ): Promise<{ turnFinished: boolean; currentTurn: number }> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
-      const roomSession = await proofRepository.getRoomSession(
-        tx,
-        roomSessionId
-      );
-      if (!roomSession) {
-        throw new NotFoundError("Room session not found");
-      }
+      const roomSession = await _getSessionRoom(tx, roomSessionId);
       if (roomSession.status !== PROOF_ROOM_SESSION_STATUS.ORDER_WAITING) {
         console.log("end", roomSession.status);
         throw new BadRequestError("Room session is not in order waiting");
@@ -430,10 +544,7 @@ export const proofService = {
       roomMembers.forEach((member) => {
         activateUser(io, member.userId, false);
       });
-      noticeAllUserInfo(
-        io,
-        toTProofRoomSessionFromProofRoomSessionWithMembers(roomSession)
-      );
+      noticeAllUserInfo(io, roomSession);
 
       return {
         turnFinished: finishFlg,
@@ -441,6 +552,83 @@ export const proofService = {
       };
     });
   },
+
+  useSkill: async (
+    roomSessionId: number,
+    memberId: number,
+    io: Server
+  ): Promise<void> => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const roomSession = await _getSessionRoom(tx, roomSessionId);
+      const member = await _getSessionRoomMember(tx, roomSessionId, memberId);
+      if (!member.role) {
+        throw new BadRequestError("Member role not found");
+      }
+      const roleName = member.role.roleName as keyof typeof PROOF_ROLE_NAME_MAP;
+      const setting = PROOF_ROLE_SETTING[roleName];
+      if (!setting) {
+        throw new BadRequestError("Role setting not found");
+      }
+      if (
+        setting.skillLimit !== 0 &&
+        member.skillUsedTime >= setting.skillLimit
+      ) {
+        throw new BadRequestError("Skill limit reached");
+      }
+      await proofSpecialMoveExecutor.executeUseSkill(
+        roleName,
+        tx,
+        member,
+        roomSession,
+        io
+      );
+
+      await proofRepository.updateRoomMemberInfoDuringTurn(
+        tx,
+        roomSession.room.id,
+        member.userId,
+        {
+          skillUsedTime: member.skillUsedTime + 1,
+        }
+      );
+    });
+  },
+  addPenalty: async (
+    roomSessionId: number,
+    memberId: number,
+    penalty: string
+  ): Promise<void> => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const roomSession = await _getSessionRoom(tx, roomSessionId);
+      const member = await _getSessionRoomMember(tx, roomSessionId, memberId);
+
+      if (
+        !(Object.values(PROOF_PENALTY_MAP) as readonly string[]).includes(
+          penalty
+        )
+      ) {
+        throw new BadRequestError("Invalid penalty");
+      }
+      // TODO 既存のペナルティとの関係
+      await proofRepository.updateRoomMemberInfoDuringTurn(
+        tx,
+        roomSession.room.id,
+        member.userId,
+        { penalty: [...(member.penalty ?? []), penalty] }
+      );
+    });
+  },
+
+  requestReport: async (
+    roomSessionId: number,
+    memberId: number
+  ): Promise<void> => {
+    return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      const roomSession = await _getSessionRoom(tx, roomSessionId);
+      const member = await _getSessionRoomMember(tx, roomSessionId, memberId);
+    });
+  },
+
   _forceFocus: async (
     roomSessionId: number,
     io: Server,
@@ -482,4 +670,64 @@ export const proofService = {
 function generate4DigitCode(): string {
   const num = randomInt(0, 10000);
   return num.toString().padStart(4, "0");
+}
+
+async function _judgeAlreadyRevealed(
+  tx: Prisma.TransactionClient,
+  roomSessionId: number,
+  turn: number,
+  memberId: number
+): Promise<boolean> {
+  const proofs = await proofRepository.getProofsByRoomSessionIdAndTurn(
+    tx,
+    roomSessionId,
+    turn
+  );
+  return proofs
+    .map(toTProofFromProofList)
+    .some((proof) => proof.revealedBy.includes(memberId));
+}
+async function _getSessionRoom(
+  tx: Prisma.TransactionClient,
+  roomSessionId: number
+): Promise<TProofRoomSession> {
+  const roomSession = await proofRepository.getRoomSession(tx, roomSessionId);
+  if (!roomSession) {
+    throw new NotFoundError("Room session not found");
+  }
+  return toTProofRoomSessionFromProofRoomSessionWithMembers(roomSession);
+}
+
+async function _getSessionRoomMember(
+  tx: Prisma.TransactionClient,
+  roomSessionId: number,
+  memberId: number
+): Promise<TProofRoomMember> {
+  const roomSession = await proofRepository.getRoomSession(tx, roomSessionId);
+  if (!roomSession) {
+    throw new NotFoundError("Room session not found");
+  }
+  const member = roomSession.room.members.find(
+    (member) => member.id === memberId
+  );
+  if (!member) {
+    throw new NotFoundError("Member not found");
+  }
+  return toTProofRoomMember(member);
+}
+
+async function _getProofByRoomSessionIdAndCode(
+  tx: Prisma.TransactionClient,
+  roomSessionId: number,
+  proofCode: string
+): Promise<TProof> {
+  const proof = await proofRepository.getProofByRoomSessionIdAndCode(
+    tx,
+    roomSessionId,
+    proofCode
+  );
+  if (!proof) {
+    throw new NotFoundError(`Proof ${proofCode} not found`);
+  }
+  return toTProofFromProofList(proof);
 }

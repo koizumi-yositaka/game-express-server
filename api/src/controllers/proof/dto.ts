@@ -2,11 +2,9 @@ import {
   PROOF_MEMBER_STATUS,
   PROOF_ROLE_NAME_MAP,
 } from "../../domain/proof/proofCommon";
-import { ProofRoomSessionSettingJsonContents } from "../../domain/proof/types";
 // roomのセッション情報
 export type DTOProofRoomSession = {
   id: number;
-  setting: ProofRoomSessionSettingJsonContents;
   focusOn: number;
   turn: number;
   status: number;
@@ -28,6 +26,8 @@ export type DTOProofRoomMember = {
   id: number;
   sort: number;
   status: number;
+  skillUsedTime: number;
+  penalty: string[];
   joinedAt: string;
   user: DTOProofUser | null;
   role: DTOProofRole | null;
@@ -60,6 +60,8 @@ export type DTOProof = {
   id: number;
   roomSessionId: number;
   code: string;
+  refer: string;
+  bomFlg: boolean;
   rank: string;
   status: string;
   title: string;

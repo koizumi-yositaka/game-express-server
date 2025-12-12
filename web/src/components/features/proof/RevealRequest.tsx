@@ -1,20 +1,14 @@
-import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { PROOF_RANK } from "@/common/proofCommon";
-import { getProofStatus, revealProof } from "@/api/apiClient";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { useAuth } from "@/contexts/AuthContext";
 import type { DTOProofStatus } from "@/proofTypes";
 import { useLoading } from "@/contexts/LoadingContext";
 import { asyncWrapper } from "@/lib/errorHandler";
+
 import { useNavigate } from "react-router-dom";
+import { RankAndCode } from "@/components/features/proof/RankAndCode";
+import { getProofStatus, revealProof } from "@/api/apiClient";
 export const RevealRequest = () => {
   const [rank, setRank] = useState<keyof typeof PROOF_RANK>(PROOF_RANK.A);
   const [proofCode, setProofCode] = useState<string>("");
@@ -22,6 +16,7 @@ export const RevealRequest = () => {
   const { user } = useAuth();
   const { show, hide } = useLoading();
   const navigate = useNavigate();
+
   if (!user) return null;
   const getProofStatusHandler = async () => {
     show("証拠を検証中...");
@@ -45,34 +40,21 @@ export const RevealRequest = () => {
     });
     hide();
   };
+  const rankChangeHandler = (rank: keyof typeof PROOF_RANK) => {
+    setRank(rank);
+  };
+  const codeChangeHandler = (code: string) => {
+    setProofCode(code);
+    setProofStatus(null);
+  };
   return (
     <div className="flex flex-col gap-4 w-full max-w-md">
-      <div className="flex items-center gap-4 p-4">
-        <Select
-          value={rank}
-          onValueChange={(value) => setRank(value as keyof typeof PROOF_RANK)}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="証拠コード" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value={PROOF_RANK.A}>{PROOF_RANK.A}</SelectItem>
-            <SelectItem value={PROOF_RANK.B}>{PROOF_RANK.B}</SelectItem>
-            <SelectItem value={PROOF_RANK.C}>{PROOF_RANK.C}</SelectItem>
-          </SelectContent>
-        </Select>
-        <Input
-          type="number"
-          inputMode="numeric"
-          pattern="[0-9]*"
-          placeholder="証拠コード"
-          value={proofCode}
-          onChange={(e) => {
-            setProofCode(e.target.value);
-            setProofStatus(null);
-          }}
-        />
-      </div>
+      <RankAndCode
+        rank={rank}
+        code={proofCode}
+        rankChangeHandler={rankChangeHandler}
+        codeChangeHandler={codeChangeHandler}
+      />
 
       {proofStatus ? (
         <>

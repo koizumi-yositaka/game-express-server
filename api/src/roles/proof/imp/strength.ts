@@ -1,20 +1,19 @@
-import ProofIF from "../proofIF";
 import {
   TProofRoomMember,
   TProofRoomSession,
 } from "../../../domain/proof/types";
+import ProofIF from "../proofIF";
 import { Prisma } from "../../../generated/prisma/client";
 import { Server } from "socket.io";
 
-class BombSquad implements ProofIF {
+export default class Strength implements ProofIF {
   async executeInitialize(
     tx: Prisma.TransactionClient,
     me: TProofRoomMember,
     roomSession: TProofRoomSession,
     proofCodes: string[]
   ): Promise<void> {
-    console.log("BombSquad executeInitialize");
-    return;
+    console.log("Strength executeInitialize");
   }
   async executeUseSkill(
     tx: Prisma.TransactionClient,
@@ -22,8 +21,6 @@ class BombSquad implements ProofIF {
     roomSession: TProofRoomSession,
     io: Server
   ): Promise<void> {
-    console.log("BombSquad executeUseSkill");
+    console.log("Strength executeUseSkill");
   }
 }
-
-export default BombSquad;

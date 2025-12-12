@@ -29,7 +29,7 @@ export function toTProofRoom(
     status: room.status,
     openFlg: room.openFlg,
     createdAt: room.createdAt,
-    members: members,
+    members: members.map((member) => toTProofRoomMember(member)),
   };
 }
 
@@ -70,6 +70,11 @@ export function toTProofRoomMember(
     roleId: roomMember.roleId,
     status: roomMember.status,
     sort: roomMember.sort,
+    skillUsedTime: roomMember.skillUsedTime,
+    penalty: roomMember.penalty
+      .split(",")
+      .filter((penalty) => penalty)
+      .map((penalty) => penalty),
     joinedAt: roomMember.joinedAt,
   };
 }
@@ -99,6 +104,11 @@ export function toTProofRoomMemberFromProofRoomMemberWithUsers(
     roleId: roomMember.role.roleId,
     status: roomMember.status,
     sort: roomMember.sort,
+    skillUsedTime: roomMember.skillUsedTime,
+    penalty: roomMember.penalty
+      .split(",")
+      .filter((penalty) => penalty)
+      .map((penalty) => penalty),
     joinedAt: roomMember.joinedAt,
     user: toTUser(roomMember.user),
     role: toTProofRole(roomMember.role),
@@ -163,6 +173,8 @@ export function toTProofFromProofList(proofList: ProofList): TProof {
     status: proofList.status,
     title: proofList.title,
     description: proofList.description,
+    refer: proofList.references,
+    bomFlg: proofList.bomFlg,
     revealedBy:
       proofList.revealedBy
         .split(",")

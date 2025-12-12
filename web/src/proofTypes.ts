@@ -6,7 +6,6 @@ import {
 // roomのセッション情報
 export type DTOProofRoomSession = {
   id: number;
-  setting: ProofRoomSessionSettingJsonContents;
   focusOn: number;
   turn: number;
   status: number;
@@ -28,6 +27,8 @@ export type DTOProofRoomMember = {
   id: number;
   sort: number;
   status: number;
+  skillUsedTime: number;
+  penalty: string[];
   joinedAt: string;
   user: DTOProofUser | null;
   role: DTOProofRole | null;
@@ -60,20 +61,25 @@ export type DTOProof = {
   id: number;
   roomSessionId: number;
   code: string;
+  refer: string;
   rank: string;
   status: string;
   title: string;
   description: string;
+  bomFlg: boolean;
   revealedBy: number[];
 };
 
 export type ProofRoomSessionSettingJsonContents = {
-  aCount: number;
-  aDummyCount: number;
-  bCount: number;
-  bDummyCount: number;
-  cCount: number;
-  cDummyCount: number;
+  cardCount: {
+    aCount: number;
+    aDummyCount: number;
+    bCount: number;
+    bDummyCount: number;
+    cCount: number;
+    cDummyCount: number;
+  };
+
   featureB: Record<keyof typeof PROOF_ROLE_NAME_MAP, RoleFeatureB>;
 };
 

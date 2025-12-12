@@ -13,6 +13,7 @@ import type {
   DecodedUserInfo,
   RevealResult,
   DTOProof,
+  RoleFeatureB,
 } from "@/proofTypes";
 
 export async function centerLogin(id: string, password: string): Promise<void> {
@@ -273,6 +274,21 @@ export async function getProofSessionByRoomId(
   }
 }
 
+export async function getProofRoleSetting(
+  roomSessionId: number,
+  memberId: number
+): Promise<RoleFeatureB> {
+  try {
+    const res = await axiosInstance.get(
+      `/proofs/sessions/${roomSessionId}/roleSetting/${memberId}`
+    );
+    return res.data;
+  } catch (error) {
+    console.error("getProofRoleSetting error:", error);
+    throw error;
+  }
+}
+
 export async function decodeToken(token: string): Promise<DecodedUserInfo> {
   try {
     const res = await axiosInstance.post("/proofs/token", { token });
@@ -314,6 +330,26 @@ export async function endOrder(
   }
 }
 
+export async function judgeAlreadyRevealed(
+  roomSessionId: number,
+  turn: number,
+  memberId: number
+): Promise<boolean> {
+  try {
+    const res: { data: { result: boolean } } = await axiosInstance.post(
+      `/proofs/judgeAlreadyRevealed`,
+      {
+        roomSessionId,
+        turn,
+        memberId,
+      }
+    );
+    return res.data.result;
+  } catch (error) {
+    console.error("judgeAlreadyRevealed error:", error);
+    throw error;
+  }
+}
 export async function getProofStatus(
   roomSessionId: number,
   proofCode: string,
@@ -344,6 +380,26 @@ export async function revealProof(
     return res.data;
   } catch (error) {
     console.error("revealProof error:", error);
+    throw error;
+  }
+}
+
+export async function applyCard(
+  roomSessionId: number,
+  proofCodes: string[],
+  memberId: number
+): Promise<boolean> {
+  try {
+    const res: { data: { success: boolean } } = await axiosInstance.post(
+      `/proofs/sessions/${roomSessionId}/bombInit/`,
+      {
+        proofCodes,
+        memberId,
+      }
+    );
+    return res.data.success;
+  } catch (error) {
+    console.error("applyCard error:", error);
     throw error;
   }
 }

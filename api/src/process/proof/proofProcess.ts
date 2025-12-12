@@ -6,11 +6,15 @@ import {
 } from "../../error/AppError";
 import {
   TProof,
+  TProofRoomMember,
   TProofRoomSession,
   TRevealedResult,
 } from "../../domain/proof/types";
 import { proofRepository } from "../../repos/proofRepository";
-import { toTProofRoomSessionFromProofRoomSessionWithMembers } from "../../domain/proof/typeParse";
+import {
+  toTProofRoomMember,
+  toTProofRoomSessionFromProofRoomSessionWithMembers,
+} from "../../domain/proof/typeParse";
 import { gameUtil } from "../../util/gameUtil";
 import { proofUtil } from "../../util/proofUtil";
 import { lineUtil } from "../../util/lineUtil";
@@ -54,9 +58,14 @@ export const proofProcess = {
         index
       );
     }
-    const roles = await proofRepository.getRoles(tx);
+    const roles = (await proofRepository.getRoles(tx)).filter(
+      (role) => role.roleName !== "NONE"
+    );
     const initailSetting = await proofUtil.createGameSetting();
-    const assignedMembers = proofUtil.assignRoles(roomMembers, roles);
+    const assignedMembers = proofUtil.assignRoles(
+      roomMembers.map(toTProofRoomMember),
+      roles
+    );
     for (const member of assignedMembers) {
       await proofRepository.updateRoomMemberRole(
         tx,
@@ -87,11 +96,10 @@ export const proofProcess = {
     await proofRepository.updateRoom(tx, room.id, {
       status: PROOF_ROOM_STATUS.IN_PROGRESS,
     });
-    const dummy = {};
     await proofRepository.createRoomSession(
       tx,
       room.id,
-      JSON.stringify(dummy),
+      JSON.stringify(initailSetting),
       topMemberId
     );
 
@@ -108,11 +116,20 @@ export const proofProcess = {
     }
 
     // 証拠作成
-    // await proofRepository.deleteProofByRoomSessionId(tx, roomSession.id);
-    const proofs = await proofUtil.createProofs(initailSetting, roomSession);
+    await proofRepository.deleteProofByRoomSessionId(tx, room.id);
+    const proofs = await proofUtil.createProofs(
+      initailSetting,
+      toTProofRoomSessionFromProofRoomSessionWithMembers(roomSession)
+    );
     await proofRepository.createProofs(tx, roomSession.id, proofs);
 
-    for (const member of roomSession.room.members) {
+    for (const member of roomSession.room.members.map(toTProofRoomMember)) {
+      if (!member.role) {
+        throw new BadRequestError("Role not assigned");
+      }
+      if (!member.user) {
+        throw new BadRequestError("User not assigned");
+      }
       const token = await proofUtil.createToken({
         roomSessionId: roomSession.id,
         memberId: member.id,
@@ -133,6 +150,15 @@ export const proofProcess = {
         toTProofRoomSessionFromProofRoomSessionWithMembers(roomSession),
     };
   },
+  turnIntoBombProcess: async (
+    tx: Prisma.TransactionClient,
+    params: {
+      roomSessionId: number;
+      memberId: number;
+      proofCode: string;
+    }
+  ): Promise<void> => {},
+
   revealProofProcess: async (
     tx: Prisma.TransactionClient,
     io: Server,
@@ -207,6 +233,7 @@ export const proofProcess = {
       tx,
       parsedProof.id,
       {
+        // 爆弾をPrivate開示の場合は爆弾のまま
         status: params.isEntire
           ? PROOF_STATUS.REVEALED_TO_ALL
           : PROOF_STATUS.REVEALED_TO_ONE,
@@ -215,7 +242,7 @@ export const proofProcess = {
       }
     );
     // 爆弾の場合
-    if (proof.status === PROOF_STATUS.BOMBED) {
+    if (parsedProof.bomFlg) {
       // ボマーの場合
       if (member.role.roleName === PROOF_ROLE_NAME_MAP.BOMBER) {
         await proofProcess.revealProcess(tx, io, {
@@ -336,7 +363,7 @@ export const proofProcess = {
             tx,
             params.roomSession.room.id,
             member.userId,
-            PROOF_MEMBER_STATUS.BOMBED
+            PROOF_MEMBER_STATUS.RETIRED
           );
         } else {
           await lineUtil.sendSimpleTextMessage(
@@ -352,8 +379,29 @@ export const proofProcess = {
         tx,
         params.roomSession.room.id,
         params.userId,
-        PROOF_MEMBER_STATUS.BOMBED
+        PROOF_MEMBER_STATUS.RETIRED
       );
     }
+  },
+  useSkill: async (
+    tx: Prisma.TransactionClient,
+    io: Server,
+    params: {}
+  ): Promise<void> => {},
+
+  deathProcess: async (
+    tx: Prisma.TransactionClient,
+    io: Server,
+    params: {
+      roomSession: TProofRoomSession;
+      member: TProofRoomMember;
+    }
+  ): Promise<void> => {
+    proofRepository.updateRoomMemberStatus(
+      tx,
+      params.roomSession.room.id,
+      params.member.userId,
+      PROOF_MEMBER_STATUS.RETIRED
+    );
   },
 };

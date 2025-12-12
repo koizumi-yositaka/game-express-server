@@ -3,6 +3,7 @@ import { useProofSocket } from "@/hooks/useProofSocket";
 import { useEffect, useState } from "react";
 import {
   PROOF_ADMIN_USER_ID,
+  PROOF_MEMBER_STATUS,
   PROOF_ROOM_SESSION_STATUS,
   REVEALED_RESULT_CODE,
 } from "@/common/proofCommon";
@@ -59,9 +60,7 @@ export const SessionBase = () => {
       if (!turnFinished) {
         await startOrder(Number(roomSessionId));
       } else {
-        const result = await showInfoDialog(
-          getProofMessage("I1", currentTurn + 1)
-        );
+        const result = await showInfoDialog(getProofMessage("I1", currentTurn));
         if (!result) {
           return;
         }
@@ -73,7 +72,7 @@ export const SessionBase = () => {
   const startTurn = async () => {
     if (roomSessionId) {
       const result = await callMyConfirm(
-        getProofMessage("C2", sessionRoom?.turn ?? 0)
+        getProofMessage("C2", (sessionRoom?.turn ?? 0) + 1)
       );
       if (!result) {
         return;
@@ -97,23 +96,34 @@ export const SessionBase = () => {
     }
     return "不明";
   };
+  const isAllReady = sessionRoom?.room.members.every(
+    (member) => member.status >= PROOF_MEMBER_STATUS.APPLY_CARD
+  );
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex-1 ">
-        今は {sessionRoom?.turn} ターン目です。 {getTurnStatus()}です。
-      </div>
+      {isAllReady ? (
+        <div className="flex-1 ">
+          今は {sessionRoom?.turn} ターン目です。 {getTurnStatus()}です。
+        </div>
+      ) : (
+        <div className="text-red-500">
+          全員が手持ちのカードを登録していません
+        </div>
+      )}
+
       <div className="flex-1 gap-2">
         {sessionRoom && (
           <ProofMemberList
             roomMenbers={sessionRoom.room.members}
             focusOn={sessionRoom.focusOn}
+            isAllReady={!!isAllReady}
           />
         )}
       </div>
       <div className="flex gap-4">
         {(sessionRoom?.status === PROOF_ROOM_SESSION_STATUS.GAME_STARTED ||
           sessionRoom?.status === PROOF_ROOM_SESSION_STATUS.TURN_ENDED) && (
-          <Button className="w-full" onClick={startTurn}>
+          <Button className="w-full" onClick={startTurn} disabled={!isAllReady}>
             ターン開始
           </Button>
         )}

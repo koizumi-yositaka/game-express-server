@@ -4,7 +4,6 @@ import {
   TUser,
   TProofRole,
   TProofRoom,
-  ProofRoomSessionSettingJsonContents,
   TProof,
 } from "../../domain/proof/types";
 import {
@@ -23,6 +22,8 @@ export function toDTOProofRoomMember(
     id: roomMember.id,
     sort: roomMember.sort,
     status: roomMember.status,
+    skillUsedTime: roomMember.skillUsedTime,
+    penalty: roomMember.penalty,
     joinedAt: roomMember.joinedAt.toISOString(),
     user: roomMember.user ? toDTOProofUser(roomMember.user) : null,
     role: roomMember.role ? toDTOProofRole(roomMember.role) : null,
@@ -59,9 +60,6 @@ export function toDTOProofRoomSession(
     status: roomSession.status,
     turn: roomSession.turn,
     focusOn: roomSession.focusOn,
-    setting: JSON.parse(
-      roomSession.setting
-    ) as ProofRoomSessionSettingJsonContents,
     room: toDTOProofRoom(roomSession.room),
   };
 }
@@ -79,6 +77,8 @@ export function toDTOProof(proof: TProof): DTOProof {
     id: proof.id,
     roomSessionId: proof.roomSessionId,
     code: proof.code,
+    refer: proof.refer,
+    bomFlg: proof.bomFlg,
     rank: proof.rank,
     status: proof.status,
     title: proof.title,

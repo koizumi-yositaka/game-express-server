@@ -23,6 +23,8 @@ export type TProofRoomMember = {
   roleId: number;
   status: number;
   sort: number;
+  skillUsedTime: number;
+  penalty: string[];
   joinedAt: Date;
   user?: TUser;
   role?: TProofRole;
@@ -48,12 +50,15 @@ export type TProofRole = {
   group: number;
 };
 export type ProofRoomSessionSettingJsonContents = {
-  aCount: number;
-  aDummyCount: number;
-  bCount: number;
-  bDummyCount: number;
-  cCount: number;
-  cDummyCount: number;
+  cardCount: {
+    aCount: number;
+    aDummyCount: number;
+    bCount: number;
+    bDummyCount: number;
+    cCount: number;
+    cDummyCount: number;
+  };
+
   featureB: Record<keyof typeof PROOF_ROLE_NAME_MAP, RoleFeatureB>;
 };
 
@@ -63,6 +68,7 @@ export type ProofForm = {
   code: string;
   status: string;
   title: string;
+  refer: string;
   description: string;
 };
 
@@ -74,6 +80,8 @@ export type TProof = {
   status: string;
   title: string;
   description: string;
+  refer: string;
+  bomFlg: boolean;
   revealedBy: number[];
 };
 

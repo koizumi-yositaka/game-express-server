@@ -22,18 +22,19 @@ jest.mock("../../domain/proof/typeParse");
 /**
  * revealProofProcess パラメータ別結果表
  *
- * | proof.status      | revealedBy.roleId | isEntire | 既に開示済み(revealedBy) | 結果コード              | メッセージ                     |
- * |-------------------|-------------------|----------|-------------------------|------------------------|--------------------------------|
- * | NORMAL            | 任意              | false    | 0                       | SUCCESS                | このカードは開示されました      |
- * | NORMAL            | 任意              | true     | 0                       | SUCCESS                | このカードは開示されました      |
- * | REVEALED_TO_ALL   | 任意              | 任意     | 任意(≠0)               | ALREADY_REVEALED       | このカードはすでに開示されています |
- * | REVEALED_TO_ONE   | 任意              | true     | 任意(≠0)                | SUCCESS                | このカードは開示されました      |
- * | REVEALED_TO_ONE   | 任意              | false    | 同じmember              | ALREADY_REVEALED       | このカードはすでにあなたには開示されています |
- * | REVEALED_TO_ONE   | 任意              | false    | 異なるmember            | SUCCESS                | このカードは開示されました      |
- * | BOMBED            | 1(ボマー)         | 任意     | 0                       | SUCCESS                | このカードは開示されました      |
- * | BOMBED            | 2(鑑定士)         | 任意     | 0                       | DISARM_SUCCESS         | 爆弾を解除しました              |
- * | BOMBED            | 3(その他)         | false    | 0                       | BOMBED                 | このカードは爆弾です            |
- * | BOMBED            | 3(その他)         | true     | 0                       | BOMBED                 | このカードは爆弾です            |
+ * | proof.status      | bomFlg | revealedBy.roleId | isEntire | 既に開示済み(revealedBy) | 結果コード              | メッセージ                     |
+ * |-------------------|--------|-------------------|----------|-------------------------|------------------------|--------------------------------|
+ * | NORMAL            | false  | 任意              | false    | 0                       | SUCCESS                | このカードは開示されました      |
+ * | NORMAL            | false  | 任意              | true     | 0                       | SUCCESS                | このカードは開示されました      |
+ * | REVEALED_TO_ALL   | 任意   | 任意              | 任意     | 任意(≠0)                | ALREADY_REVEALED       | このカードはすでに開示されています |
+ * | REVEALED_TO_ONE   | 任意   | 任意              | true     | 任意(≠0)                | SUCCESS                | このカードは開示されました      |
+ * | REVEALED_TO_ONE   | 任意   | 任意              | false    | 同じmember              | ALREADY_REVEALED       | このカードはすでにあなたには開示されています |
+ * | REVEALED_TO_ONE   | 任意   | 任意              | false    | 異なるmember            | SUCCESS                | このカードは開示されました      |
+ * | NORMAL            | true   | 1(ボマー)         | 任意     | 0                       | SUCCESS                | このカードは開示されました      |
+ * | NORMAL            | true   | 2(鑑定士)         | false    | 0                       | DISARM_SUCCESS         | 爆弾を解除しました              |
+ * | NORMAL            | true   | 2(鑑定士)         | true     | 0                       | BOMBED                 | このカードは爆弾です            |
+ * | NORMAL            | true   | 3(その他)         | false    | 0                       | BOMBED                 | このカードは爆弾です            |
+ * | NORMAL            | true   | 3(その他)         | true     | 0                       | BOMBED                 | このカードは爆弾です            |
  */
 
 describe("proofProcess.revealProofProcess", () => {
@@ -56,6 +57,8 @@ describe("proofProcess.revealProofProcess", () => {
         status: proof.status,
         title: proof.title,
         description: proof.description,
+        refer: proof.refer || "",
+        bomFlg: proof.bomFlg || false,
         revealedBy:
           proof.revealedBy && proof.revealedBy !== ""
             ? proof.revealedBy.split(",").map((id: string) => parseInt(id))
@@ -74,18 +77,19 @@ describe("proofProcess.revealProofProcess", () => {
 ╔════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╗
 ║ revealProofProcess パラメータ別結果表                                                                                                    ║
 ╠════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╣
-║ proof.status      │ revealedBy.roleId │ isEntire │ 既に開示済み(revealedBy) │ 結果コード              │ メッセージ                     ║
-╠═══════════════════╪═══════════════════╪══════════╪═════════════════════════╪═════════════════════════╪════════════════════════════════╣
-║ NORMAL            │ 任意              │ false    │ 0                       │ SUCCESS                 │ このカードは開示されました      ║
-║ NORMAL            │ 任意              │ true     │ 0                       │ SUCCESS                 │ このカードは開示されました      ║
-║ REVEALED_TO_ALL   │ 任意              │ 任意     │ 任意(≠0)                │ ALREADY_REVEALED        │ このカードはすでに開示されています ║
-║ REVEALED_TO_ONE   │ 任意              │ true     │ 任意(≠0)                │ SUCCESS                 │ このカードは開示されました      ║
-║ REVEALED_TO_ONE   │ 任意              │ false    │ 同じmember              │ ALREADY_REVEALED        │ このカードはすでにあなたには開示されています ║
-║ REVEALED_TO_ONE   │ 任意              │ false    │ 異なるmember            │ SUCCESS                 │ このカードは開示されました      ║
-║ BOMBED            │ 1(ボマー)         │ 任意     │ 0                       │ SUCCESS                 │ このカードは開示されました      ║
-║ BOMBED            │ 2(鑑定士)         │ 任意     │ 0                       │ DISARM_SUCCESS          │ 爆弾を解除しました              ║
-║ BOMBED            │ 3(その他)         │ false    │ 0                       │ BOMBED                  │ このカードは爆弾です            ║
-║ BOMBED            │ 3(その他)         │ true     │ 0                       │ BOMBED                  │ このカードは爆弾です            ║
+║ proof.status      │ bomFlg │ revealedBy.roleId │ isEntire │ 既に開示済み(revealedBy) │ 結果コード              │ メッセージ                     ║
+╠═══════════════════╪════════╪═══════════════════╪══════════╪═════════════════════════╪═════════════════════════╪════════════════════════════════╣
+║ NORMAL            │ false  │ 任意              │ false    │ 0                       │ SUCCESS                 │ このカードは開示されました      ║
+║ NORMAL            │ false  │ 任意              │ true     │ 0                       │ SUCCESS                 │ このカードは開示されました      ║
+║ REVEALED_TO_ALL   │ 任意   │ 任意              │ 任意     │ 任意(≠0)                │ ALREADY_REVEALED        │ このカードはすでに開示されています ║
+║ REVEALED_TO_ONE   │ 任意   │ 任意              │ true     │ 任意(≠0)                │ SUCCESS                 │ このカードは開示されました      ║
+║ REVEALED_TO_ONE   │ 任意   │ 任意              │ false    │ 同じmember              │ ALREADY_REVEALED        │ このカードはすでにあなたには開示されています ║
+║ REVEALED_TO_ONE   │ 任意   │ 任意              │ false    │ 異なるmember            │ SUCCESS                 │ このカードは開示されました      ║
+║ NORMAL            │ true   │ 1(ボマー)         │ 任意     │ 0                       │ SUCCESS                 │ このカードは開示されました      ║
+║ NORMAL            │ true   │ 2(鑑定士)         │ false    │ 0                       │ DISARM_SUCCESS          │ 爆弾を解除しました              ║
+║ NORMAL            │ true   │ 2(鑑定士)         │ true     │ 0                       │ BOMBED                  │ このカードは爆弾です            ║
+║ NORMAL            │ true   │ 3(その他)         │ false    │ 0                       │ BOMBED                  │ このカードは爆弾です            ║
+║ NORMAL            │ true   │ 3(その他)         │ true     │ 0                       │ BOMBED                  │ このカードは爆弾です            ║
 ╚════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════════╝
 `;
     console.log(table);
@@ -159,7 +163,8 @@ describe("proofProcess.revealProofProcess", () => {
     id: number,
     code: string,
     status: string,
-    revealedBy: number[] = []
+    revealedBy: number[] = [],
+    bomFlg: boolean = false
   ) => {
     // DBから取得されるProofList型（revealedByはstring）
     return {
@@ -171,6 +176,7 @@ describe("proofProcess.revealProofProcess", () => {
       title: "Test Proof",
       description: "Test Description",
       revealedBy: revealedBy.length > 0 ? revealedBy.join(",") : "",
+      bomFlg,
     };
   };
 
@@ -211,7 +217,8 @@ describe("proofProcess.revealProofProcess", () => {
         1,
         "CODE1",
         PROOF_STATUS.REVEALED_TO_ONE,
-        [1]
+        [1],
+        false
       );
       const tProofRoomSession = createMockTProofRoomSession([member1]);
       const tProof = {
@@ -222,6 +229,8 @@ describe("proofProcess.revealProofProcess", () => {
         status: PROOF_STATUS.REVEALED_TO_ONE,
         title: "Test Proof",
         description: "Test Description",
+        refer: "",
+        bomFlg: false,
         revealedBy: [1],
       };
 
@@ -286,6 +295,8 @@ describe("proofProcess.revealProofProcess", () => {
         status: PROOF_STATUS.REVEALED_TO_ALL,
         title: "Test Proof",
         description: "Test Description",
+        refer: "",
+        bomFlg: false,
         revealedBy: [1],
       };
 
@@ -426,6 +437,8 @@ describe("proofProcess.revealProofProcess", () => {
         status: PROOF_STATUS.REVEALED_TO_ALL,
         title: "Test Proof",
         description: "Test Description",
+        refer: "",
+        bomFlg: false,
         revealedBy: [1],
       };
 
@@ -484,6 +497,8 @@ describe("proofProcess.revealProofProcess", () => {
         status: PROOF_STATUS.REVEALED_TO_ONE,
         title: "Test Proof",
         description: "Test Description",
+        refer: "",
+        bomFlg: false,
         revealedBy: [1, 2],
       };
 
@@ -550,6 +565,8 @@ describe("proofProcess.revealProofProcess", () => {
         status: PROOF_STATUS.REVEALED_TO_ALL,
         title: "Test Proof",
         description: "Test Description",
+        refer: "",
+        bomFlg: false,
         revealedBy: [1, 2],
       };
 
@@ -591,12 +608,13 @@ describe("proofProcess.revealProofProcess", () => {
     it("roleName: BOMBER（ボマー）が開示する場合、SUCCESSを返す", async () => {
       const member1 = createMockMember(1, "user1", 1); // ボマー
       const roomSession = createMockRoomSession([member1]);
-      const proof = createMockProof(1, "CODE1", PROOF_STATUS.BOMBED, []);
+      const proof = createMockProof(1, "CODE1", PROOF_STATUS.NORMAL, [], true);
       const updatedProof = createMockProof(
         1,
         "CODE1",
         PROOF_STATUS.REVEALED_TO_ONE,
-        [1]
+        [1],
+        true
       );
       const tProofRoomSession = createMockTProofRoomSession([member1]);
       const tProof = {
@@ -607,6 +625,8 @@ describe("proofProcess.revealProofProcess", () => {
         status: PROOF_STATUS.REVEALED_TO_ONE,
         title: "Test Proof",
         description: "Test Description",
+        refer: "",
+        bomFlg: true,
         revealedBy: [1],
       };
 
@@ -642,15 +662,16 @@ describe("proofProcess.revealProofProcess", () => {
       );
     });
 
-    it("roleName: BOMB_SQUAD（鑑定士）が開示する場合、DISARM_SUCCESSを返す", async () => {
+    it("roleName: BOMB_SQUAD（鑑定士）が開示する場合、DISARM_SUCCESSを返す（isEntire: false）", async () => {
       const member1 = createMockMember(1, "user1", 2); // 鑑定士
       const roomSession = createMockRoomSession([member1]);
-      const proof = createMockProof(1, "CODE1", PROOF_STATUS.BOMBED, []);
+      const proof = createMockProof(1, "CODE1", PROOF_STATUS.NORMAL, [], true);
       const updatedProof = createMockProof(
         1,
         "CODE1",
         PROOF_STATUS.REVEALED_TO_ONE,
-        [1]
+        [1],
+        true
       );
       const tProofRoomSession = createMockTProofRoomSession([member1]);
       const tProof = {
@@ -661,6 +682,8 @@ describe("proofProcess.revealProofProcess", () => {
         status: PROOF_STATUS.REVEALED_TO_ONE,
         title: "Test Proof",
         description: "Test Description",
+        refer: "",
+        bomFlg: true,
         revealedBy: [1],
       };
 
@@ -696,15 +719,65 @@ describe("proofProcess.revealProofProcess", () => {
       );
     });
 
+    it("roleName: BOMB_SQUAD（鑑定士）が全体開示する場合、BOMBEDを返す（isEntire: true）", async () => {
+      const member1 = createMockMember(1, "user1", 2); // 鑑定士
+      const member2 = createMockMember(2, "user2", 3);
+      const roomSession = createMockRoomSession([member1, member2]);
+      const proof = createMockProof(1, "CODE1", PROOF_STATUS.NORMAL, [], true);
+      const updatedProof = createMockProof(
+        1,
+        "CODE1",
+        PROOF_STATUS.REVEALED_TO_ALL,
+        [1],
+        true
+      );
+      const tProofRoomSession = createMockTProofRoomSession([member1, member2]);
+
+      (proofRepository.getRoomSession as jest.Mock).mockResolvedValue(
+        roomSession
+      );
+      (
+        proofRepository.getProofByRoomSessionIdAndCode as jest.Mock
+      ).mockResolvedValue(proof);
+      (proofRepository.updateProofStatus as jest.Mock).mockResolvedValue(
+        updatedProof
+      );
+      (
+        toTProofRoomSessionFromProofRoomSessionWithMembers as jest.Mock
+      ).mockReturnValue(tProofRoomSession);
+      (lineUtil.sendSimpleTextMessage as jest.Mock).mockResolvedValue({
+        success: true,
+      });
+      (proofRepository.updateRoomMemberStatus as jest.Mock).mockResolvedValue(
+        null
+      );
+
+      const result = await proofProcess.revealProofProcess(mockTx, mockIo, {
+        roomSessionId: 1,
+        code: "CODE1",
+        revealedBy: 1,
+        isEntire: true,
+      });
+
+      expect(result.result).toBe(REVEALED_RESULT_CODE.BOMBED);
+      expect(result.message).toBe("このカードは爆弾です");
+      expect(mockIo.to).toHaveBeenCalledWith(`user:${PROOF_ADMIN_USER_ID}`);
+      expect(mockIo.emit).toHaveBeenCalledWith("proof:revealResult", {
+        result: REVEALED_RESULT_CODE.BOMBED,
+        message: "このカードは爆弾です",
+      });
+    });
+
     it("roleName: その他が開示する場合、BOMBEDを返す（isEntire: false）", async () => {
       const member1 = createMockMember(1, "user1", 3);
       const roomSession = createMockRoomSession([member1]);
-      const proof = createMockProof(1, "CODE1", PROOF_STATUS.BOMBED, []);
+      const proof = createMockProof(1, "CODE1", PROOF_STATUS.NORMAL, [], true);
       const updatedProof = createMockProof(
         1,
         "CODE1",
         PROOF_STATUS.REVEALED_TO_ONE,
-        [1]
+        [1],
+        true
       );
       const tProofRoomSession = createMockTProofRoomSession([member1]);
 
@@ -744,7 +817,7 @@ describe("proofProcess.revealProofProcess", () => {
         mockTx,
         1,
         "user1",
-        PROOF_MEMBER_STATUS.BOMBED
+        PROOF_MEMBER_STATUS.RETIRED
       );
     });
 
@@ -753,12 +826,13 @@ describe("proofProcess.revealProofProcess", () => {
       const member2 = createMockMember(2, "user2", 1); // ボマー
       const member3 = createMockMember(3, "user3", 4);
       const roomSession = createMockRoomSession([member1, member2, member3]);
-      const proof = createMockProof(1, "CODE1", PROOF_STATUS.BOMBED, []);
+      const proof = createMockProof(1, "CODE1", PROOF_STATUS.NORMAL, [], true);
       const updatedProof = createMockProof(
         1,
         "CODE1",
         PROOF_STATUS.REVEALED_TO_ALL,
-        [1]
+        [1],
+        true
       );
       const tProofRoomSession = createMockTProofRoomSession([
         member1,
@@ -819,13 +893,13 @@ describe("proofProcess.revealProofProcess", () => {
         mockTx,
         1,
         "user1",
-        PROOF_MEMBER_STATUS.BOMBED
+        PROOF_MEMBER_STATUS.RETIRED
       );
       expect(proofRepository.updateRoomMemberStatus).toHaveBeenCalledWith(
         mockTx,
         1,
         "user3",
-        PROOF_MEMBER_STATUS.BOMBED
+        PROOF_MEMBER_STATUS.RETIRED
       );
     });
   });

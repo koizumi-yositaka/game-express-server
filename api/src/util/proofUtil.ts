@@ -42,19 +42,15 @@ export const proofUtil = {
     const featureBKeys = Object.values(PROOF_ROLE_FEATURE_B_KEYS);
 
     const temp = {
-      aCount: DEFAULT_PROOF_COUNT.A_NORMAL,
-      aDummyCount: DEFAULT_PROOF_COUNT.A_DUMMY,
-      bCount: DEFAULT_PROOF_COUNT.B_NORMAL,
-      bDummyCount: DEFAULT_PROOF_COUNT.B_DUMMY,
-      cCount: DEFAULT_PROOF_COUNT.C_NORMAL,
-      cDummyCount: DEFAULT_PROOF_COUNT.C_DUMMY,
+      cardCount: {
+        aCount: DEFAULT_PROOF_COUNT.A_NORMAL,
+        aDummyCount: DEFAULT_PROOF_COUNT.A_DUMMY,
+        bCount: DEFAULT_PROOF_COUNT.B_NORMAL,
+        bDummyCount: DEFAULT_PROOF_COUNT.B_DUMMY,
+        cCount: DEFAULT_PROOF_COUNT.C_NORMAL,
+        cDummyCount: DEFAULT_PROOF_COUNT.C_DUMMY,
+      },
       featureB: {
-        DETECTIVE: {
-          borned: "",
-          favariteFood: "",
-          birthDay: "",
-          yesterday: "",
-        },
         BOMBER: {
           borned: "",
           favariteFood: "",
@@ -67,19 +63,7 @@ export const proofUtil = {
           birthDay: "",
           yesterday: "",
         },
-        LIER: {
-          borned: "",
-          favariteFood: "",
-          birthDay: "",
-          yesterday: "",
-        },
-        INFORMER: {
-          borned: "",
-          favariteFood: "",
-          birthDay: "",
-          yesterday: "",
-        },
-        MAGICIAN: {
+        STRENGTH: {
           borned: "",
           favariteFood: "",
           birthDay: "",
@@ -177,8 +161,6 @@ function _createAProofList(
   const normalCount = DEFAULT_PROOF_COUNT.A_NORMAL;
   const dummyCount = DEFAULT_PROOF_COUNT.A_DUMMY;
 
-  console.log(proofRoomSession.room.members);
-
   const memberInfos = proofRoomSession.room.members.map(getMemberInfoString);
 
   if (codeList.length !== normalCount + dummyCount) {
@@ -195,7 +177,8 @@ function _createAProofList(
         rank: PROOF_RANK.A,
         status: PROOF_STATUS.NORMAL,
         title: PROOF_BOMB_RESERVED_WORD,
-        description: "Proof" + i,
+        description: "不明",
+        refer: "",
       });
       continue;
     }
@@ -207,8 +190,9 @@ function _createAProofList(
         code: codeList[i],
         rank: PROOF_RANK.A,
         status: PROOF_STATUS.NORMAL,
-        title: memberInfos[i - 1].sentence,
-        description: memberInfos[i - 1].memberId,
+        title: memberInfos[i - 1].title,
+        description: memberInfos[i - 1].sentence,
+        refer: memberInfos[i - 1].refer,
       });
     } else {
       result.push({
@@ -218,6 +202,7 @@ function _createAProofList(
         status: PROOF_STATUS.DUMMY,
         title: PROOF_RANK.A + codeList[i],
         description: "DummyProof" + i,
+        refer: "",
       });
     }
   }
@@ -250,6 +235,7 @@ function _createBProofList(
         status: PROOF_STATUS.NORMAL,
         title: featureB[i].title,
         description: featureB[i].description,
+        refer: featureB[i].refer,
       });
     } else {
       result.push({
@@ -259,6 +245,7 @@ function _createBProofList(
         status: PROOF_STATUS.DUMMY,
         title: PROOF_RANK.B + codeList[i],
         description: "DummyProof" + i,
+        refer: "",
       });
     }
   }
@@ -280,16 +267,52 @@ function _createCProofList(
     );
   }
 
+  const cMap = DEFAULT_PROOF_COUNT.C_MAP;
+  if (
+    Object.values(cMap).reduce((acc, curr) => (acc += curr), 0) !==
+    codeList.length
+  ) {
+    throw new Error("Code list length is not equal to total count");
+  }
+
   for (let i = 0; i < codeList.length; i++) {
     if (i < normalCount) {
-      result.push({
-        roomSessionId: proofRoomSession.id,
-        code: codeList[i],
-        rank: PROOF_RANK.C,
-        status: PROOF_STATUS.NORMAL,
-        title: PROOF_RANK.C + codeList[i],
-        description: "Proof" + i,
+      Object.entries(cMap).forEach(([type, count]) => {
+        Array.from({ length: count }).forEach((_, index) => {
+          i++;
+          result.push({
+            roomSessionId: proofRoomSession.id,
+            code: codeList[i],
+            rank: PROOF_RANK.C,
+            status: PROOF_STATUS.NORMAL,
+            title: PROOF_RANK.C + `${type}${index + 1}`,
+            description: `${type}${index + 1}のPOWER`,
+            refer: "",
+          });
+        });
       });
+      //   if (i < count) {
+      //     result.push({
+      //       roomSessionId: proofRoomSession.id,
+      //       code: codeList[i],
+      //       rank: PROOF_RANK.C,
+      //       status: PROOF_STATUS.NORMAL,
+      //       title: PROOF_RANK.C + codeList[i],
+      //       description: "Proof" + i,
+      //       refer: "",
+      //     });
+      //   }
+      //   i++;
+      // });
+      // result.push({
+      //   roomSessionId: proofRoomSession.id,
+      //   code: codeList[i],
+      //   rank: PROOF_RANK.C,
+      //   status: PROOF_STATUS.NORMAL,
+      //   title: PROOF_RANK.C + codeList[i],
+      //   description: "Proof" + i,
+      //   refer: "",
+      // });
     } else {
       result.push({
         roomSessionId: proofRoomSession.id,
@@ -298,6 +321,7 @@ function _createCProofList(
         status: PROOF_STATUS.DUMMY,
         title: PROOF_RANK.C + codeList[i],
         description: "DummyProof" + i,
+        refer: "",
       });
     }
   }
@@ -307,8 +331,9 @@ function _createCProofList(
 
 function getMemberInfoString(member: TProofRoomMember) {
   return {
+    refer: `member:${member.id}`,
     sentence: `${member.user?.displayName} は ${member.role?.roleName} です。`,
-    memberId: `${member.user?.displayName}の正体`,
+    title: `${member.user?.displayName}の正体`,
   };
 }
 
@@ -347,6 +372,7 @@ function getFeatureB(setting: ProofRoomSessionSettingJsonContents) {
         result.push({
           description: `${role}の${keyToName(key)}は${featureB}`,
           title: `${role}のヒント`,
+          refer: `role:${role}`,
         });
       }
     }
@@ -382,8 +408,12 @@ const keyToName = (key: keyof RoleFeatureB) => {
     case PROOF_ROLE_FEATURE_B_KEYS.FAVARITE_FOOD:
       return "好きな食べ物";
     case PROOF_ROLE_FEATURE_B_KEYS.BIRTH_DAY:
-      return "誕生日";
+      return "誕生月";
     case PROOF_ROLE_FEATURE_B_KEYS.YESTERDAY:
       return "昨日の出来事";
   }
+};
+
+export const isBomber = (member: TProofRoomMember) => {
+  return member.role?.roleName === PROOF_ROLE_NAME_MAP.BOMBER;
 };

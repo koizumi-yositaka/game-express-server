@@ -35,6 +35,11 @@ export const roomSessionIdSchema = z.object({
   roomSessionId: z.string(),
 });
 
+export const roomSessionIdAndMemberIdSchema = z.object({
+  roomSessionId: z.string(),
+  memberId: z.string(),
+});
+
 export const roomSessionIdAndProofCodeSchema = z.object({
   roomSessionId: z.string(),
   proofCode: z.string(),
@@ -43,6 +48,12 @@ export const roomSessionIdAndProofCodeSchema = z.object({
 export const revealProofBodySchema = z.object({
   memberId: z.number(),
   isEntire: z.boolean(),
+});
+
+export const judgeAlreadyRevealedBodySchema = z.object({
+  memberId: z.number(),
+  roomSessionId: z.number(),
+  turn: z.number(),
 });
 
 export const tokenBodySchema = z.object({
@@ -76,6 +87,12 @@ export type OptionalMemberIdParamsSchema = z.infer<
 export type CreateBombBodySchema = z.infer<typeof createBombBodySchema>;
 export type TokenBody = z.infer<typeof tokenBodySchema>;
 export type ForceFocusBodySchema = z.infer<typeof forceFocusBodySchema>;
+export type JudgeAlreadyRevealedBodySchema = z.infer<
+  typeof judgeAlreadyRevealedBodySchema
+>;
+export type RoomSessionIdAndMemberIdSchema = z.infer<
+  typeof roomSessionIdAndMemberIdSchema
+>;
 export const proofController = {
   getHealth: (_req: Request, res: Response, _next: NextFunction) => {
     res.status(200).json({ message: "ok" });
@@ -208,6 +225,22 @@ export const proofController = {
     }
   },
 
+  getRoleSetting: async (
+    req: Request<RoomSessionIdAndMemberIdSchema>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const roleSetting = await proofService.getRoleSetting(
+        Number(req.params.roomSessionId),
+        Number(req.params.memberId)
+      );
+      res.status(200).json(roleSetting);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   getProofList: async (
     req: Request<RoomSessionIdSchema, OptionalMemberIdParamsSchema>,
     res: Response,
@@ -253,6 +286,23 @@ export const proofController = {
       next(error);
     }
   },
+
+  judgeAlreadyRevealed: async (
+    req: Request<unknown, unknown, JudgeAlreadyRevealedBodySchema>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const isAlreadyRevealed = await proofService.judgeAlreadyRevealed(
+        req.body.roomSessionId,
+        req.body.turn,
+        req.body.memberId
+      );
+      res.status(200).json({ result: isAlreadyRevealed });
+    } catch (error) {
+      next(error);
+    }
+  },
   getProofByRoomSessionIdAndCode: async (
     req: Request<RoomSessionIdAndProofCodeSchema, unknown, RevealProofBody>,
     res: Response,
@@ -284,7 +334,8 @@ export const proofController = {
       await proofService.initializeBomb(
         Number(req.params.roomSessionId),
         req.body.proofCodes,
-        req.body.memberId
+        req.body.memberId,
+        req.app.locals.io
       );
       res.status(200).json({ success: true });
     } catch (error) {
