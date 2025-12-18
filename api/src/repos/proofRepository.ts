@@ -34,6 +34,8 @@ export type ProofRoomSessionWithMembers = Prisma.ProofRoomSessionGetPayload<{
     };
   };
 }>;
+
+export type ProofListPure = Prisma.ProofListGetPayload<{}>;
 type TxClient = PrismaClient | Prisma.TransactionClient;
 
 export const proofRepository = {
@@ -149,6 +151,7 @@ export const proofRepository = {
     updateVal: {
       skillUsedTime?: number;
       penalty?: string[];
+      isSkillUsed?: boolean;
     }
   ) => {
     const updateData = {
@@ -157,6 +160,9 @@ export const proofRepository = {
       }),
       ...(updateVal.penalty !== undefined && {
         penalty: updateVal.penalty?.join(",") ?? "",
+      }),
+      ...(updateVal.isSkillUsed !== undefined && {
+        isSkillUsed: updateVal.isSkillUsed,
       }),
     };
     return await tx.proofRoomMember.update({
@@ -211,6 +217,7 @@ export const proofRepository = {
     roomId: number,
     updateVal: { openFlg?: boolean; status?: number }
   ): Promise<ProofRoom | null> => {
+    console.log("updateRoom", "roomId", roomId, "updateVal", updateVal);
     const updateData = {
       ...(updateVal.openFlg !== undefined && { openFlg: updateVal.openFlg }),
       ...(updateVal.status !== undefined && { status: updateVal.status }),
@@ -241,39 +248,17 @@ export const proofRepository = {
   updateRoomSession: async (
     tx: TxClient,
     roomSessionId: number,
-    updateVal: { turn?: number; focusOn?: number; status?: number }
+    updateVal: {
+      turn?: number;
+      focusOn?: number;
+      status?: number;
+    }
   ) => {
     return await tx.proofRoomSession.update({
       where: { id: roomSessionId },
       data: updateVal,
     });
   },
-  // updateRoomSessionStatus: async (
-  //   tx: TxClient,
-  //   roomSessionId: number,
-  //   status: number
-  // ) => {
-  //   return await tx.proofRoomSession.update({
-  //     where: { id: roomSessionId },
-  //     data: { status: status },
-  //   });
-  // },
-  // stepNextTurn: async (tx: TxClient, roomSessionId: number, turn: number) => {
-  //   return await tx.proofRoomSession.update({
-  //     where: { id: roomSessionId },
-  //     data: { turn: turn },
-  //   });
-  // },
-  // updateRoomSessionFocusOn: async (
-  //   tx: TxClient,
-  //   roomSessionId: number,
-  //   focusOn: number
-  // ) => {
-  //   return await tx.proofRoomSession.update({
-  //     where: { id: roomSessionId },
-  //     data: { focusOn: focusOn },
-  //   });
-  // },
   getRoomSession: async (
     tx: TxClient,
     roomSessionId: number
@@ -375,7 +360,7 @@ export const proofRepository = {
     tx: TxClient,
     roomSessionId: number,
     code: string
-  ) => {
+  ): Promise<ProofListPure | null> => {
     return await tx.proofList.findFirst({
       where: { roomSessionId: roomSessionId, code: code },
     });
@@ -402,6 +387,7 @@ export const proofRepository = {
       description?: string;
       revealedTurn?: number;
       bomFlg?: boolean;
+      refer?: string;
     }
   ) => {
     const updateData = {
@@ -417,6 +403,7 @@ export const proofRepository = {
         revealedTurn: updateVal.revealedTurn,
       }),
       ...(updateVal.bomFlg !== undefined && { bomFlg: updateVal.bomFlg }),
+      ...(updateVal.refer !== undefined && { references: updateVal.refer }),
     };
     return await tx.proofList.update({
       where: { id: proofId },

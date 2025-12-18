@@ -13,10 +13,11 @@ import {
 import { proofRepository } from "../../repos/proofRepository";
 import {
   toTProofRoomMember,
+  toTProofRoomMemberFromProofRoomMemberWithUsers,
   toTProofRoomSessionFromProofRoomSessionWithMembers,
 } from "../../domain/proof/typeParse";
 import { gameUtil } from "../../util/gameUtil";
-import { proofUtil } from "../../util/proofUtil";
+import { createRefer, proofUtil } from "../../util/proofUtil";
 import { lineUtil } from "../../util/lineUtil";
 import { toTProofFromProofList } from "../../domain/proof/typeParse";
 import {
@@ -25,9 +26,13 @@ import {
   PROOF_ROLE_NAME_MAP,
   PROOF_STATUS,
   PROOF_ADMIN_USER_ID,
+  PROOF_RANK,
+  PROOF_PENALTY_MAP,
 } from "../../domain/proof/proofCommon";
 import { REVEALED_RESULT_CODE } from "../../domain/proof/types";
 import { Server } from "socket.io";
+import { proofSpecialMoveExecutor } from "../../roles/proof/roleSpecialMoveExecutor";
+import { RequestReportResult } from "../../controllers/proof/dto";
 
 const FRONT_URL = process.env.FRONT_URL ?? "http://localhost:5173";
 export const proofProcess = {
@@ -39,13 +44,7 @@ export const proofProcess = {
     if (!room || !room.id) {
       throw new NotFoundError("部屋が見つかりません");
     }
-    const existingRoomSession = await proofRepository.getRoomSessionByRoomId(
-      tx,
-      room.id
-    );
-    // if (existingRoomSession) {
-    //   throw new BadRequestError("Room session already exists");
-    // }
+    await proofRepository.getRoomSessionByRoomId(tx, room.id);
     const roomMembers = await proofRepository.getRoomMembers(tx, room.id);
 
     const shuffledRoomMembers = gameUtil.shuffleArray(roomMembers);
@@ -61,7 +60,9 @@ export const proofProcess = {
     const roles = (await proofRepository.getRoles(tx)).filter(
       (role) => role.roleName !== "NONE"
     );
-    const initailSetting = await proofUtil.createGameSetting();
+    const initailSetting = await proofUtil.createGameSetting(
+      roomMembers.length
+    );
     const assignedMembers = proofUtil.assignRoles(
       roomMembers.map(toTProofRoomMember),
       roles
@@ -73,20 +74,6 @@ export const proofProcess = {
         member.userId,
         member.roleId
       );
-    }
-    for (const member of assignedMembers) {
-      const { success } = await lineUtil.sendNoticeRoleMessage(
-        member.userId,
-        member.role?.roleName ?? "",
-        member.role?.description ?? "",
-        member.role?.imageUrl ?? "",
-        member.role?.notionUrl ?? "",
-        "役割を確認"
-      );
-      if (!success) {
-        console.error(`Failed to send notice role message to ${member.userId}`);
-        throw new InternalServerError("Failed to send notice role message");
-      }
     }
 
     // 初期設定
@@ -117,13 +104,31 @@ export const proofProcess = {
 
     // 証拠作成
     await proofRepository.deleteProofByRoomSessionId(tx, room.id);
+
     const proofs = await proofUtil.createProofs(
       initailSetting,
-      toTProofRoomSessionFromProofRoomSessionWithMembers(roomSession)
+      toTProofRoomSessionFromProofRoomSessionWithMembers(roomSession),
+      roles
     );
     await proofRepository.createProofs(tx, roomSession.id, proofs);
 
-    for (const member of roomSession.room.members.map(toTProofRoomMember)) {
+    for (const member of assignedMembers) {
+      const { success } = await lineUtil.sendNoticeRoleMessage(
+        member.userId,
+        member.role?.roleName ?? "",
+        member.role?.description ?? "",
+        member.role?.imageUrl ?? "",
+        member.role?.notionUrl ?? "",
+        "役割を確認"
+      );
+      if (!success) {
+        console.error(`Failed to send notice role message to ${member.userId}`);
+        throw new InternalServerError("Failed to send notice role message");
+      }
+    }
+    for (const member of roomSession.room.members.map(
+      toTProofRoomMemberFromProofRoomMemberWithUsers
+    )) {
       if (!member.role) {
         throw new BadRequestError("Role not assigned");
       }
@@ -139,9 +144,9 @@ export const proofProcess = {
         userId: member.user.userId,
         roomCode: room.roomCode,
       });
-      await lineUtil.sendSimpleTextMessage(
+      lineUtil.sendSimpleTextMessage(
         member.userId,
-        `${FRONT_URL}/public/proof/${roomSession.id}?token=${token}`
+        `${FRONT_URL}?token=${token}`
       );
     }
 
@@ -156,8 +161,43 @@ export const proofProcess = {
       roomSessionId: number;
       memberId: number;
       proofCode: string;
+
+      isRevealedMyMe?: boolean;
     }
-  ): Promise<void> => {},
+  ): Promise<void> => {
+    const proof = await proofRepository.getProofByRoomSessionIdAndCode(
+      tx,
+      params.roomSessionId,
+      params.proofCode
+    );
+    console.log("turnIntoBombProcess", proof);
+    if (!proof) {
+      throw new NotFoundError("Proof not found");
+    }
+
+    if (proof.status === PROOF_STATUS.REVEALED_TO_ALL) {
+      throw new BadRequestError("Proof is already revealed to all");
+    }
+    // if (params.isOnlyA && proof.rank !== PROOF_RANK.A) {
+    //   throw new BadRequestError("Bomber can only turn into bomb A");
+    // }
+    // if (
+    //   params.isOnlyPrivateRevealed &&
+    //   proof.status !== PROOF_STATUS.REVEALED_TO_ONE
+    // ) {
+    //   throw new BadRequestError("Proof is not revealed to one");
+    // }
+    if (
+      params.isRevealedMyMe &&
+      !proof.revealedBy.includes(params.memberId.toString())
+    ) {
+      throw new BadRequestError("自分が開示した証拠でないと爆弾にできません");
+    }
+    if (proof.bomFlg) {
+      throw new BadRequestError("Proof is already a bomb");
+    }
+    await proofRepository.updateProofStatus(tx, proof.id, { bomFlg: true });
+  },
 
   revealProofProcess: async (
     tx: Prisma.TransactionClient,
@@ -271,6 +311,15 @@ export const proofProcess = {
           revealedMemberUserId: member.user.userId,
           isEntire: params.isEntire,
         });
+        // 一応鑑定士のスキルも実行処理を投げておく
+        await proofSpecialMoveExecutor.executeUseSkill(
+          PROOF_ROLE_NAME_MAP.BOMB_SQUAD,
+          tx,
+          toTProofRoomMember(member),
+          parsedRoomSession,
+          io,
+          params
+        );
         return {
           result: REVEALED_RESULT_CODE.DISARM_SUCCESS,
           message: "爆弾を解除しました",
@@ -388,6 +437,85 @@ export const proofProcess = {
     io: Server,
     params: {}
   ): Promise<void> => {},
+  report: async (
+    tx: Prisma.TransactionClient,
+    io: Server,
+    params: {
+      roomSession: TProofRoomSession;
+      member: TProofRoomMember;
+      targetMember: TProofRoomMember;
+      proofCodes: string[];
+    }
+  ): Promise<RequestReportResult> => {
+    const proofList: TProof[] = [];
+    for (const proofCode of params.proofCodes) {
+      const proof = await proofRepository.getProofByRoomSessionIdAndCode(
+        tx,
+        params.roomSession.id,
+        proofCode
+      );
+      if (proof) {
+        proofList.push(toTProofFromProofList(proof));
+      } else {
+        return {
+          isSuccess: false,
+          message: "証拠が見つかりません",
+          ngList: [{ proofCode: proofCode, message: "証拠が見つかりません" }],
+        };
+      }
+    }
+    const ngList = proofList
+      .map((proof) => {
+        if (proof.status !== PROOF_STATUS.REVEALED_TO_ALL) {
+          return {
+            proofCode: proof.code,
+            message: "全体に開示されていません",
+          };
+        }
+        if (
+          proof.refer !== createRefer("member", params.member.id.toString())
+        ) {
+          return {
+            proofCode: proof.code,
+            message: `${params.member.user?.displayName}の証拠ではありません`,
+          };
+        }
+        return null;
+      })
+      .filter((ng) => ng !== null);
+    if (ngList.length > 0) {
+      return {
+        isSuccess: false,
+        message: "告発に失敗しました",
+        ngList: ngList,
+      };
+    }
+    const hasPenalty =
+      params.targetMember.penalty?.length > 0 &&
+      params.targetMember.penalty?.includes(PROOF_PENALTY_MAP.LIE);
+    if (
+      proofList.filter((proof) => proof.rank === PROOF_RANK.A).length >= 1 ||
+      proofList.filter((proof) => proof.rank === PROOF_RANK.B).length >=
+        (hasPenalty ? 1 : 2)
+    ) {
+      // 告発に成功
+      await proofProcess.deathProcess(tx, io, {
+        roomSession: params.roomSession,
+        member: params.targetMember,
+      });
+      return {
+        isSuccess: true,
+        message: "告発に成功しました",
+        ngList: [],
+      };
+    } else {
+      return {
+        isSuccess: false,
+        message: "告発に必要な証拠には不十分でした",
+        ngList: ngList,
+      };
+    }
+  },
 
   deathProcess: async (
     tx: Prisma.TransactionClient,
@@ -397,6 +525,21 @@ export const proofProcess = {
       member: TProofRoomMember;
     }
   ): Promise<void> => {
+    if (
+      params.member.role?.roleName === PROOF_ROLE_NAME_MAP.STRENGTH &&
+      params.member.skillUsedTime === 0
+    ) {
+      // 回避
+      proofSpecialMoveExecutor.executeUseSkill(
+        PROOF_ROLE_NAME_MAP.STRENGTH,
+        tx,
+        params.member,
+        params.roomSession,
+        io,
+        params
+      );
+      return;
+    }
     proofRepository.updateRoomMemberStatus(
       tx,
       params.roomSession.room.id,

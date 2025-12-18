@@ -5,8 +5,9 @@ import {
 } from "../../../domain/proof/types";
 import { Prisma } from "../../../generated/prisma/client";
 import { Server } from "socket.io";
+import { UseSkillResult } from "../../../controllers/proof/dto";
 
-class BombSquad implements ProofIF {
+class BombSquad implements ProofIF<unknown> {
   async executeInitialize(
     tx: Prisma.TransactionClient,
     me: TProofRoomMember,
@@ -20,9 +21,14 @@ class BombSquad implements ProofIF {
     tx: Prisma.TransactionClient,
     me: TProofRoomMember,
     roomSession: TProofRoomSession,
-    io: Server
-  ): Promise<void> {
+    io: Server,
+    params: unknown
+  ): Promise<UseSkillResult> {
     console.log("BombSquad executeUseSkill");
+    return {
+      isSuccess: true,
+      result: "BombSquad executeUseSkill",
+    };
   }
 }
 

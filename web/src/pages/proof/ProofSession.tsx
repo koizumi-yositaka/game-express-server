@@ -66,19 +66,32 @@ export const ProofSession = () => {
         proofSession?.turn,
         user?.memberId
       );
+
       setIsRevealed(isAlreadyRevealed);
     };
     judgeAlreadyRevealedHandler();
   }, [roomSessionId, user?.memberId, proofSession?.turn]);
-  const { requestOrderAll } = useOrderSocket({ setSessionRoom: () => {} });
+  const { requestOrderAll } = useOrderSocket({
+    setSessionRoom: () => {
+      refetch();
+    },
+  });
   const [isRevealed, setIsRevealed] = useState(false);
   const isMyTurn = isFocusing || proofSession?.focusOn === user?.memberId;
   const me = proofSession?.room.members.find(
     (member) => member.id === user?.memberId
   );
-  const isTurnStarted =
+  const isSkillUsed = me?.isSkillUsed;
+  // もうあとはORderを完了させるだけの状態
+  const isOrderToBeFinished = isSkillUsed || isRevealed;
+  const isGameStarted =
     proofSession?.status &&
     proofSession.status >= PROOF_ROOM_SESSION_STATUS.TURN_STARTED;
+
+  const isTurnStarted =
+    isGameStarted &&
+    proofSession?.status !== PROOF_ROOM_SESSION_STATUS.TURN_ENDED;
+
   // if (user && proofSession) {
   //   setUser({
   //     ...user,
@@ -86,7 +99,6 @@ export const ProofSession = () => {
   //   });
   // }
 
-  console.log("proofSession", proofSession);
   const handleRevealRequest = () => {
     navigate(`/public/proof/${roomSessionId}/reveal/request`);
   };
@@ -107,9 +119,11 @@ export const ProofSession = () => {
       if (!result) {
         return;
       }
+
       const { turnFinished, currentTurn } = await endOrder(
         Number(roomSessionId)
       );
+
       if (!turnFinished) {
         await startOrder(Number(roomSessionId));
       } else {
@@ -119,9 +133,21 @@ export const ProofSession = () => {
         }
         requestOrderAll(Number(roomSessionId));
       }
+      refetch();
     }
   };
 
+  const handleRequestReport = () => {
+    navigate(`/public/proof/${roomSessionId}/report`, {
+      state: { memberId: user?.memberId },
+    });
+  };
+
+  const handleUseSkill = () => {
+    navigate(`/public/proof/${roomSessionId}/skill`, {
+      state: { memberId: user?.memberId, skillDef: roleSetting?.skillDef },
+    });
+  };
   if (!roomSessionId || !user?.memberId || isLoading || !isConnected) {
     return <div>Loading...</div>;
   }
@@ -133,6 +159,8 @@ export const ProofSession = () => {
   }
   return (
     <div className="flex flex-col gap-6 p-4 max-w-4xl mx-auto">
+      {isFocusing && <div>Focusing...</div>}
+
       {me?.status && me.status < PROOF_MEMBER_STATUS.APPLY_CARD ? (
         <Card>
           <CardHeader>
@@ -157,6 +185,17 @@ export const ProofSession = () => {
                 role={me?.role ?? null}
                 roleSetting={roleSetting ?? null}
               />
+              {isMyTurn && (
+                <Button
+                  onClick={handleUseSkill}
+                  disabled={
+                    me?.isSkillUsed || isOrderToBeFinished || !isTurnStarted
+                  }
+                  className="w-full"
+                >
+                  {me?.isSkillUsed ? "使用済み" : "スキル使用"}
+                </Button>
+              )}
             </CardContent>
           </Card>
 
@@ -166,9 +205,14 @@ export const ProofSession = () => {
                 {isMyTurn ? (
                   <span>
                     あなたのターンです
-                    {!isTurnStarted && (
+                    {!isGameStarted && (
                       <span className="text-sm font-normal text-muted-foreground ml-2">
                         (ゲーム開始までお待ちください)
+                      </span>
+                    )}
+                    {isGameStarted && !isTurnStarted && (
+                      <span className="text-sm font-normal text-muted-foreground ml-2">
+                        (ターン開始までお待ちください)
                       </span>
                     )}
                   </span>
@@ -182,7 +226,7 @@ export const ProofSession = () => {
                 {isMyTurn && !isRevealed && (
                   <Button
                     onClick={handleRevealRequest}
-                    disabled={!isTurnStarted}
+                    disabled={!isTurnStarted || isOrderToBeFinished}
                     className="w-full"
                   >
                     証拠公開依頼
@@ -190,11 +234,17 @@ export const ProofSession = () => {
                 )}
                 <Button
                   onClick={handleProofList}
-                  disabled={!isTurnStarted}
-                  variant="outline"
+                  disabled={!isGameStarted}
                   className="w-full"
                 >
                   証拠一覧
+                </Button>
+                <Button
+                  onClick={handleRequestReport}
+                  disabled={!isTurnStarted || !isMyTurn || isOrderToBeFinished}
+                  className="w-full"
+                >
+                  告発
                 </Button>
                 <Button
                   onClick={handleNext}

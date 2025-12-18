@@ -55,12 +55,10 @@ export const PROOF_PENALTY_MAP = Object.freeze({
 export const PROOF_BOMB_RESERVED_WORD = "BOMB";
 
 export const PROOF_ROLE_NAME_MAP = Object.freeze({
-  DETECTIVE: "DETECTIVE",
   BOMBER: "BOMBER",
   BOMB_SQUAD: "BOMB_SQUAD",
-  LIER: "LIER",
-  INFORMER: "INFORMER",
-  MAGICIAN: "MAGICIAN",
+  STRENGTH: "STRENGTH",
+  SWITCHER: "SWITCHER",
 });
 
 export const PROOF_ROLE_GROUP_MAP = Object.freeze({

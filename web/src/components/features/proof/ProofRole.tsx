@@ -1,4 +1,10 @@
-import type { RoleFeatureB, DTOProofRole } from "@/proofTypes";
+import type {
+  RoleFeatureB,
+  DTOProofRole,
+  RoleSkillDef,
+  DTOProofRoomMember,
+  DTOProofRoomSession,
+} from "@/proofTypes";
 
 const getFeatureLabel = (key: keyof RoleFeatureB): string => {
   switch (key) {
@@ -20,7 +26,7 @@ export const ProofRole = ({
   roleSetting,
 }: {
   role: DTOProofRole | null;
-  roleSetting: RoleFeatureB | null;
+  roleSetting: { featureB: RoleFeatureB; skillDef: RoleSkillDef } | null;
 }) => {
   return (
     <div className="space-y-4">
@@ -34,8 +40,8 @@ export const ProofRole = ({
       {roleSetting && (
         <div className="space-y-3">
           <div className="grid gap-3">
-            {(Object.keys(roleSetting) as Array<keyof RoleFeatureB>)
-              .filter((key) => roleSetting[key])
+            {(Object.keys(roleSetting.featureB) as Array<keyof RoleFeatureB>)
+              .filter((key) => roleSetting.featureB[key])
               .map((key) => (
                 <div
                   key={key}
@@ -45,7 +51,7 @@ export const ProofRole = ({
                     {getFeatureLabel(key)}
                   </span>
                   <span className="text-base font-medium text-gray-900 dark:text-gray-100">
-                    {roleSetting[key]}
+                    {roleSetting.featureB[key]}
                   </span>
                 </div>
               ))}
@@ -55,3 +61,9 @@ export const ProofRole = ({
     </div>
   );
 };
+
+export interface ProofSkillCommonProps {
+  roomSession: DTOProofRoomSession;
+  me: DTOProofRoomMember;
+  skillDef: RoleSkillDef;
+}

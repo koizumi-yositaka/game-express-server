@@ -26,6 +26,7 @@ export type TProofRoomMember = {
   skillUsedTime: number;
   penalty: string[];
   joinedAt: Date;
+  isSkillUsed: boolean;
   user?: TUser;
   role?: TProofRole;
 };
@@ -58,8 +59,8 @@ export type ProofRoomSessionSettingJsonContents = {
     cCount: number;
     cDummyCount: number;
   };
-
   featureB: Record<keyof typeof PROOF_ROLE_NAME_MAP, RoleFeatureB>;
+  skillDef: Record<keyof typeof PROOF_ROLE_NAME_MAP, RoleSkillDef>;
 };
 
 export type ProofForm = {
@@ -82,6 +83,7 @@ export type TProof = {
   description: string;
   refer: string;
   bomFlg: boolean;
+  revealedTurn: number;
   revealedBy: number[];
 };
 
@@ -90,6 +92,12 @@ export type RoleFeatureB = {
   favariteFood: string;
   birthDay: string;
   yesterday: string;
+};
+
+export type RoleSkillDef = {
+  skillName: string;
+  skillDescription: string;
+  skillLimit: number;
 };
 
 export const PROOF_ROLE_FEATURE_B_KEYS = Object.freeze({

@@ -11,10 +11,21 @@ import {
   PROOF_STATUS,
 } from "../../../domain/proof/proofCommon";
 import { myUtil } from "../../../util/myUtil";
-import { NotFoundError } from "../../../error/AppError";
+import {
+  AppError,
+  BadRequestError,
+  NotFoundError,
+} from "../../../error/AppError";
 import { Server } from "socket.io";
+import { proofProcess } from "../../../process/proof/proofProcess";
+import { z } from "zod";
+import { UseSkillResult } from "../../../controllers/proof/dto";
 
-class Bomber implements ProofIF {
+const paramsSchema = z.object({
+  code: z.string().min(1),
+});
+export type ParamsSchema = z.infer<typeof paramsSchema>;
+class Bomber implements ProofIF<ParamsSchema> {
   async executeInitialize(
     tx: Prisma.TransactionClient,
     me: TProofRoomMember,
@@ -83,9 +94,39 @@ class Bomber implements ProofIF {
     tx: Prisma.TransactionClient,
     me: TProofRoomMember,
     roomSession: TProofRoomSession,
-    io: Server
-  ): Promise<void> {
-    console.log("Bomber executeUseSkill");
+    io: Server,
+    params: ParamsSchema
+  ): Promise<UseSkillResult> {
+    let code = "";
+    try {
+      params = paramsSchema.parse(params);
+      code = params.code;
+    } catch (error) {
+      throw new BadRequestError("Invalid params");
+    }
+
+    console.log("Bomber executeUseSkill", code);
+
+    try {
+      await proofProcess.turnIntoBombProcess(tx, {
+        roomSessionId: roomSession.id,
+        memberId: me.id,
+        proofCode: code,
+        isRevealedMyMe: true,
+      });
+    } catch (error: any) {
+      console.log("turnIntoBombProcess error", error);
+      if (error instanceof AppError) {
+        return {
+          isSuccess: false,
+          result: error.message,
+        };
+      }
+    }
+    return {
+      isSuccess: true,
+      result: "爆弾になりました",
+    };
   }
 }
 

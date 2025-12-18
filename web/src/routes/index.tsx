@@ -19,6 +19,7 @@ import { RevealResult } from "@/components/features/proof/RevealResult";
 import { NotFount } from "@/pages/NotFount";
 import { ProofError } from "@/pages/proof/ProofError";
 import { ProofRequestReveal } from "@/pages/proof/ProofRequestReveal";
+import { RequestReport } from "@/pages/proof/report/RequestReport";
 import { CenterAuthProvider } from "@/contexts/CenterAuthContext";
 import ProofRoomsLayout from "@/layouts/ProofRoomsLayout";
 import ProofRooms from "@/pages/proof/rooms/ProofRooms";
@@ -27,6 +28,7 @@ import ProofRoomPrepare from "@/pages/proof/rooms/ProofRoomPrepare";
 import ProofSessionLayout from "@/layouts/ProofSessionLayout";
 import { SessionBase } from "@/pages/proof/session/SessionBase";
 import { ProofList } from "@/components/features/proof/ProofList";
+import { ProofUseSkill } from "@/pages/proof/skill/ProofUseSkill";
 
 export default function AppRoutes() {
   return (
@@ -84,6 +86,14 @@ export default function AppRoutes() {
                 <Route
                   path=":roomSessionId/proofList"
                   element={<ProofList />}
+                />
+                <Route
+                  path=":roomSessionId/skill"
+                  element={<ProofUseSkill />}
+                />
+                <Route
+                  path=":roomSessionId/report"
+                  element={<RequestReport />}
                 />
                 <Route
                   path=":roomSessionId/reveal/request"

@@ -17,6 +17,8 @@ import {
   optionalMemberIdParamsSchema,
   judgeAlreadyRevealedBodySchema,
   roomSessionIdAndMemberIdSchema,
+  useSkillBodySchema,
+  requestReportBodySchema,
 } from "../controllers/proof.controller";
 
 const router = Router();
@@ -115,5 +117,23 @@ router.get(
   "/sessions/:roomSessionId/roleSetting/:memberId",
   [validateParams(roomSessionIdAndMemberIdSchema)],
   proofController.getRoleSetting
+);
+
+// order中の行動
+router.post(
+  "/sessions/:roomSessionId/members/:memberId/skill",
+  [
+    validateParams(roomSessionIdAndMemberIdSchema),
+    validate(useSkillBodySchema),
+  ],
+  proofController.useSkill
+);
+router.post(
+  "/sessions/:roomSessionId/members/:memberId/report",
+  [
+    validateParams(roomSessionIdAndMemberIdSchema),
+    validate(requestReportBodySchema),
+  ],
+  proofController.requestReport
 );
 export default router;

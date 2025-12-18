@@ -26,20 +26,16 @@ export const PROOF_RANK = Object.freeze({
 });
 
 export const DEFAULT_PROOF_COUNT = Object.freeze({
-  A_NORMAL: 7,
-  B_NORMAL: 12,
-  C_NORMAL: 15,
   A_DUMMY: 1,
   B_DUMMY: 2,
-  C_DUMMY: 3,
+  C_DUMMY: 0,
   C_MAP: {
-    type1: 2,
-    type2: 2,
-    type3: 2,
-    type4: 2,
-    type5: 2,
-    type6: 2,
-    type7: 3,
+    type1: 1,
+    type2: 1,
+    type3: 1,
+    type4: 1,
+    type5: 1,
+    type6: 1,
   },
 });
 
@@ -60,6 +56,9 @@ export const PROOF_ROLE_NAME_MAP = Object.freeze({
   BOMBER: "BOMBER",
   BOMB_SQUAD: "BOMB_SQUAD",
   STRENGTH: "STRENGTH",
+  SWITCHER: "SWITCHER",
+  FIVE: "FIVE",
+  SIX: "SIX",
 });
 
 export const PROOF_ROLE_SETTING = Object.freeze({
@@ -80,6 +79,24 @@ export const PROOF_ROLE_SETTING = Object.freeze({
     description: "力士は、爆発に１度耐えることができます",
     imageUrl: "https://d1z1o17j25srna.cloudfront.net/bomber.png",
     skillLimit: 1,
+  },
+  [PROOF_ROLE_NAME_MAP.SWITCHER]: {
+    name: "スイッチャー",
+    description: "スイッチャーは、証拠を交換することができます。",
+    imageUrl: "https://d1z1o17j25srna.cloudfront.net/switcher.png",
+    skillLimit: 0,
+  },
+  [PROOF_ROLE_NAME_MAP.FIVE]: {
+    name: "ファイブ",
+    description: "ファイブは、証拠を交換することができます。",
+    imageUrl: "https://d1z1o17j25srna.cloudfront.net/five.png",
+    skillLimit: 0,
+  },
+  [PROOF_ROLE_NAME_MAP.SIX]: {
+    name: "シックス",
+    description: "シックスは、証拠を交換することができます。",
+    imageUrl: "https://d1z1o17j25srna.cloudfront.net/six.png",
+    skillLimit: 0,
   },
 });
 

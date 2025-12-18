@@ -1,7 +1,8 @@
+import { UseSkillResult } from "../../controllers/proof/dto";
 import { TProofRoomMember, TProofRoomSession } from "../../domain/proof/types";
 import { Prisma } from "../../generated/prisma/client";
 import { Server } from "socket.io";
-abstract class ProofIF {
+abstract class ProofIF<T> {
   abstract executeInitialize(
     tx: Prisma.TransactionClient,
     me: TProofRoomMember,
@@ -12,8 +13,9 @@ abstract class ProofIF {
     tx: Prisma.TransactionClient,
     me: TProofRoomMember,
     roomSession: TProofRoomSession,
-    io: Server
-  ): Promise<void>;
+    io: Server,
+    params: T
+  ): Promise<UseSkillResult>;
 }
 
 export default ProofIF;

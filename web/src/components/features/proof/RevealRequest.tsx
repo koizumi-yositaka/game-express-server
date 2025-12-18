@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
-import { PROOF_RANK } from "@/common/proofCommon";
+import { PROOF_RANK, PROOF_ROLE_NAME_MAP } from "@/common/proofCommon";
 import { useAuth } from "@/contexts/AuthContext";
 import type { DTOProofStatus } from "@/proofTypes";
 import { useLoading } from "@/contexts/LoadingContext";
@@ -47,6 +47,7 @@ export const RevealRequest = () => {
     setProofCode(code);
     setProofStatus(null);
   };
+  const isBomber = user.roleName === PROOF_ROLE_NAME_MAP.BOMBER;
   return (
     <div className="flex flex-col gap-4 w-full max-w-md">
       <RankAndCode
@@ -67,6 +68,7 @@ export const RevealRequest = () => {
               <div className="flex p-4">証拠は全体に公開済みです</div>
             )}
           <RevealRequestButtonList
+            isBomber={isBomber}
             proofStatus={proofStatus}
             revealProofHandler={revealProofHandler}
           />
@@ -88,17 +90,23 @@ export const RevealRequest = () => {
 
 const RevealRequestButtonList = ({
   proofStatus,
+  isBomber,
   revealProofHandler,
 }: {
   proofStatus: DTOProofStatus;
+  isBomber: boolean;
   revealProofHandler: (isEntire: boolean) => void;
 }) => {
   return (
     <>
       <div className="flex p-2">
         {proofStatus.ableToOpenToPublic && (
-          <Button className="w-full" onClick={() => revealProofHandler(true)}>
-            証拠を全員に公開
+          <Button
+            className="w-full"
+            onClick={() => revealProofHandler(true)}
+            disabled={isBomber}
+          >
+            {isBomber ? "ボマーは全体公開できません" : "証拠を全員に公開"}
           </Button>
         )}
       </div>

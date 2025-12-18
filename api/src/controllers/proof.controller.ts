@@ -65,6 +65,19 @@ export const createBombBodySchema = z.object({
   memberId: z.number(),
 });
 
+export const proofCodesBodySchema = z.object({
+  proofCodes: z.array(z.string()),
+});
+
+export const useSkillBodySchema = z.object({
+  params: z.unknown(),
+});
+
+export const requestReportBodySchema = z.object({
+  targetMemberId: z.number(),
+  proofCodes: z.array(z.string()),
+});
+
 export const forceFocusBodySchema = z.object({
   memberId: z.number(),
   roomSessionId: z.number(),
@@ -93,6 +106,9 @@ export type JudgeAlreadyRevealedBodySchema = z.infer<
 export type RoomSessionIdAndMemberIdSchema = z.infer<
   typeof roomSessionIdAndMemberIdSchema
 >;
+export type ProofCodesBodySchema = z.infer<typeof proofCodesBodySchema>;
+export type UseSkillBodySchema = z.infer<typeof useSkillBodySchema>;
+export type RequestReportBodySchema = z.infer<typeof requestReportBodySchema>;
 export const proofController = {
   getHealth: (_req: Request, res: Response, _next: NextFunction) => {
     res.status(200).json({ message: "ok" });
@@ -303,6 +319,30 @@ export const proofController = {
       next(error);
     }
   },
+
+  includeBomb: async (
+    req: Request<RoomSessionIdSchema, unknown, ProofCodesBodySchema>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const proofStatuses = await Promise.all(
+        req.body.proofCodes.map(async (proofCode) => {
+          return proofService.getProofStatus(
+            Number(req.params.roomSessionId),
+            proofCode
+          );
+        })
+      );
+      const includeBomb = proofStatuses.some(
+        (proofStatus) => proofStatus?.bomFlg
+      );
+      res.status(200).json({ includeBomb });
+    } catch (error) {
+      next(error);
+    }
+  },
+
   getProofByRoomSessionIdAndCode: async (
     req: Request<RoomSessionIdAndProofCodeSchema, unknown, RevealProofBody>,
     res: Response,
@@ -389,6 +429,25 @@ export const proofController = {
       next(error);
     }
   },
+
+  useSkill: async (
+    req: Request<RoomSessionIdAndMemberIdSchema, unknown, UseSkillBodySchema>,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const result = await proofService.useSkill(
+        Number(req.params.roomSessionId),
+        Number(req.params.memberId),
+        req.app.locals.io,
+        req.body.params
+      );
+      res.status(200).json(result);
+    } catch (error) {
+      next(error);
+    }
+  },
+
   endOrder: async (
     req: Request<RoomSessionIdSchema>,
     res: Response,
@@ -400,6 +459,28 @@ export const proofController = {
         req.app.locals.io
       );
       res.status(200).json({ turnFinished, currentTurn });
+    } catch (error) {
+      next(error);
+    }
+  },
+  requestReport: async (
+    req: Request<
+      RoomSessionIdAndMemberIdSchema,
+      unknown,
+      RequestReportBodySchema
+    >,
+    res: Response,
+    next: NextFunction
+  ) => {
+    try {
+      const result = await proofService.requestReport(
+        Number(req.params.roomSessionId),
+        Number(req.params.memberId),
+        req.body.targetMemberId,
+        req.body.proofCodes,
+        req.app.locals.io
+      );
+      res.status(200).json(result);
     } catch (error) {
       next(error);
     }

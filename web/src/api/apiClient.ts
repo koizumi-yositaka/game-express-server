@@ -14,7 +14,12 @@ import type {
   RevealResult,
   DTOProof,
   RoleFeatureB,
+  RoleSkillDef,
+  UseSkillResult,
+  RequestReportResult,
 } from "@/proofTypes";
+import { PROOF_ROLE_NAME_MAP } from "@/common/proofCommon";
+import { z } from "zod";
 
 export async function centerLogin(id: string, password: string): Promise<void> {
   try {
@@ -277,7 +282,10 @@ export async function getProofSessionByRoomId(
 export async function getProofRoleSetting(
   roomSessionId: number,
   memberId: number
-): Promise<RoleFeatureB> {
+): Promise<{
+  featureB: RoleFeatureB;
+  skillDef: RoleSkillDef;
+}> {
   try {
     const res = await axiosInstance.get(
       `/proofs/sessions/${roomSessionId}/roleSetting/${memberId}`
@@ -403,3 +411,76 @@ export async function applyCard(
     throw error;
   }
 }
+
+export type RequestReportBody = {
+  targetMemberId: number;
+  proofCodes: string[];
+};
+export async function requestReport(
+  roomSessionId: number,
+  memberId: number,
+  requestReportBody: RequestReportBody
+): Promise<RequestReportResult> {
+  try {
+    const res = await axiosInstance.post(
+      `/proofs/sessions/${roomSessionId}/members/${memberId}/report`,
+      requestReportBody
+    );
+    return res.data;
+  } catch (error) {
+    console.error("requestReport error:", error);
+    throw error;
+  }
+}
+
+// proof skill
+
+export async function useSkill(
+  roomSessionId: number,
+  memberId: number,
+  params: unknown
+): Promise<UseSkillResult> {
+  try {
+    const res = await axiosInstance.post(
+      `/proofs/sessions/${roomSessionId}/members/${memberId}/skill`,
+      { params }
+    );
+    return res.data;
+  } catch (error) {
+    console.error("useSkill error:", error);
+    throw error;
+  }
+}
+
+// 以下どこかに移動予定
+const useSkillBomberParamSchema = z.object({
+  rank: z.string(),
+  code: z.string(),
+});
+const useSkillSwitcherParamSchema = z.object({
+  rank1: z.string(),
+  rank2: z.string(),
+  code1: z.string(),
+  code2: z.string(),
+});
+
+export type UseSkillBomberParam = z.infer<typeof useSkillBomberParamSchema>;
+export type UseSkillSwitcherParam = z.infer<typeof useSkillSwitcherParamSchema>;
+export const createUseSkillParam = (
+  roleName: keyof typeof PROOF_ROLE_NAME_MAP,
+  params: UseSkillBomberParam | UseSkillSwitcherParam
+) => {
+  switch (roleName) {
+    case PROOF_ROLE_NAME_MAP.BOMBER:
+      const useSkillBomberParam = useSkillBomberParamSchema.parse(params);
+      return { code: `${useSkillBomberParam.rank}${useSkillBomberParam.code}` };
+    case PROOF_ROLE_NAME_MAP.SWITCHER:
+      const useSkillSwitcherParam = useSkillSwitcherParamSchema.parse(params);
+      return {
+        code1: `${useSkillSwitcherParam.rank1}${useSkillSwitcherParam.code1}`,
+        code2: `${useSkillSwitcherParam.rank2}${useSkillSwitcherParam.code2}`,
+      };
+    default:
+      throw new Error("Invalid role name");
+  }
+};

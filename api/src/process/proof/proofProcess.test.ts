@@ -9,6 +9,7 @@ import {
   PROOF_ROLE_NAME_MAP,
   PROOF_ADMIN_USER_ID,
 } from "../../domain/proof/proofCommon";
+import { proofSpecialMoveExecutor } from "../../roles/proof/roleSpecialMoveExecutor";
 import { REVEALED_RESULT_CODE } from "../../domain/proof/types";
 import { NotFoundError } from "../../error/AppError";
 import { Prisma } from "../../generated/prisma/client";
@@ -18,6 +19,7 @@ import { Server } from "socket.io";
 jest.mock("../../repos/proofRepository");
 jest.mock("../../util/lineUtil");
 jest.mock("../../domain/proof/typeParse");
+jest.mock("../../roles/proof/roleSpecialMoveExecutor");
 
 /**
  * revealProofProcess パラメータ別結果表
@@ -699,6 +701,12 @@ describe("proofProcess.revealProofProcess", () => {
       (
         toTProofRoomSessionFromProofRoomSessionWithMembers as jest.Mock
       ).mockReturnValue(tProofRoomSession);
+      (proofSpecialMoveExecutor.executeUseSkill as jest.Mock).mockResolvedValue(
+        {
+          isSuccess: true,
+          result: "爆弾を解除しました",
+        }
+      );
       (lineUtil.sendSimpleTextMessage as jest.Mock).mockResolvedValue({
         success: true,
       });

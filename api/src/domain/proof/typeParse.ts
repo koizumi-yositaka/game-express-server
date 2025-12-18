@@ -63,7 +63,7 @@ export function toTProofRole(role: MProofRole): TProofRole {
 export function toTProofRoomMember(
   roomMember: ProofRoomMember
 ): TProofRoomMember {
-  return {
+  const temp = {
     id: roomMember.id,
     roomId: roomMember.roomId,
     userId: roomMember.userId,
@@ -71,12 +71,15 @@ export function toTProofRoomMember(
     status: roomMember.status,
     sort: roomMember.sort,
     skillUsedTime: roomMember.skillUsedTime,
+    isSkillUsed: roomMember.isSkillUsed,
     penalty: roomMember.penalty
       .split(",")
       .filter((penalty) => penalty)
       .map((penalty) => penalty),
     joinedAt: roomMember.joinedAt,
   };
+
+  return temp;
 }
 
 // export function toTProofRoomFromRoomWithUsers(
@@ -105,6 +108,7 @@ export function toTProofRoomMemberFromProofRoomMemberWithUsers(
     status: roomMember.status,
     sort: roomMember.sort,
     skillUsedTime: roomMember.skillUsedTime,
+    isSkillUsed: roomMember.isSkillUsed,
     penalty: roomMember.penalty
       .split(",")
       .filter((penalty) => penalty)
@@ -126,10 +130,9 @@ export function toTUser(user: User): TUser {
 export function toTProofRoomSessionFromProofRoomSessionWithMembers(
   roomSession: ProofRoomSessionWithMembers
 ): TProofRoomSession {
-  return toTProofRoomSession(
+  return toTProofRoomSessionFromProofRoomSessionWithUsers(
     roomSession,
-    roomSession.room,
-    roomSession.room.members // これ要らない,
+    roomSession.room
   );
 }
 
@@ -175,6 +178,7 @@ export function toTProofFromProofList(proofList: ProofList): TProof {
     description: proofList.description,
     refer: proofList.references,
     bomFlg: proofList.bomFlg,
+    revealedTurn: proofList.revealedTurn,
     revealedBy:
       proofList.revealedBy
         .split(",")

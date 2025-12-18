@@ -23,7 +23,7 @@ export const ProofApplyCardCode = ({
   const [code2, setCode2] = useState<string>("");
   const [code3, setCode3] = useState<string>("");
   const clickHandler = async () => {
-    const codes = ["A" + code1, "B" + code2, "C" + code3];
+    const codes = ["B" + code1, "B" + code2, "C" + code3];
     const result = await callMyConfirm(getProofMessage("C3", codes.join(",")));
     if (!result) {
       return;
@@ -63,7 +63,7 @@ export const ProofApplyCardCode = ({
         <ProofApplyCardCodeItem
           code={code1}
           setCode={setCode1}
-          label="A"
+          label="B"
           textId="code1"
         />
       </div>

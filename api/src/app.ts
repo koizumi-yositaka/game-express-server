@@ -43,7 +43,10 @@ const io = new Server<
 >(server, {
   path: "/api/socket.io",
   cors: {
-    origin: ["http://localhost:5173"],
+    origin: [
+      "http://localhost:5173",
+      "https://joelle-unreleasable-defeatedly.ngrok-free.dev",
+    ],
     methods: ["GET", "POST"],
     credentials: true,
   },

@@ -25,6 +25,7 @@ export type DTOProofRoom = {
 export type DTOProofRoomMember = {
   id: number;
   sort: number;
+  isSkillUsed: boolean;
   status: number;
   skillUsedTime: number;
   penalty: string[];
@@ -66,6 +67,7 @@ export type DTOProof = {
   status: string;
   title: string;
   description: string;
+  revealedTurn: number;
   revealedBy: number[];
 };
 
@@ -83,4 +85,15 @@ export type DecodedUserInfo = {
   memberId: number;
   roleName: keyof typeof PROOF_ROLE_NAME_MAP;
   status: (typeof PROOF_MEMBER_STATUS)[keyof typeof PROOF_MEMBER_STATUS];
+};
+
+export type UseSkillResult = {
+  isSuccess: boolean;
+  result: string;
+};
+
+export type RequestReportResult = {
+  isSuccess: boolean;
+  message: string;
+  ngList: { proofCode: string; message: string }[];
 };

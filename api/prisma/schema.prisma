@@ -147,17 +147,19 @@ model ProofRoom {
 }
 
 model ProofRoomMember {
-  id        Int         @id @default(autoincrement())
-  room      ProofRoom   @relation(fields: [roomId], references: [id])
-  roomId    Int
+  id          Int         @id @default(autoincrement())
+  room        ProofRoom   @relation(fields: [roomId], references: [id])
+  roomId      Int
 
-  user      User        @relation(fields: [userId], references: [userId])
-  userId    String
+  user        User        @relation(fields: [userId], references: [userId])
+  userId      String
 
-  role      MProofRole  @relation(fields: [roleId], references: [roleId])
-  roleId    Int         @default(0)
+  role        MProofRole  @relation(fields: [roleId], references: [roleId])
+  roleId      Int         @default(0)
 
-  status    Int         @default(0)
+  status      Int         @default(0)
+
+  isSkillUsed Boolean     @default(false)
 
   skillUsedTime Int     @default(0)
   penalty   String      @default("")

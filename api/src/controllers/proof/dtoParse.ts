@@ -23,6 +23,7 @@ export function toDTOProofRoomMember(
     sort: roomMember.sort,
     status: roomMember.status,
     skillUsedTime: roomMember.skillUsedTime,
+    isSkillUsed: roomMember.isSkillUsed,
     penalty: roomMember.penalty,
     joinedAt: roomMember.joinedAt.toISOString(),
     user: roomMember.user ? toDTOProofUser(roomMember.user) : null,
@@ -83,6 +84,7 @@ export function toDTOProof(proof: TProof): DTOProof {
     status: proof.status,
     title: proof.title,
     description: proof.description,
+    revealedTurn: proof.revealedTurn,
     revealedBy: proof.revealedBy,
   };
 }
