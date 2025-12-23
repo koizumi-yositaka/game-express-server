@@ -28,7 +28,7 @@ export const ProofSession = () => {
   const navigate = useNavigate();
   const { isConnected } = useAuthSocket();
   const { user } = useAuth();
-  const { isFocusing } = useOrderSocket({ setSessionRoom: () => {} });
+
   // useEffect(() => {
   //   const getSessionRoomInfo = async () => {
   //     const sessionRoomInfo = await getProofSession(Number(roomSessionId));
@@ -56,6 +56,11 @@ export const ProofSession = () => {
       getProofRoleSetting(Number(roomSessionId), user?.memberId ?? 0),
     enabled: !!roomSessionId && !!user?.memberId,
   });
+  const { requestOrderAll, isFocusing } = useOrderSocket({
+    setSessionRoom: () => {
+      refetch();
+    },
+  });
   useEffect(() => {
     const judgeAlreadyRevealedHandler = async () => {
       if (!roomSessionId || !user?.memberId || !proofSession?.turn) {
@@ -71,11 +76,7 @@ export const ProofSession = () => {
     };
     judgeAlreadyRevealedHandler();
   }, [roomSessionId, user?.memberId, proofSession?.turn]);
-  const { requestOrderAll } = useOrderSocket({
-    setSessionRoom: () => {
-      refetch();
-    },
-  });
+
   const [isRevealed, setIsRevealed] = useState(false);
   const isMyTurn = isFocusing || proofSession?.focusOn === user?.memberId;
   const me = proofSession?.room.members.find(
@@ -157,10 +158,13 @@ export const ProofSession = () => {
   if (!proofSession) {
     return <div>Proof session not found</div>;
   }
+
+  if (PROOF_MEMBER_STATUS.RETIRED === me?.status) {
+    return <div>あなたは爆死しました</div>;
+  }
+
   return (
     <div className="flex flex-col gap-6 p-4 max-w-4xl mx-auto">
-      {isFocusing && <div>Focusing...</div>}
-
       {me?.status && me.status < PROOF_MEMBER_STATUS.APPLY_CARD ? (
         <Card>
           <CardHeader>

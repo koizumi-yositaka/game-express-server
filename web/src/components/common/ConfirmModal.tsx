@@ -44,21 +44,32 @@ export default function ConfirmDialog() {
   })();
 
   return (
-    <Dialog open={dialog.isOpen} onOpenChange={() => handleClose(false)}>
+    <Dialog
+      open={dialog.isOpen}
+      onOpenChange={(open) => !open && handleClose(false)}
+    >
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <div className={`flex items-center gap-2 rounded-md p-2 ${typeStyle.accentBg}`}>
-            <svg className={`h-5 w-5 ${typeStyle.iconColor}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              {dialog.type === 'error' && (
+          <div
+            className={`flex items-center gap-2 rounded-md p-2 ${typeStyle.accentBg}`}
+          >
+            <svg
+              className={`h-5 w-5 ${typeStyle.iconColor}`}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+            >
+              {dialog.type === "error" && (
                 <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
               )}
-              {dialog.type === 'info' && (
+              {dialog.type === "info" && (
                 <>
                   <circle cx="12" cy="12" r="10" />
                   <path d="M12 16v-4M12 8h.01" />
                 </>
               )}
-              {dialog.type === 'confirm' && (
+              {dialog.type === "confirm" && (
                 <>
                   <circle cx="12" cy="12" r="10" />
                   <path d="M9.09 9a3 3 0 115.82 1c0 2-3 2-3 4" />
@@ -66,12 +77,16 @@ export default function ConfirmDialog() {
                 </>
               )}
             </svg>
-            <DialogTitle className={`${typeStyle.titleColor}`}>{dialog.title}</DialogTitle>
+            <DialogTitle className={`${typeStyle.titleColor}`}>
+              {dialog.title}
+            </DialogTitle>
           </div>
         </DialogHeader>
         <div className="flex items-start gap-3">
           <div className="grid flex-1 gap-2">
-            <p className="leading-relaxed text-sm text-gray-700 whitespace-pre-wrap">{dialog.description}</p>
+            <p className="leading-relaxed text-sm text-gray-700 whitespace-pre-wrap">
+              {dialog.description}
+            </p>
           </div>
         </div>
         <DialogFooter className="sm:justify-end gap-2">
@@ -80,8 +95,11 @@ export default function ConfirmDialog() {
               {dialog.cancelLabel ?? "いいえ"}
             </Button>
           )}
-          <Button variant={typeStyle.confirmVariant} onClick={() => handleClose(true)}>
-            {dialog.execLabel ?? (dialog.type === 'info' ? 'OK' : 'はい')}
+          <Button
+            variant={typeStyle.confirmVariant}
+            onClick={() => handleClose(true)}
+          >
+            {dialog.execLabel ?? (dialog.type === "info" ? "OK" : "はい")}
           </Button>
         </DialogFooter>
       </DialogContent>

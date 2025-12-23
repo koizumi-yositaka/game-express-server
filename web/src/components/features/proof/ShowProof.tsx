@@ -4,7 +4,13 @@ import { Badge } from "@/components/ui/badge";
 import { PROOF_STATUS, PROOF_STATUS_MAP } from "@/common/proofCommon";
 import { cn } from "@/lib/utils";
 
-export const ShowProof = ({ proof }: { proof: DTOProof }) => {
+export const ShowProof = ({
+  proof,
+  isBomShow,
+}: {
+  proof: DTOProof;
+  isBomShow?: boolean;
+}) => {
   const getStatusInfo = () => {
     switch (proof.status) {
       case PROOF_STATUS.NORMAL:
@@ -65,6 +71,14 @@ export const ShowProof = ({ proof }: { proof: DTOProof }) => {
             >
               {statusInfo.label}
             </Badge>
+            {isBomShow && proof.bomFlg && (
+              <Badge
+                variant="outline"
+                className="text-xs bg-red-50 border-red-200 text-red-700 dark:bg-red-950 dark:border-red-800 dark:text-red-300"
+              >
+                爆弾
+              </Badge>
+            )}
           </div>
           <CardTitle className="text-l">
             {proof.code} {proof.title}

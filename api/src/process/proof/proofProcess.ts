@@ -170,7 +170,6 @@ export const proofProcess = {
       params.roomSessionId,
       params.proofCode
     );
-    console.log("turnIntoBombProcess", proof);
     if (!proof) {
       throw new NotFoundError("Proof not found");
     }
@@ -243,11 +242,6 @@ export const proofProcess = {
     const parsedProof = toTProofFromProofList(proof);
 
     if (parsedProof.revealedBy.length > 0) {
-      console.log(
-        "開示済みのカードです",
-        parsedProof.revealedBy,
-        parsedProof.status
-      );
       if (parsedProof.status === PROOF_STATUS.REVEALED_TO_ALL) {
         return {
           result: REVEALED_RESULT_CODE.ALREADY_REVEALED,
@@ -315,7 +309,7 @@ export const proofProcess = {
         await proofSpecialMoveExecutor.executeUseSkill(
           PROOF_ROLE_NAME_MAP.BOMB_SQUAD,
           tx,
-          toTProofRoomMember(member),
+          toTProofRoomMemberFromProofRoomMemberWithUsers(member),
           parsedRoomSession,
           io,
           params
@@ -423,13 +417,16 @@ export const proofProcess = {
       }
       // ゲーム完了
     } else {
-      await lineUtil.sendSimpleTextMessage(params.userId, "爆死です");
-      await proofRepository.updateRoomMemberStatus(
-        tx,
-        params.roomSession.room.id,
-        params.userId,
-        PROOF_MEMBER_STATUS.RETIRED
+      const deadMember = params.roomSession.room.members.find(
+        (member) => member.userId === params.userId
       );
+      if (!deadMember || !deadMember.user || !deadMember.role) {
+        throw new NotFoundError("Member not found");
+      }
+      await proofProcess.deathProcess(tx, io, {
+        roomSession: params.roomSession,
+        member: deadMember,
+      });
     }
   },
   useSkill: async (
@@ -540,6 +537,11 @@ export const proofProcess = {
       );
       return;
     }
+    io.to(`user:${PROOF_ADMIN_USER_ID}`).emit("proof:revealResult", {
+      result: REVEALED_RESULT_CODE.BOMBED,
+      message: `${params.member.user?.displayName}が爆死しました`,
+    });
+
     proofRepository.updateRoomMemberStatus(
       tx,
       params.roomSession.room.id,

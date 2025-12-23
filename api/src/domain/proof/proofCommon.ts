@@ -84,7 +84,7 @@ export const PROOF_ROLE_SETTING = Object.freeze({
     name: "スイッチャー",
     description: "スイッチャーは、証拠を交換することができます。",
     imageUrl: "https://d1z1o17j25srna.cloudfront.net/switcher.png",
-    skillLimit: 0,
+    skillLimit: 3,
   },
   [PROOF_ROLE_NAME_MAP.FIVE]: {
     name: "ファイブ",

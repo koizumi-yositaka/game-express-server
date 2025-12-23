@@ -28,6 +28,7 @@ export const ProofSkillBomber = ({
       createUseSkillParam(PROOF_ROLE_NAME_MAP.BOMBER, { rank, code })
     );
     setSkillUseResult(result);
+    setIsSkillUseResultDialogOpen(true);
   };
   return (
     <div className="space-y-6">

@@ -801,11 +801,11 @@ describe("proofProcess.revealProofProcess", () => {
       (
         toTProofRoomSessionFromProofRoomSessionWithMembers as jest.Mock
       ).mockReturnValue(tProofRoomSession);
-      (lineUtil.sendSimpleTextMessage as jest.Mock).mockResolvedValue({
-        success: true,
-      });
       (proofRepository.updateRoomMemberStatus as jest.Mock).mockResolvedValue(
         null
+      );
+      (proofSpecialMoveExecutor.executeUseSkill as jest.Mock).mockResolvedValue(
+        undefined
       );
 
       const result = await proofProcess.revealProofProcess(mockTx, mockIo, {
@@ -817,10 +817,11 @@ describe("proofProcess.revealProofProcess", () => {
 
       expect(result.result).toBe(REVEALED_RESULT_CODE.BOMBED);
       expect(result.message).toBe("このカードは爆弾です");
-      expect(lineUtil.sendSimpleTextMessage).toHaveBeenCalledWith(
-        "user1",
-        "爆死です"
-      );
+      expect(mockIo.to).toHaveBeenCalledWith(`user:${PROOF_ADMIN_USER_ID}`);
+      expect(mockIo.emit).toHaveBeenCalledWith("proof:revealResult", {
+        result: REVEALED_RESULT_CODE.BOMBED,
+        message: "User 1が爆死しました",
+      });
       expect(proofRepository.updateRoomMemberStatus).toHaveBeenCalledWith(
         mockTx,
         1,

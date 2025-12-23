@@ -34,7 +34,7 @@ export const ProofMemberList = ({
           "bg-yellow-50 border-yellow-200 text-yellow-700 dark:bg-yellow-950 dark:border-yellow-800 dark:text-yellow-300";
         design.content = "";
         break;
-      case PROOF_MEMBER_STATUS.BOMBED:
+      case PROOF_MEMBER_STATUS.RETIRED:
         design.className =
           "bg-red-50 border-red-200 text-red-700 dark:bg-red-950 dark:border-red-800 dark:text-red-300";
         design.content = "爆死";

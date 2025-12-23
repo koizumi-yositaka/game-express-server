@@ -22,10 +22,12 @@ import {
   DialogContent,
   DialogHeader,
 } from "@/components/ui/dialog";
+import { CommonTimer } from "@/components/common/CommonTimer";
 
 export const SessionBase = () => {
   const { roomSessionId } = useParams();
   const { login, isConnected } = useAuthSocket();
+  const [isTimerShown, setIsTimerShown] = useState(false);
   const { revealResult } = useProofSocket(() => {
     setIsRevealResultDialogOpen(true);
   });
@@ -34,7 +36,17 @@ export const SessionBase = () => {
   const [sessionRoom, setSessionRoom] = useState<DTOProofRoomSession | null>(
     null
   );
-  const { requestOrderAll } = useOrderSocket({ setSessionRoom });
+  const finishTurn = async () => {
+    const result1 = await showInfoDialog(getProofMessage("I1"));
+    if (!result1) {
+      return;
+    }
+    setIsTimerShown(true);
+  };
+  const { requestOrderAll } = useOrderSocket({
+    setSessionRoom,
+    callTurnFinished: finishTurn,
+  });
   useEffect(() => {
     if (roomSessionId) {
       if (!isConnected) {
@@ -54,19 +66,24 @@ export const SessionBase = () => {
       if (!result) {
         return;
       }
-      const { turnFinished, currentTurn } = await endOrder(
-        Number(roomSessionId)
-      );
+      const { turnFinished } = await endOrder(Number(roomSessionId));
       if (!turnFinished) {
         await startOrder(Number(roomSessionId));
       } else {
-        const result = await showInfoDialog(getProofMessage("I1", currentTurn));
-        if (!result) {
+        const result1 = await showInfoDialog(getProofMessage("I1"));
+        if (!result1) {
           return;
         }
+        setIsTimerShown(true);
+
         requestOrderAll(Number(roomSessionId));
       }
     }
+  };
+
+  const handleTimerNext = async () => {
+    setIsTimerShown(false);
+    await startTurn();
   };
 
   const startTurn = async () => {
@@ -99,6 +116,7 @@ export const SessionBase = () => {
   const isAllReady = sessionRoom?.room.members.every(
     (member) => member.status >= PROOF_MEMBER_STATUS.APPLY_CARD
   );
+
   return (
     <div className="flex flex-col gap-4">
       {isAllReady ? (
@@ -134,8 +152,11 @@ export const SessionBase = () => {
           </Button>
         )}
       </div>
+      <MyDialog isOpen={isTimerShown} onOpenChange={() => {}} title="タイマー">
+        <CommonTimer initialTime={90} nextAction={handleTimerNext} />
+      </MyDialog>
       {revealResult && (
-        <RevealResultDialog
+        <MyDialog
           isOpen={isRevealResultDialogOpen}
           onOpenChange={setIsRevealResultDialogOpen}
           title={revealResult.message}
@@ -155,13 +176,13 @@ export const SessionBase = () => {
           {revealResult.result === REVEALED_RESULT_CODE.INVALID_CODE && (
             <div className="text-red-500">無効なコードです</div>
           )}
-        </RevealResultDialog>
+        </MyDialog>
       )}
     </div>
   );
 };
 
-const RevealResultDialog = ({
+const MyDialog = ({
   isOpen,
   onOpenChange,
   title,

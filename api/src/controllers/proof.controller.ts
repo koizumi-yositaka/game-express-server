@@ -209,7 +209,6 @@ export const proofController = {
     next: NextFunction
   ) => {
     try {
-      console.log("req.query", req.query);
       if (isNaN(Number(req.query.roomId))) {
         throw new BadRequestError("roomId must be a number");
       }
@@ -227,8 +226,6 @@ export const proofController = {
     next: NextFunction
   ) => {
     try {
-      console.log("req.params", req.params);
-      console.log("req.params.roomSessionId", req.params.roomSessionId);
       if (isNaN(Number(req.params.roomSessionId))) {
         throw new BadRequestError("roomSessionId must be a number");
       }
@@ -286,7 +283,6 @@ export const proofController = {
         Number(req.params.roomSessionId),
         req.params.proofCode
       );
-      console.log("proof", proof);
 
       const dtoProofStatus: DTOProofStatus = {
         isExists: proof !== null,
@@ -406,6 +402,7 @@ export const proofController = {
   ) => {
     try {
       const nextTurn = await proofService.startTurn(
+        req.app.locals.io,
         Number(req.params.roomSessionId)
       );
       res.status(200).json({ result: `success ${nextTurn}` });

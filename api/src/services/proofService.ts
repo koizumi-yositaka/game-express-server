@@ -32,6 +32,7 @@ import { userRepository } from "../repos/userRepository";
 import {
   PROOF_ROOM_SESSION_STATUS,
   PROOF_ROOM_STATUS,
+  PROOF_ADMIN_USER_ID,
 } from "../domain/proof/proofCommon";
 import { proofProcess } from "../process/proof/proofProcess";
 import {
@@ -277,7 +278,6 @@ export const proofService = {
       }
 
       // 手札に爆弾を１枚作成
-      let bombHintProof: TProof | null = null;
       let bombProof: TProof | null = null;
       const shuffledProofCodes = myUtil.shuffleArray(proofCodes);
       for (const proofCode of shuffledProofCodes) {
@@ -286,21 +286,17 @@ export const proofService = {
           roomSessionId,
           proofCode
         );
-        if (proof.title === PROOF_BOMB_RESERVED_WORD) {
-          bombHintProof = proof;
-        } else {
-          bombProof = proof;
-        }
+        bombProof = proof;
       }
-      if (bombHintProof && bombProof) {
+      if (bombProof) {
         await proofRepository.updateProofStatus(tx, bombProof.id, {
           bomFlg: true,
         });
         // 爆弾のヒントを作成
-        await proofRepository.updateProofStatus(tx, bombHintProof.id, {
-          title: "PROOF_BOMB_RESERVED_WORD",
-          description: `${bombProof.code}は爆弾です`,
-        });
+        // await proofRepository.updateProofStatus(tx, bombHintProof.id, {
+        //   title: "PROOF_BOMB_RESERVED_WORD",
+        //   description: `${bombProof.code}は爆弾です`,
+        // });
       }
       await proofSpecialMoveExecutor.executeInitialize(
         member.role?.roleName as keyof typeof PROOF_ROLE_NAME_MAP,
@@ -316,7 +312,9 @@ export const proofService = {
         member.userId,
         PROOF_MEMBER_STATUS.APPLY_CARD
       );
-      noticeAllUserInfo(io, roomSession);
+      const currentRoomSession = await _getSessionRoom(tx, roomSessionId);
+      console.log("initializeBomb", JSON.stringify(roomSession, null, 2));
+      noticeAllUserInfo(io, currentRoomSession);
     });
   },
 
@@ -457,7 +455,7 @@ export const proofService = {
       return revealedResult;
     });
   },
-  startTurn: async (roomSessionId: number): Promise<number> => {
+  startTurn: async (io: Server, roomSessionId: number): Promise<number> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
       const roomSession = await _getSessionRoom(tx, roomSessionId);
       if (
@@ -468,11 +466,42 @@ export const proofService = {
           "Room session is not in game started or turn ended"
         );
       }
+
+      // 初回のみ爆弾ヒントを作成
+      if (roomSession.turn === 0) {
+        const proofList = await proofRepository.getProofsByRoomSessionId(
+          tx,
+          roomSessionId
+        );
+        const bombHintProof = proofList.find(
+          (proof) => proof.title === PROOF_BOMB_RESERVED_WORD
+        );
+        if (!bombHintProof) {
+          throw new NotFoundError("Bomb hint proof not found");
+        }
+        const bombProofs = proofList.filter((proof) => proof.bomFlg);
+
+        await proofRepository.updateProofStatus(tx, bombHintProof.id, {
+          title: "爆弾のヒント",
+          description: `${bombProofs
+            .map((proof) => proof.code)
+            .join(",")}は爆弾です`,
+        });
+      }
       const nextTurn = roomSession.turn + 1;
       await proofRepository.updateRoomSession(tx, roomSessionId, {
         turn: nextTurn,
         status: PROOF_ROOM_SESSION_STATUS.ORDER_WAITING,
       });
+      for (const member of roomSession.room.members) {
+        await proofRepository.updateRoomMemberInfoDuringTurn(
+          tx,
+          roomSession.room.id,
+          member.userId,
+          { isSkillUsed: false }
+        );
+        activateUser(io, member.userId, member.id === roomSession.focusOn);
+      }
       return nextTurn;
     });
   },
@@ -507,11 +536,17 @@ export const proofService = {
           member.userId,
           { isSkillUsed: false }
         );
+        activateUser(io, member.userId, member.id === focusOnMember.id);
       }
 
-      roomMembers.forEach((member) => {
-        activateUser(io, member.userId, member.id === focusOnMember.id);
-      });
+      // roomMembers.forEach((member) => {
+      //   console.log(
+      //     "activateUser",
+      //     member.userId,
+      //     member.id === focusOnMember.id
+      //   );
+      //   activateUser(io, member.userId, member.id === focusOnMember.id);
+      // });
       noticeAllUserInfo(io, roomSession);
     });
   },
@@ -532,16 +567,28 @@ export const proofService = {
       if (!focusOnMember) {
         throw new NotFoundError("Focus on member not found");
       }
-      let nextFocusOnMember = roomMembers.find(
-        (member) => member.sort === focusOnMember.sort + 1
+      const sortedRoomMembers = roomMembers.sort((a, b) => a.sort - b.sort);
+      const focusIndex = sortedRoomMembers.findIndex(
+        (member) => member.id === focusOnMember.id
       );
+      const n = sortedRoomMembers.length;
+
+      const start = focusIndex + 1;
       let finishFlg = false;
-      if (!nextFocusOnMember) {
-        // 次のメンバーがいない場合はturnを終了する
-        console.log("endOrder", "end");
-        finishFlg = true;
-        nextFocusOnMember = roomMembers.sort((a, b) => a.sort - b.sort)[0];
+      let nextFocusOnMember: TProofRoomMember | null = null;
+      for (let i = 0; i < n; i++) {
+        const tempNextFocusOnMember = sortedRoomMembers[(start + i) % n];
+        finishFlg = start + i >= n;
+        if (tempNextFocusOnMember.status !== PROOF_MEMBER_STATUS.RETIRED) {
+          nextFocusOnMember = tempNextFocusOnMember;
+          break;
+        }
       }
+
+      if (!nextFocusOnMember) {
+        throw new NotFoundError("Next focus on member not found");
+      }
+
       // orderの終わり
       await proofRepository.updateRoomSession(tx, roomSessionId, {
         focusOn: nextFocusOnMember.id,
@@ -550,6 +597,9 @@ export const proofService = {
           : PROOF_ROOM_SESSION_STATUS.ORDER_WAITING,
       });
 
+      if (finishFlg) {
+        io.to(`user:${PROOF_ADMIN_USER_ID}`).emit("order:finished");
+      }
       roomMembers.forEach((member) => {
         activateUser(io, member.userId, false);
       });

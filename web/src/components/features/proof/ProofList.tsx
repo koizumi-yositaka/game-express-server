@@ -1,4 +1,4 @@
-import { getProofList } from "@/api/apiClient";
+import { getProofList, getProofSession } from "@/api/apiClient";
 import { useQuery } from "@tanstack/react-query";
 import { useLocation, useParams } from "react-router-dom";
 import { ShowProof } from "@/components/features/proof/ShowProof";
@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/accordion";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { PROOF_RANK } from "@/common/proofCommon";
+import { PROOF_RANK, PROOF_ROLE_NAME_MAP } from "@/common/proofCommon";
 import type { DTOProof } from "@/proofTypes";
 import { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,21 @@ export const ProofList = ({}) => {
     enabled: !!roomSessionId && !!memberId,
     refetchInterval: 30000,
   });
+
+  const { isLoading: isRoomSessionLoading, data: roomSession } = useQuery({
+    queryKey: ["roomSession", roomSessionId],
+    queryFn: () => getProofSession(Number(roomSessionId)),
+    enabled: !!roomSessionId,
+  });
+  const isBomShow = useMemo(() => {
+    const roleName = roomSession?.room.members.find(
+      (member) => member.id === memberId
+    )?.role?.roleName;
+    return [
+      PROOF_ROLE_NAME_MAP.BOMBER.toString(),
+      PROOF_ROLE_NAME_MAP.BOMB_SQUAD.toString(),
+    ].includes(roleName?.toString() || "");
+  }, [roomSession, memberId]);
 
   const proofsByRank = useMemo(() => {
     if (!proofs) return {};
@@ -78,10 +93,14 @@ export const ProofList = ({}) => {
           </div>
         </div>
       )}
-      {isLoading && <div>Loading...</div>}
+      {(isLoading || isRoomSessionLoading) && <div>Loading...</div>}
       {error && <div>Error: {error.message}</div>}
       {proofs && (
-        <Accordion type="multiple" className="w-full">
+        <Accordion
+          type="multiple"
+          className="w-full"
+          defaultValue={["A", "B", "C"]}
+        >
           {rankOrder.map((rank) => {
             const rankProofs = proofsByRank[rank];
             if (!rankProofs || rankProofs.length === 0) return null;
@@ -103,7 +122,11 @@ export const ProofList = ({}) => {
                           parseInt(a.code.slice(1)) - parseInt(b.code.slice(1))
                       )
                       .map((proof) => (
-                        <ShowProof key={proof.id} proof={proof} />
+                        <ShowProof
+                          key={proof.id}
+                          proof={proof}
+                          isBomShow={isBomShow}
+                        />
                       ))}
                   </div>
                 </AccordionContent>

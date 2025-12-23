@@ -43,7 +43,6 @@ export const roomSessionController = {
     next: NextFunction
   ) => {
     try {
-      console.log("req.query", req.query);
       if (isNaN(Number(req.query.roomId))) {
         throw new BadRequestError("roomId must be a number");
       }
@@ -61,8 +60,6 @@ export const roomSessionController = {
     next: NextFunction
   ) => {
     try {
-      console.log("req.params", req.params);
-      console.log("req.params.roomSessionId", req.params.roomSessionId);
       if (isNaN(Number(req.params.roomSessionId))) {
         throw new BadRequestError("roomSessionId must be a number");
       }

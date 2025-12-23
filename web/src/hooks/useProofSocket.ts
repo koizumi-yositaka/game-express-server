@@ -1,9 +1,13 @@
 // client/src/hooks/useAuthSocket.ts
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { socket } from "../lib/socket/socket";
 import type { RevealResult } from "@/lib/socket/socketTypes";
 
 export const useProofSocket = (revealResultReceivedAction?: () => void) => {
+  const revealResultReceivedActionRef = useRef(revealResultReceivedAction);
+  useEffect(() => {
+    revealResultReceivedActionRef.current = revealResultReceivedAction;
+  }, [revealResultReceivedAction]);
   const [revealResult, setRevealResult] = useState<RevealResult | null>(null);
   const initProof = useCallback((roomSessionId: number, memberId: number) => {
     socket.emit("proof:init", roomSessionId, memberId);
@@ -17,8 +21,8 @@ export const useProofSocket = (revealResultReceivedAction?: () => void) => {
     const handleProofRevealResult = (result: RevealResult) => {
       console.log("handleProofRevealResult", result);
       setRevealResult(result);
-      if (revealResultReceivedAction) {
-        revealResultReceivedAction();
+      if (revealResultReceivedActionRef.current) {
+        revealResultReceivedActionRef.current();
       }
     };
     socket.on("proof:revealResult", handleProofRevealResult);

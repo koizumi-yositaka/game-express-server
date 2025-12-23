@@ -7,7 +7,7 @@ export type TLineMessage = {
 };
 
 const LINE_LAMBDA_ENDPOINT = process.env.LINE_LAMBDA_ENDPOINT ?? "";
-const dummyFlg = false;
+const dummyFlg = true;
 
 export const lineClient = {
   sendMessage: async (userId: string, messages: any[]) => {

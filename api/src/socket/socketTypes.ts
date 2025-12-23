@@ -35,6 +35,7 @@ export interface ServerToClientEvents {
   "order:activate": (message: string) => void;
   "order:deactivate": (message: string) => void;
   "order:all": (sessionInfo: DTOProofRoomSession) => void;
+  "order:finished": () => void;
   "proof:init": (message: string) => void;
   "proof:revealResult": (result: RevealResult) => void;
 }

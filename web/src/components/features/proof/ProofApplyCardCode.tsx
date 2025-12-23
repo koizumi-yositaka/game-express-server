@@ -23,37 +23,48 @@ export const ProofApplyCardCode = ({
   const [code2, setCode2] = useState<string>("");
   const [code3, setCode3] = useState<string>("");
   const clickHandler = async () => {
-    const codes = ["B" + code1, "B" + code2, "C" + code3];
-    const result = await callMyConfirm(getProofMessage("C3", codes.join(",")));
-    if (!result) {
-      return;
-    }
-    const proofStatuses = await Promise.all(
-      codes.map(async (code) => {
-        return {
-          code,
-          status: await getProofStatus(sessionId, code, memberId),
-        };
-      })
-    );
-    const errorMessage = proofStatuses
-      .filter((status) => !status.status.isExists)
-      .map((status) => status.code)
-      .join("\n");
-    if (errorMessage) {
-      await showErrorDialog(
-        "存在しない証拠コードがあります ぼけ\n" + errorMessage
+    try {
+      const codes = ["B" + code1, "C" + code2, "C" + code3];
+      const result = await callMyConfirm(
+        getProofMessage("C3", codes.join(","))
       );
-      return;
-    }
-    const success = await applyCard(sessionId, codes, memberId);
-    if (!success) {
-      await showErrorDialog("証拠コードの登録に失敗しました");
-    } else {
-      const next = await showInfoDialog(getProofMessage("I3"));
-      if (next) {
-        refetch();
+      if (!result) {
+        return;
       }
+      const proofStatuses = await Promise.all(
+        codes.map(async (code) => {
+          return {
+            code,
+            status: await getProofStatus(sessionId, code, memberId),
+          };
+        })
+      );
+      const errorMessage = proofStatuses
+        .filter((status) => !status.status.isExists)
+        .map((status) => status.code)
+        .join("\n");
+      if (errorMessage) {
+        await showErrorDialog(
+          "存在しない証拠コードがあります ぼけ\n" + errorMessage
+        );
+        return;
+      }
+      const success = await applyCard(sessionId, codes, memberId);
+      if (!success) {
+        await showErrorDialog("証拠コードの登録に失敗しました");
+      } else {
+        const next = await showInfoDialog(getProofMessage("I3"));
+        if (next) {
+          refetch();
+        }
+      }
+    } catch (error) {
+      console.error("clickHandler error:", error);
+      await showErrorDialog(
+        "証拠コードの登録に失敗しました" + (error as Error).message
+      );
+
+      return;
     }
   };
 
@@ -71,7 +82,7 @@ export const ProofApplyCardCode = ({
         <ProofApplyCardCodeItem
           code={code2}
           setCode={setCode2}
-          label="B"
+          label="C"
           textId="code2"
         />
       </div>

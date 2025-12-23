@@ -45,7 +45,7 @@ export const PROOF_MEMBER_STATUS = Object.freeze({
   ENTERED: 0,
   ASSIGNED: 1,
   APPLY_CARD: 2,
-  BOMBED: 99,
+  RETIRED: 99,
 });
 
 export const PROOF_PENALTY_MAP = Object.freeze({

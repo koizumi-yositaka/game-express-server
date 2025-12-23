@@ -62,6 +62,17 @@ export const ProofUseSkill = () => {
       </div>
     );
   }
+  if (me.isSkillUsed) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Card className="max-w-md">
+          <CardContent className="pt-6">
+            <p className="text-destructive text-center">スキル使用済みです</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
   return (
     <div className="min-h-screen bg-background p-4">
       <div className="max-w-2xl mx-auto space-y-6">

@@ -336,6 +336,7 @@ export const proofRepository = {
         status: proof.status,
         title: proof.title,
         description: proof.description,
+        references: proof.refer,
       })),
     });
   },

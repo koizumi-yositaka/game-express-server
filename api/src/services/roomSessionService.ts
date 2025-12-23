@@ -58,6 +58,7 @@ export const roomSessionService = {
     processed?: boolean
   ): Promise<TRoomSession> => {
     return await prisma.$transaction(async (tx: Prisma.TransactionClient) => {
+      console.log("getRoomSession", roomSessionId);
       const roomSession = await roomSessionRepository.getRoomSession(
         tx,
         roomSessionId

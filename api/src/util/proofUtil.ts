@@ -287,7 +287,7 @@ function _createAProofList(
       code: codeList[bomberInfoCardCount + i],
       rank: PROOF_RANK.A,
       status: PROOF_STATUS.DUMMY,
-      title: PROOF_RANK.A + codeList[bomberInfoCardCount + i],
+      title: codeList[bomberInfoCardCount + i],
       description: "DummyProof" + (i + 1),
       refer: "",
     });
@@ -337,8 +337,8 @@ function _createBProofList(
       code: codeList[i],
       rank: PROOF_RANK.B,
       status: PROOF_STATUS.DUMMY,
-      title: PROOF_RANK.B + codeList[i],
-      description: "DummyProof" + (i + 1),
+      title: codeList[i],
+      description: "ごめんなさい、このカードはダミーです",
       refer: "",
     });
   }
@@ -384,8 +384,8 @@ function _createCProofList(
       code: codeList[i],
       rank: PROOF_RANK.C,
       status: PROOF_STATUS.DUMMY,
-      title: PROOF_RANK.C + codeList[i],
-      description: "DummyProof" + (i + 1),
+      title: codeList[i],
+      description: "ごめんなさい、このカードはダミーです",
       refer: "",
     });
   }
@@ -518,6 +518,7 @@ export const activateUser = (
   userId: string,
   isActivate: boolean
 ) => {
+  console.log("activateUser", userId, isActivate);
   io.to(`user:${userId}`).emit(
     isActivate ? "order:activate" : "order:deactivate",
     isActivate ? "activate" : "deactivate"

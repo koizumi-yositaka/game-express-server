@@ -84,7 +84,7 @@ export default class Switcher implements ProofIF<ParamsSchema> {
     const parsedTarget1 = toTProofFromProofList(target1!);
     const parsedTarget2 = toTProofFromProofList(target2!);
     await proofRepository.updateProofStatus(tx, parsedTarget1.id, {
-      status: PROOF_STATUS.REVEALED_TO_ONE,
+      status: parsedTarget2.status,
       title: parsedTarget2.title,
       description: parsedTarget2.description,
       refer: parsedTarget2.refer,
@@ -92,7 +92,7 @@ export default class Switcher implements ProofIF<ParamsSchema> {
       bomFlg: parsedTarget2.bomFlg,
     });
     await proofRepository.updateProofStatus(tx, parsedTarget2.id, {
-      status: PROOF_STATUS.REVEALED_TO_ONE,
+      status: parsedTarget1.status,
       title: parsedTarget1.title,
       description: parsedTarget1.description,
       refer: parsedTarget1.refer,
